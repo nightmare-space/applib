@@ -1,0 +1,32 @@
+apply plugin: 'com.android.library'
+
+
+apply plugin: 'com.github.dcendents.android-maven'
+// 其中username需要替换为你在github上的用户名
+group = 'com.github.nightmare-space'
+android {
+    compileSdk 30
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    defaultConfig {
+        minSdk 21
+        targetSdk 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+}
