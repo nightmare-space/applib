@@ -270,7 +270,7 @@ public class AppChannel {
                 } else {
                     builder.append("\r").append("null");
                 }
-//                Log.w("nightmare", packages.applicationInfo.nativeLibraryDir);
+                Log.w("Nightmare", packages.applicationInfo.loadLabel(context.getPackageManager()) + String.valueOf(packages.applicationInfo.enabled));
                 builder.append("\r").append(packages.applicationInfo.targetSdkVersion);
                 builder.append("\r").append(packages.versionName);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
