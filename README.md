@@ -2,6 +2,9 @@
 这是获取app信息的服务端，在尝试flutter plugin后替代的方案，支持pc桌面应用获取adb连接的应用信息。
 
 app 文件夹是一个android library，按照jitpack的文档进行配置用于集成
+
+目前是apputils这个flutter plugin内部集成，如果上层客户端是flutter app，直接使用插件
+
 ## 开始使用
 
 ### 集成
