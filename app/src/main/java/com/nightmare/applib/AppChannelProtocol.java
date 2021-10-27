@@ -8,4 +8,6 @@ public class AppChannelProtocol {
     public static final String getAppPermissions = "getAppPermissions:";
     public static final String getAppDetail = "getAppDetail:";
     public static final String getAppMainActivity = "getAppMainActivity:";
+    public static final String openAppByPackage = "openAppByPackage:";
+    public static final String checkToken = "checkToken:";
 }
