@@ -80,6 +80,11 @@ public class AppChannel {
 
     }
 
+    public static void print(Object object) {
+        System.out.println(">>>>" + object.toString());
+        System.out.flush();
+    }
+
     // 更安全的拿到一个ServerSocket
     // 有的时候会端口占用
     public static ServerSocket safeGetServerSocket() {
@@ -111,56 +116,39 @@ public class AppChannel {
 
     public static void startServerWithServerSocket(ServerSocket serverSocket, Context context) throws IOException {
         while (true) {
-            System.out.println("等待下次连接");
-            System.out.flush();
+            print("等待下次连接");
             Socket socket = serverSocket.accept();
-            System.out.println("连接成功");
-            System.out.flush();
+            print("连接成功");
             InputStream is = socket.getInputStream();
             OutputStream os = socket.getOutputStream();
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String data = br.readLine();
             String type = data.replaceAll(":.*", ":");
+            print("type:" + type);
             AppChannel appInfo = new AppChannel(context);
             switch (type) {
                 case AppChannelProtocol.getIconData:
-                    System.out.println("响应Icon信息");
-                    System.out.flush();
                     handleIcon(os, context, data.replace(AppChannelProtocol.getIconData, ""));
                     break;
                 case AppChannelProtocol.getAllAppInfo:
-                    System.out.println("响应AllAppInfo");
-                    System.out.flush();
                     String arg = data.replace(AppChannelProtocol.getAllAppInfo, "");
                     handleAllAppInfo(os, context, arg.equals("1"));
                     break;
                 case AppChannelProtocol.getAppInfos:
-                    System.out.println("响应getAppInfos");
-                    System.out.flush();
                     handleAppInfos(os, context, data.replace(AppChannelProtocol.getAppInfos, ""));
                     break;
                 case AppChannelProtocol.getAllIconData:
-                    System.out.println("响应AllAppIcon");
-                    System.out.flush();
                     handleAllAppIcon(os, context, data.replace(AppChannelProtocol.getAllIconData, ""));
                     break;
                 case AppChannelProtocol.getAppActivity:
-                    System.out.println("响应getAppActivity");
-                    System.out.flush();
                     os.write(appInfo.getAppActivitys(data.replace(AppChannelProtocol.getAppActivity, "")).getBytes());
                 case AppChannelProtocol.getAppPermissions:
-                    System.out.println("响应getAppPermissions");
-                    System.out.flush();
                     os.write(appInfo.getAppPermissions(data.replace(AppChannelProtocol.getAppPermissions, "")).getBytes());
                     break;
                 case AppChannelProtocol.getAppDetail:
-                    System.out.println("响应getAppDetail");
-                    System.out.flush();
                     os.write(appInfo.getAppDetail(data.replace(AppChannelProtocol.getAppDetail, "")).getBytes());
                     break;
                 case AppChannelProtocol.getAppMainActivity:
-                    System.out.println("响应getAppMainActivity");
-                    System.out.flush();
                     os.write(appInfo.getAppMainActivity(data.replace(AppChannelProtocol.getAppMainActivity, "")).getBytes());
                     break;
                 case AppChannelProtocol.openAppByPackage:
@@ -237,7 +225,7 @@ public class AppChannel {
                     builder.append("\r").append(false);
                 } catch (PackageManager.NameNotFoundException e) {
                     builder.append("\r").append(true);
-                    e.printStackTrace();
+                    print(packageInfo.packageName+"为隐藏app");
                 }
                 builder.append("\r").append(applicationInfo.uid);
                 builder.append("\r").append(applicationInfo.sourceDir);
@@ -248,6 +236,7 @@ public class AppChannel {
     }
 
     public String getAllAppInfo(boolean isSystemApp) {
+        @SuppressLint("QueryPermissionsNeeded")
         List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
         StringBuilder builder = new StringBuilder();
         for (PackageInfo packageInfo : packages) {
@@ -311,6 +300,7 @@ public class AppChannel {
 
     public String getAppActivitys(String data) {
         StringBuilder builder = new StringBuilder();
+        @SuppressLint("QueryPermissionsNeeded")
         List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
         for (PackageInfo pack : packages) {
             if (pack.packageName.equals(data)) {
@@ -342,7 +332,7 @@ public class AppChannel {
             for (String usesPermissionName : usesPermissionsArray) {
 
                 //得到每个权限的名字,如:android.permission.INTERNET
-                System.out.println("usesPermissionName=" + usesPermissionName);
+                print("usesPermissionName=" + usesPermissionName);
                 builder.append(usesPermissionName);
                 //通过usesPermissionName获取该权限的详细信息
                 PermissionInfo permissionInfo = pm.getPermissionInfo(usesPermissionName, 0);
@@ -353,7 +343,7 @@ public class AppChannel {
 
                 //获取该权限的标签信息,比如:完全的网络访问权限
                 String permissionLabel = permissionInfo.loadLabel(pm).toString();
-                System.out.println("permissionLabel=" + permissionLabel);
+                print("permissionLabel=" + permissionLabel);
 
                 //获取该权限的详细描述信息,比如:允许该应用创建网络套接字和使用自定义网络协议
                 //浏览器和其他某些应用提供了向互联网发送数据的途径,因此应用无需该权限即可向互联网发送数据.
@@ -362,8 +352,8 @@ public class AppChannel {
                 builder.append(" ").append(permissionDescription);
                 boolean isHasPermission = PackageManager.PERMISSION_GRANTED == pm.checkPermission(permissionInfo.name, data);
                 builder.append(" ").append(isHasPermission).append("\r");
-                System.out.println("permissionDescription=" + permissionDescription);
-                System.out.println("===========================================");
+                print("permissionDescription=" + permissionDescription);
+                print("===========================================");
             }
 
         } catch (Exception e) {
