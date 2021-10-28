@@ -105,7 +105,6 @@ public class AppChannel {
             }
         }).start();
         System.out.println("success start:" + serverSocket.getLocalPort());
-        Log.e("Nightmare", "success start" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
     }
@@ -124,39 +123,42 @@ public class AppChannel {
             String type = data.replaceAll(":.*", ":");
             AppChannel appInfo = new AppChannel(context);
             switch (type) {
-                case com.nightmare.applib.AppChannelProtocol.getIconData:
+                case AppChannelProtocol.getIconData:
                     System.out.println("响应Icon信息");
                     System.out.flush();
-                    Log.d("Nightmare", "响应Icon信息");
-                    handleIcon(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconData, ""));
+                    handleIcon(os, context, data.replace(AppChannelProtocol.getIconData, ""));
                     break;
-                case com.nightmare.applib.AppChannelProtocol.getAllAppInfo:
+                case AppChannelProtocol.getAllAppInfo:
                     System.out.println("响应AllAppInfo");
-                    Log.d("Nightmare", "响应AllAppInfo");
                     System.out.flush();
-                    String arg = data.replace(com.nightmare.applib.AppChannelProtocol.getAllAppInfo, "");
+                    String arg = data.replace(AppChannelProtocol.getAllAppInfo, "");
                     handleAllAppInfo(os, context, arg.equals("1"));
                     break;
-                case com.nightmare.applib.AppChannelProtocol.getAllIconData:
+                case AppChannelProtocol.getAppInfos:
+                    System.out.println("响应AllAppInfo");
+                    System.out.flush();
+                    handleAppInfos(os, context, data.replace(AppChannelProtocol.getAllAppInfo, ""));
+                    break;
+                case AppChannelProtocol.getAllIconData:
                     System.out.println("响应AllAppIcon");
                     System.out.flush();
-                    handleAllAppIcon(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getAllIconData, ""));
+                    handleAllAppIcon(os, context, data.replace(AppChannelProtocol.getAllIconData, ""));
                     break;
-                case com.nightmare.applib.AppChannelProtocol.getAppActivity:
+                case AppChannelProtocol.getAppActivity:
                     System.out.println("响应getAppActivity");
                     System.out.flush();
-                    os.write(appInfo.getAppActivitys(data.replace(com.nightmare.applib.AppChannelProtocol.getAppActivity, "")).getBytes());
-                case com.nightmare.applib.AppChannelProtocol.getAppPermissions:
+                    os.write(appInfo.getAppActivitys(data.replace(AppChannelProtocol.getAppActivity, "")).getBytes());
+                case AppChannelProtocol.getAppPermissions:
                     System.out.println("响应getAppPermissions");
                     System.out.flush();
-                    os.write(appInfo.getAppPermissions(data.replace(com.nightmare.applib.AppChannelProtocol.getAppPermissions, "")).getBytes());
+                    os.write(appInfo.getAppPermissions(data.replace(AppChannelProtocol.getAppPermissions, "")).getBytes());
                     break;
-                case com.nightmare.applib.AppChannelProtocol.getAppDetail:
+                case AppChannelProtocol.getAppDetail:
                     System.out.println("响应getAppDetail");
                     System.out.flush();
-                    os.write(appInfo.getAppDetail(data.replace(com.nightmare.applib.AppChannelProtocol.getAppDetail, "")).getBytes());
+                    os.write(appInfo.getAppDetail(data.replace(AppChannelProtocol.getAppDetail, "")).getBytes());
                     break;
-                case com.nightmare.applib.AppChannelProtocol.getAppMainActivity:
+                case AppChannelProtocol.getAppMainActivity:
                     System.out.println("响应getAppMainActivity");
                     System.out.flush();
                     os.write(appInfo.getAppMainActivity(data.replace(AppChannelProtocol.getAppMainActivity, "")).getBytes());
@@ -190,10 +192,59 @@ public class AppChannel {
         }
     }
 
+    public static void handleAppInfos(OutputStream outputStream, Context context, String data) throws IOException {
+        AppChannel appInfo = new AppChannel(context);
+        List<String> packages = stringToList(data);
+        outputStream.write(appInfo.getAppInfos(packages).getBytes());
+    }
 
     public static void handleAllAppInfo(OutputStream outputStream, Context context, boolean isSystemApp) throws IOException {
         AppChannel appInfo = new AppChannel(context);
         outputStream.write(appInfo.getAllAppInfo(isSystemApp).getBytes());
+    }
+
+
+    public String getAppInfos(List<String> packages) {
+        StringBuilder builder = new StringBuilder();
+        for (String packageName : packages) {
+            PackageInfo packageInfo = null;
+            try {
+                packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            if (packageInfo != null) {
+                ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+                builder.append(applicationInfo.packageName);
+                builder.append("\r").append(applicationInfo.loadLabel(pm));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    builder.append("\r").append(packageInfo.applicationInfo.minSdkVersion);
+                } else {
+                    builder.append("\r").append("null");
+                }
+                builder.append("\r").append(applicationInfo.targetSdkVersion);
+                builder.append("\r").append(packageInfo.versionName);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    builder.append("\r").append(packageInfo.getLongVersionCode());
+                } else {
+                    builder.append("\r").append(packageInfo.versionCode);
+                }
+                builder.append("\r").append(applicationInfo.enabled);
+                try {
+                    // 只有被隐藏的app会拿不到
+                    PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+//                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
+                    builder.append("\r").append(false);
+                } catch (PackageManager.NameNotFoundException e) {
+                    builder.append("\r").append(true);
+                    e.printStackTrace();
+                }
+                builder.append("\r").append(applicationInfo.uid);
+                builder.append("\r").append(applicationInfo.sourceDir);
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 
     public String getAllAppInfo(boolean isSystemApp) {
@@ -229,7 +280,7 @@ public class AppChannel {
             }
             builder.append("\r").append(applicationInfo.enabled);
             try {
-                // 只有被隐藏的app会拿不到
+                // 只有被隐藏的app会拿不到，所以捕捉到异常后，标记这个app就是被隐藏的
                 PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                 builder.append("\r").append(false);
@@ -245,9 +296,7 @@ public class AppChannel {
     }
 
     public void openApp(String packageName) {
-        Log.e("Nightmare", "openApp");
         new Thread(() -> {
-            // try catch 一下
             try {
                 Intent intent = new Intent();
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -267,7 +316,6 @@ public class AppChannel {
             if (pack.packageName.equals(data)) {
                 try {
                     PackageInfo packageInfo = pm.getPackageInfo(data, PackageManager.GET_ACTIVITIES);
-                    Log.w("nightmare", Arrays.toString(packageInfo.activities));
                     if (packageInfo.activities == null) {
                         return "";
                     }

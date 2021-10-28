@@ -1,39 +1,48 @@
 # applib
-这是获取app信息的服务端，在尝试flutter plugin后替代的方案，支持pc桌面应用获取adb连接的应用信息。
+纯 Android 的 Library
 
-app 文件夹是一个android library，按照jitpack的文档进行配置用于集成
+这是获取app信息的服务端，在尝试 Flutter Plugin后替代的方案，服务启动后仅与端口通信，支持任意语言获取 App 信息
 
-目前是apputils这个flutter plugin内部集成，如果上层客户端是flutter app，直接使用插件
+app 文件夹是一个 Android Library，按照 jitpack 的文档进行配置用于集成。
 
-## 开始使用
+目前 [apputils]()作为对应的客户端，flutter 项目想要使用本功能请集成 [apputils]()
 
-### 集成
+目前 app_manager，adb_tool，speed_share 依赖 [apputils]() 这个 Plugin,apputils 依赖本仓库
+
+## 安卓集成
+
+### 添加依赖
 ```gradle
 dependencies {
-    implementation 'com.github.nightmare-space:applib:v0.0.4'
+    implementation 'com.github.nightmare-space:applib:v0.0.5'
 }
 ```
-### 导入依赖
+### 导包
 ```java
 import com.nightmare.applib.AppChannel;
 ```
 
 ### 启动服务
 ```java
-        new Thread(() -> {
-            try {
-                AppChannel.startServer(getApplicationContext());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+AppChannel.startServer(getApplicationContext());
 ```
 
-## 设计原理
-使用套接字响应app信息，这样无论是安卓的本地app，还是pc桌面端，只要能启动这个服务，就能从指定端口获得安卓的app信息。
-
+## 端口占用
+这个lib有一个端口占用的检测，
+```java
+    public static ServerSocket safeGetServerSocket() {
+        for (int i = RANGE_START; i < RANGE_END; i++) {
+            try {
+                return new ServerSocket(i);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+```
 ## 为什么弄成了一个独立的库？
-这个库起初是为了解决app_manager这个app存在的问题， 后来另一个项目文件选择器有了选择app的需求，便独立出了这个仓库。
+这个库起初是为了解决 app_manager 这个 flutter app 存在的问题， 后来另一个项目文件选择器有了选择 app 的需求，便独立出了这个仓库。
 
 ## 它的适用场景是什么
 由于这个库是基于套接字的，所以只要能使用套接字的app开发语言，例如java，dart，c语言，都能使用。
