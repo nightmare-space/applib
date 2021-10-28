@@ -135,9 +135,9 @@ public class AppChannel {
                     handleAllAppInfo(os, context, arg.equals("1"));
                     break;
                 case AppChannelProtocol.getAppInfos:
-                    System.out.println("响应AllAppInfo");
+                    System.out.println("响应getAppInfos");
                     System.out.flush();
-                    handleAppInfos(os, context, data.replace(AppChannelProtocol.getAllAppInfo, ""));
+                    handleAppInfos(os, context, data.replace(AppChannelProtocol.getAppInfos, ""));
                     break;
                 case AppChannelProtocol.getAllIconData:
                     System.out.println("响应AllAppIcon");
@@ -292,7 +292,7 @@ public class AppChannel {
             builder.append("\r").append(applicationInfo.sourceDir);
             builder.append("\n");
         }
-        return builder.toString();
+        return builder.toString().trim();
     }
 
     public void openApp(String packageName) {
@@ -427,7 +427,7 @@ public class AppChannel {
         if (applicationInfo == null) {
             return null;
         }
-        Drawable icon = applicationInfo.loadIcon(pm); //xxx根据自己的情况获取drawable
+        Drawable icon = applicationInfo.loadIcon(pm);
         try {
             if (icon == null) {
                 return null;
