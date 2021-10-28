@@ -59,6 +59,14 @@ public class AppChannel {
     }
 
     public static void main(String[] arg) throws Exception {
+        Context ctx = getContextWithoutActivity();
+        startServer(ctx);
+        // 不能让进程退了
+        int placeholder = System.in.read();
+
+    }
+
+    public static Context getContextWithoutActivity() throws Exception {
         Looper.prepareMainLooper();
         @SuppressLint("PrivateApi")
         Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
@@ -67,17 +75,7 @@ public class AppChannel {
         Object activityThread = activityThreadConstructor.newInstance();
         @SuppressLint("DiscouragedPrivateApi")
         Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
-        Context ctx = (Context) getSystemContextMethod.invoke(activityThread);
-        new Thread(() -> {
-            try {
-                startServer(ctx);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-        // 不能让进程退了
-        int placeholder = System.in.read();
-
+        return (Context) getSystemContextMethod.invoke(activityThread);
     }
 
     public static void print(Object object) {
@@ -92,7 +90,7 @@ public class AppChannel {
             try {
                 return new ServerSocket(i);
             } catch (IOException e) {
-                e.printStackTrace();
+                print("端口" + i + "被占用");
             }
         }
         return null;
@@ -225,14 +223,14 @@ public class AppChannel {
                     builder.append("\r").append(false);
                 } catch (PackageManager.NameNotFoundException e) {
                     builder.append("\r").append(true);
-                    print(packageInfo.packageName+"为隐藏app");
+                    print(packageInfo.packageName + "为隐藏app");
                 }
                 builder.append("\r").append(applicationInfo.uid);
                 builder.append("\r").append(applicationInfo.sourceDir);
             }
             builder.append("\n");
         }
-        return builder.toString();
+        return builder.toString().trim();
     }
 
     public String getAllAppInfo(boolean isSystemApp) {
