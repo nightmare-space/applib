@@ -100,13 +100,16 @@ public class AppChannel {
     public static int startServer(Context context) {
         ServerSocket serverSocket = safeGetServerSocket();
         assert serverSocket != null;
-        new Thread(() -> {
-            try {
-                startServerWithServerSocket(serverSocket, context);
-            } catch (IOException e) {
-                e.printStackTrace();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    startServerWithServerSocket(serverSocket, context);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        }).start();
+        });
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
@@ -233,6 +236,7 @@ public class AppChannel {
         return builder.toString().trim();
     }
 
+    // 这儿有crash
     public String getAllAppInfo(boolean isSystemApp) {
         @SuppressLint("QueryPermissionsNeeded")
         List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
@@ -273,7 +277,6 @@ public class AppChannel {
                 builder.append("\r").append(false);
             } catch (PackageManager.NameNotFoundException e) {
                 builder.append("\r").append(true);
-                e.printStackTrace();
             }
             builder.append("\r").append(applicationInfo.uid);
             builder.append("\r").append(applicationInfo.sourceDir);
