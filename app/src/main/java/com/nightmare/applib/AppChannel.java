@@ -109,7 +109,7 @@ public class AppChannel {
                     e.printStackTrace();
                 }
             }
-        });
+        }).start();
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
