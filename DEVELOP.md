@@ -15,7 +15,7 @@
 
 ### 2.getAllAppInfo:
 #### 解释
-获取所有App的简略信息，例如 `getAllAppInfo 0/1\n`
+获取所有App的简略信息，例如 `getAllAppInfo:0\n`
 0为用户应用，1为系统应用
 
 #### 返回结果
