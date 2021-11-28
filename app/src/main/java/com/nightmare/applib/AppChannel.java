@@ -256,6 +256,7 @@ public class AppChannel {
             }
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             builder.append(applicationInfo.packageName);
+            Log.d("Nightmare", "getAllAppInfo package:" + applicationInfo.packageName);
             builder.append("\r").append(applicationInfo.loadLabel(pm));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 builder.append("\r").append(packageInfo.applicationInfo.minSdkVersion);
@@ -418,6 +419,7 @@ public class AppChannel {
         if (applicationInfo == null) {
             return null;
         }
+        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName);
         Drawable icon = applicationInfo.loadIcon(pm);
         try {
             if (icon == null) {
