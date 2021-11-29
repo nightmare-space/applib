@@ -36,7 +36,7 @@ packageName apkLabel(app应用名) minSdkVersion(最小的sdk版本) targetSdkVe
 ```sh
 // 返回图片的字节流，所以需要根据 PNG 图片的编码的图片头进行拆分。
 ```
-### 4.getAllIconData:
+### 4.getIconDatas:
 
 #### 解释
 获取多个App Icon字节流。例如`getIconDatas:com.nightmare com.nightmare.remote\n`
