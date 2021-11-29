@@ -15,7 +15,6 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -49,16 +48,9 @@ public class AppChannel {
     }
 
 
-    static public byte[] Bitmap2Bytes(Bitmap bm) {
-        if (bm == null) {
-            return new byte[0];
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bm.compress(Bitmap.CompressFormat.PNG, 100, baos);
-        return baos.toByteArray();
-    }
-
     public static void main(String[] arg) throws Exception {
+        Workarounds.prepareMainLooper();
+//        Workarounds.fillAppInfo();
         Context ctx = getContextWithoutActivity();
         startServer(ctx);
         // 不能让进程退了
@@ -67,7 +59,6 @@ public class AppChannel {
     }
 
     public static Context getContextWithoutActivity() throws Exception {
-        Looper.prepareMainLooper();
         @SuppressLint("PrivateApi")
         Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
         Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
@@ -128,34 +119,34 @@ public class AppChannel {
             print("type:" + type);
             AppChannel appInfo = new AppChannel(context);
             switch (type) {
-                case AppChannelProtocol.getIconData:
-                    handleIcon(os, context, data.replace(AppChannelProtocol.getIconData, ""));
+                case com.nightmare.applib.AppChannelProtocol.getIconData:
+                    handleIcon(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconData, ""));
                     break;
-                case AppChannelProtocol.getAllAppInfo:
-                    String arg = data.replace(AppChannelProtocol.getAllAppInfo, "");
+                case com.nightmare.applib.AppChannelProtocol.getAllAppInfo:
+                    String arg = data.replace(com.nightmare.applib.AppChannelProtocol.getAllAppInfo, "");
                     handleAllAppInfo(os, context, arg.equals("1"));
                     break;
-                case AppChannelProtocol.getAppInfos:
-                    handleAppInfos(os, context, data.replace(AppChannelProtocol.getAppInfos, ""));
+                case com.nightmare.applib.AppChannelProtocol.getAppInfos:
+                    handleAppInfos(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getAppInfos, ""));
                     break;
-                case AppChannelProtocol.getAllIconData:
-                    handleAllAppIcon(os, context, data.replace(AppChannelProtocol.getAllIconData, ""));
+                case com.nightmare.applib.AppChannelProtocol.getIconDatas:
+                    handleAllAppIcon(os, br, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconDatas, ""));
                     break;
-                case AppChannelProtocol.getAppActivity:
-                    os.write(appInfo.getAppActivitys(data.replace(AppChannelProtocol.getAppActivity, "")).getBytes());
-                case AppChannelProtocol.getAppPermissions:
-                    os.write(appInfo.getAppPermissions(data.replace(AppChannelProtocol.getAppPermissions, "")).getBytes());
+                case com.nightmare.applib.AppChannelProtocol.getAppActivity:
+                    os.write(appInfo.getAppActivitys(data.replace(com.nightmare.applib.AppChannelProtocol.getAppActivity, "")).getBytes());
+                case com.nightmare.applib.AppChannelProtocol.getAppPermissions:
+                    os.write(appInfo.getAppPermissions(data.replace(com.nightmare.applib.AppChannelProtocol.getAppPermissions, "")).getBytes());
                     break;
-                case AppChannelProtocol.getAppDetail:
-                    os.write(appInfo.getAppDetail(data.replace(AppChannelProtocol.getAppDetail, "")).getBytes());
+                case com.nightmare.applib.AppChannelProtocol.getAppDetail:
+                    os.write(appInfo.getAppDetail(data.replace(com.nightmare.applib.AppChannelProtocol.getAppDetail, "")).getBytes());
                     break;
-                case AppChannelProtocol.getAppMainActivity:
-                    os.write(appInfo.getAppMainActivity(data.replace(AppChannelProtocol.getAppMainActivity, "")).getBytes());
+                case com.nightmare.applib.AppChannelProtocol.getAppMainActivity:
+                    os.write(appInfo.getAppMainActivity(data.replace(com.nightmare.applib.AppChannelProtocol.getAppMainActivity, "")).getBytes());
                     break;
-                case AppChannelProtocol.openAppByPackage:
-                    appInfo.openApp(data.replace(AppChannelProtocol.openAppByPackage, ""));
+                case com.nightmare.applib.AppChannelProtocol.openAppByPackage:
+                    appInfo.openApp(data.replace(com.nightmare.applib.AppChannelProtocol.openAppByPackage, ""));
                     break;
-                case AppChannelProtocol.checkToken:
+                case com.nightmare.applib.AppChannelProtocol.checkToken:
                     os.write("OK".getBytes());
                     break;
                 default:
@@ -172,12 +163,24 @@ public class AppChannel {
         outputStream.write(appInfo.getBitmapBytes(packageName));
     }
 
-    public static void handleAllAppIcon(OutputStream outputStream, Context context, String data) throws IOException {
+    public static void handleAllAppIcon(OutputStream outputStream, BufferedReader br, Context context, String data) throws IOException {
         List<String> id = stringToList(data);
         AppChannel appInfo = new AppChannel(context);
-        for (String packageName : id) {
-            outputStream.write(appInfo.getBitmapBytes(packageName));
+
+        for (int i = 0; i < id.size(); i++) {
+            Log.d("Nightmare", "return package:" + id.get(i));
+            outputStream.write((id.get(i) + ":").getBytes());
+            br.read();
+            outputStream.write(appInfo.getBitmapBytes(id.get(i)));
+            outputStream.write(58);
+//            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+//                String base64Str = Base64.getEncoder().encodeToString(appInfo.getBitmapBytes(packageName));
+//            }
             outputStream.flush();
+            if (i != id.size() - 1) {
+                int result = br.read();
+                Log.d("Nightmare", "result:" + result);
+            }
         }
     }
 
@@ -256,7 +259,7 @@ public class AppChannel {
             }
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             builder.append(applicationInfo.packageName);
-            Log.d("Nightmare", "getAllAppInfo package:" + applicationInfo.packageName);
+//            Log.d("Nightmare", "getAllAppInfo package:" + applicationInfo.packageName);
             builder.append("\r").append(applicationInfo.loadLabel(pm));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 builder.append("\r").append(packageInfo.applicationInfo.minSdkVersion);
@@ -287,17 +290,15 @@ public class AppChannel {
     }
 
     public void openApp(String packageName) {
-        new Thread(() -> {
-            try {
-                Intent intent = new Intent();
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                ComponentName cName = new ComponentName(packageName, getAppMainActivity(packageName));
-                intent.setComponent(cName);
-                context.startActivity(intent);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+        try {
+            Intent intent = new Intent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ComponentName cName = new ComponentName(packageName, getAppMainActivity(packageName));
+            intent.setComponent(cName);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String getAppActivitys(String data) {
@@ -408,6 +409,16 @@ public class AppChannel {
         return Bitmap2Bytes(getBitmap(packname));
     }
 
+
+    static public byte[] Bitmap2Bytes(Bitmap bm) {
+        if (bm == null) {
+            return new byte[0];
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bm.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        return baos.toByteArray();
+    }
+
     public synchronized Bitmap getBitmap(String packname) {
         ApplicationInfo applicationInfo = null;
         try {
@@ -420,7 +431,14 @@ public class AppChannel {
             return null;
         }
         Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName);
-        Drawable icon = applicationInfo.loadIcon(pm);
+        Drawable icon;
+        try {
+            icon = applicationInfo.loadIcon(pm);
+        } catch (Exception e) {
+            Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
+            e.printStackTrace();
+            return null;
+        }
         try {
             if (icon == null) {
                 return null;
