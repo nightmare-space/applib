@@ -27,6 +27,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -90,71 +91,97 @@ public class AppChannel {
     // 返回端口号，最后给客户端连接的
     public static int startServer(Context context) {
         ServerSocket serverSocket = safeGetServerSocket();
+        try {
+            serverSocket.setReuseAddress(true);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
         assert serverSocket != null;
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    startServerWithServerSocket(serverSocket, context);
+                    startServerWithServerSocket(serverSocket, context, 1);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    startServerWithServerSocket(serverSocket, context, 2);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
     }
 
-    public static void startServerWithServerSocket(ServerSocket serverSocket, Context context) throws IOException {
+    public static void startServerWithServerSocket(ServerSocket serverSocket, Context context, int thread) throws IOException {
         while (true) {
-            print("等待下次连接");
+            print("线程" + thread + "等待下次连接");
             Socket socket = serverSocket.accept();
-            print("连接成功");
-            InputStream is = socket.getInputStream();
-            OutputStream os = socket.getOutputStream();
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            String data = br.readLine();
-            String type = data.replaceAll(":.*", ":");
-            print("type:" + type);
-            AppChannel appInfo = new AppChannel(context);
-            switch (type) {
-                case com.nightmare.applib.AppChannelProtocol.getIconData:
-                    handleIcon(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconData, ""));
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getAllAppInfo:
-                    String arg = data.replace(com.nightmare.applib.AppChannelProtocol.getAllAppInfo, "");
-                    handleAllAppInfo(os, context, arg.equals("1"));
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getAppInfos:
-                    handleAppInfos(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getAppInfos, ""));
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getIconDatas:
-                    handleAllAppIcon(os, br, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconDatas, ""));
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getAppActivity:
-                    os.write(appInfo.getAppActivitys(data.replace(com.nightmare.applib.AppChannelProtocol.getAppActivity, "")).getBytes());
-                case com.nightmare.applib.AppChannelProtocol.getAppPermissions:
-                    os.write(appInfo.getAppPermissions(data.replace(com.nightmare.applib.AppChannelProtocol.getAppPermissions, "")).getBytes());
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getAppDetail:
-                    os.write(appInfo.getAppDetail(data.replace(com.nightmare.applib.AppChannelProtocol.getAppDetail, "")).getBytes());
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.getAppMainActivity:
-                    os.write(appInfo.getAppMainActivity(data.replace(com.nightmare.applib.AppChannelProtocol.getAppMainActivity, "")).getBytes());
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.openAppByPackage:
-                    appInfo.openApp(data.replace(com.nightmare.applib.AppChannelProtocol.openAppByPackage, ""));
-                    break;
-                case com.nightmare.applib.AppChannelProtocol.checkToken:
-                    os.write("OK".getBytes());
-                    break;
-                default:
-                    socket.close();
-                    return;
-            }
-            socket.setReuseAddress(true);
-            socket.close();
+            print("线程" + thread + "连接成功");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        InputStream is = socket.getInputStream();
+                        OutputStream os = socket.getOutputStream();
+                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                        String data = br.readLine();
+                        String type = data.replaceAll(":.*", ":");
+                        print("线程" + thread + "type:" + type);
+                        AppChannel appInfo = new AppChannel(context);
+                        switch (type) {
+                            case com.nightmare.applib.AppChannelProtocol.getIconData:
+                                handleIcon(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconData, ""));
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getAllAppInfo:
+                                String arg = data.replace(com.nightmare.applib.AppChannelProtocol.getAllAppInfo, "");
+                                handleAllAppInfo(os, context, arg.equals("1"));
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getAppInfos:
+                                handleAppInfos(os, context, data.replace(com.nightmare.applib.AppChannelProtocol.getAppInfos, ""));
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getIconDatas:
+                                handleAllAppIcon(os, br, context, data.replace(com.nightmare.applib.AppChannelProtocol.getIconDatas, ""));
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getAppActivity:
+                                os.write(appInfo.getAppActivitys(data.replace(com.nightmare.applib.AppChannelProtocol.getAppActivity, "")).getBytes());
+                            case com.nightmare.applib.AppChannelProtocol.getAppPermissions:
+                                os.write(appInfo.getAppPermissions(data.replace(com.nightmare.applib.AppChannelProtocol.getAppPermissions, "")).getBytes());
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getAppDetail:
+                                os.write(appInfo.getAppDetail(data.replace(com.nightmare.applib.AppChannelProtocol.getAppDetail, "")).getBytes());
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.getAppMainActivity:
+                                os.write(appInfo.getAppMainActivity(data.replace(com.nightmare.applib.AppChannelProtocol.getAppMainActivity, "")).getBytes());
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.openAppByPackage:
+                                appInfo.openApp(data.replace(com.nightmare.applib.AppChannelProtocol.openAppByPackage, ""));
+                                break;
+                            case com.nightmare.applib.AppChannelProtocol.checkToken:
+                                os.write("OK".getBytes());
+                                break;
+                            default:
+                                socket.close();
+                                return;
+                        }
+                        socket.setReuseAddress(true);
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }).start();
+
         }
     }
 
@@ -369,7 +396,11 @@ public class AppChannel {
     public String getAppMainActivity(String packageName) {
         StringBuilder builder = new StringBuilder();
         Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
-        builder.append(launchIntent.getComponent().getClassName());
+        if(launchIntent!=null){
+            builder.append(launchIntent.getComponent().getClassName());
+        }else{
+            print(packageName+"启动失败");
+        }
         // 注释掉的是另外一种方法
 //        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
 //        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
