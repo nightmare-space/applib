@@ -16,7 +16,7 @@ unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-30}
 BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.1}
 
-BUILD_DIR="$(realpath ${BUILD_DIR:-build_manual})"
+BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
 CLASSES_DIR="$BUILD_DIR/classes"
 SERVER_DIR=$(dirname "$0")
 SERVER_BINARY=app_server
