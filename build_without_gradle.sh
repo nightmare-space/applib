@@ -10,9 +10,7 @@
 #     BUILD_DIR=my_build_dir ./build_without_gradle.sh
 
 set -e
-
-SCRCPY_DEBUG=false
-SCRCPY_VERSION_NAME=1.19
+LOCAL_DIR=$(cd `dirname $0`; pwd)
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-30}
@@ -30,7 +28,7 @@ echo "$CLASSES_DIR/com/nightmare/applib"
 rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
 
 mkdir -p "$CLASSES_DIR/com/nightmare/applib"
-
+cd $LOCAL_DIR/app/src/main/java
 echo "Compiling java sources..."
 
 javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
