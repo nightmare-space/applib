@@ -1,0 +1,1 @@
+adb shell CLASSPATH=/sdcard/app_server app_process /sdcard/ com.nightmare.applib.AppChannel open

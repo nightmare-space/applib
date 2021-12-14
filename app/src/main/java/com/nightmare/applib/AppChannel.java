@@ -9,14 +9,17 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
+import android.content.res.AssetManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.util.DisplayMetrics;
 import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,10 +27,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,15 +45,27 @@ public class AppChannel {
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6010;
-
+    DisplayMetrics displayMetrics;
+    Configuration configuration;
     public AppChannel(Context context) {
         this.context = context;
         pm = context.getPackageManager();
+        displayMetrics =  new DisplayMetrics();
+        displayMetrics.setToDefaults();
+        configuration = new Configuration();
+        configuration.setToDefaults();
+
     }
 
 
     public static void main(String[] arg) throws Exception {
         Workarounds.prepareMainLooper();
+        if (arg.length != 0) {
+            Context ctx = getContextWithoutActivity();
+            AppChannel channel = new AppChannel(ctx);
+            channel.getAllAppInfo(false, true);
+            return;
+        }
 //        Workarounds.fillAppInfo();
         Context ctx = getContextWithoutActivity();
         startServer(ctx);
@@ -91,12 +106,6 @@ public class AppChannel {
     // 返回端口号，最后给客户端连接的
     public static int startServer(Context context) {
         ServerSocket serverSocket = safeGetServerSocket();
-        try {
-            serverSocket.setReuseAddress(true);
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
-        assert serverSocket != null;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -117,6 +126,7 @@ public class AppChannel {
 //                }
 //            }
 //        }).start();
+        assert serverSocket != null;
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
@@ -266,6 +276,12 @@ public class AppChannel {
         return builder.toString().trim();
     }
 
+    public void getAllAppInfo(boolean isSystemApp, boolean print) {
+        if (print) {
+            System.out.print(getAllAppInfo(isSystemApp));
+        }
+    }
+
     // 这儿有crash
     public String getAllAppInfo(boolean isSystemApp) {
         @SuppressLint("QueryPermissionsNeeded")
@@ -396,10 +412,10 @@ public class AppChannel {
     public String getAppMainActivity(String packageName) {
         StringBuilder builder = new StringBuilder();
         Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
-        if(launchIntent!=null){
+        if (launchIntent != null) {
             builder.append(launchIntent.getComponent().getClassName());
-        }else{
-            print(packageName+"启动失败");
+        } else {
+            print(packageName + "启动失败");
         }
         // 注释掉的是另外一种方法
 //        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
@@ -462,9 +478,28 @@ public class AppChannel {
             return null;
         }
         Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName);
+        AssetManager assetManager = null;
+        try {
+            assetManager = AssetManager.class.newInstance();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert assetManager != null;
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        Resources resources = new Resources(assetManager, displayMetrics, configuration);
         Drawable icon;
         try {
-            icon = applicationInfo.loadIcon(pm);
+            icon = resources.getDrawable(applicationInfo.icon);
         } catch (Exception e) {
             Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
             e.printStackTrace();
@@ -486,6 +521,15 @@ public class AppChannel {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static Drawable getDrawable(Context context, int id) {
+        if (Build.VERSION.SDK_INT >= 21) {
+            return context.getDrawable(id);
+        } else if (Build.VERSION.SDK_INT >= 16) {
+            return context.getResources().getDrawable(id);
+        }
+        return null;
     }
 
 }

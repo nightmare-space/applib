@@ -1,0 +1,1 @@
+adb push 'build/app_server' /sdcard/

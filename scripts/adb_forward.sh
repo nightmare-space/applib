@@ -1,0 +1,1 @@
+adb forward tcp:13000 tcp:6000
