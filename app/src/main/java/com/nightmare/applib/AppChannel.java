@@ -44,7 +44,7 @@ public class AppChannel {
 
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
-    static final int RANGE_END = 6010;
+    static final int RANGE_END = 6040;
     DisplayMetrics displayMetrics;
     Configuration configuration;
     public AppChannel(Context context) {
