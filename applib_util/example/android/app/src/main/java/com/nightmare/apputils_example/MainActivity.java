@@ -1,4 +1,4 @@
-package com.nightmare.applib_util_example;
+package com.nightmare.apputils_example;
 
 import io.flutter.embedding.android.FlutterActivity;
 

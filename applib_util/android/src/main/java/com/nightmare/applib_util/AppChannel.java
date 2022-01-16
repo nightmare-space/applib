@@ -1,4 +1,4 @@
-package com.nightmare.applib;
+package com.nightmare.applib_util;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -21,6 +21,9 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
+import com.nightmare.applib.AppChannelProtocol;
+import com.nightmare.applib.Workarounds;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,6 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -209,8 +213,15 @@ public class AppChannel {
         for (int i = 0; i < id.size(); i++) {
             Log.d("Nightmare", "return package:" + id.get(i));
             byte[] bitmap = appInfo.getBitmapBytes(id.get(i));
+            Log.d("Nightmare", "bitmap.length:" + bitmap.length);
             // +1是那个分号
-            outputStream.write(id.get(i).length() + 1 + bitmap.length);
+            int packLength = id.get(i).length() + 1 + bitmap.length;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+            byteBuffer.putInt(packLength);
+            byteBuffer.flip();
+            byte[] head = new byte[4];
+            byteBuffer.get(head);
+            outputStream.write(head);
             outputStream.write((id.get(i) + ":").getBytes());
             outputStream.write(bitmap);
             outputStream.flush();

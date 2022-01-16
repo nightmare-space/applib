@@ -1,6 +1,6 @@
-# applib_util_example
+# apputils_example
 
-Demonstrates how to use the applib_util plugin.
+Demonstrates how to use the apputils plugin.
 
 ## Getting Started
 

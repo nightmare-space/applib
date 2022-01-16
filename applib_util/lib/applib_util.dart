@@ -4,10 +4,10 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class ApplibUtil {
-  static const MethodChannel _channel = MethodChannel('applib_util');
+  static const MethodChannel _channel = MethodChannel('apputils');
 
-  static Future<String?> get platformVersion async {
-    final String? version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  static Future<int> get port async {
+    final int port = await _channel.invokeMethod('getPort');
+    return port;
   }
 }

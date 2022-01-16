@@ -1,12 +1,12 @@
-name: applib_util_example
-description: Demonstrates how to use the applib_util plugin.
+name: apputils_example
+description: Demonstrates how to use the apputils plugin.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: ">=2.15.1 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -20,7 +20,7 @@ dependencies:
 
   applib_util:
     # When depending on this package from a real application you should use:
-    #   applib_util: ^x.y.z
+    #   apputils: ^x.y.z
     # See https://dart.dev/tools/pub/dependencies#version-constraints
     # The example app is bundled with the plugin so we use a path dependency on
     # the parent directory to use the current plugin's version.
