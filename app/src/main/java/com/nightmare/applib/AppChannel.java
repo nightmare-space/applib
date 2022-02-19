@@ -18,11 +18,16 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -118,20 +123,24 @@ public class AppChannel {
                 }
             }
         }).start();
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    startServerWithServerSocket(serverSocket, context, 2);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }).start();
         assert serverSocket != null;
+        writePort(serverSocket.getLocalPort());
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
+    }
+
+    public static void writePort(int port)  {
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(Environment.getDataDirectory().getPath());
+            out.write((port + "").getBytes());
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void startServerWithServerSocket(ServerSocket serverSocket, Context context, int thread) throws IOException {

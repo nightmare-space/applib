@@ -22,17 +22,12 @@ public class ApplibUtilPlugin implements FlutterPlugin, MethodCallHandler {
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "apputils");
-        port = AppChannel.startServer(flutterPluginBinding.getApplicationContext());
+        int port = AppChannel.startServer(flutterPluginBinding.getApplicationContext());
         channel.setMethodCallHandler(this);
     }
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        if (call.method.equals("getPort")) {
-            result.success(port);
-        } else {
-            result.notImplemented();
-        }
     }
 
     @Override

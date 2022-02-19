@@ -18,6 +18,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -26,6 +27,8 @@ import com.nightmare.applib.Workarounds;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,7 +38,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -111,6 +113,7 @@ public class AppChannel {
 
     // 返回端口号，最后给客户端连接的
     public static int startServer(Context context) {
+
         ServerSocket serverSocket = safeGetServerSocket();
         new Thread(new Runnable() {
             @Override
@@ -122,20 +125,24 @@ public class AppChannel {
                 }
             }
         }).start();
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    startServerWithServerSocket(serverSocket, context, 2);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }).start();
-        assert serverSocket != null;
+        writePort(context.getFilesDir().getPath(), serverSocket.getLocalPort());
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
+    }
+
+    public static void writePort(String path, int port) {
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(path + "/server_port");
+            Log.d("Nightmare", path);
+            out.write((port + "").getBytes());
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void startServerWithServerSocket(ServerSocket serverSocket, Context context, int thread) throws IOException {
@@ -213,15 +220,8 @@ public class AppChannel {
         for (int i = 0; i < id.size(); i++) {
             Log.d("Nightmare", "return package:" + id.get(i));
             byte[] bitmap = appInfo.getBitmapBytes(id.get(i));
-            Log.d("Nightmare", "bitmap.length:" + bitmap.length);
             // +1是那个分号
-            int packLength = id.get(i).length() + 1 + bitmap.length;
-            ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-            byteBuffer.putInt(packLength);
-            byteBuffer.flip();
-            byte[] head = new byte[4];
-            byteBuffer.get(head);
-            outputStream.write(head);
+            outputStream.write(id.get(i).length() + 1 + bitmap.length);
             outputStream.write((id.get(i) + ":").getBytes());
             outputStream.write(bitmap);
             outputStream.flush();
