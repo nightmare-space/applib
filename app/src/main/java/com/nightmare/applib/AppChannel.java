@@ -18,14 +18,11 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,7 +30,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -77,7 +73,7 @@ public class AppChannel {
         Context ctx = getContextWithoutActivity();
         startServer(ctx);
         // 不能让进程退了
-        int placeholder = System.in.read();
+        System.in.read();
 
     }
 
@@ -112,6 +108,7 @@ public class AppChannel {
 
     // 返回端口号，最后给客户端连接的
     public static int startServer(Context context) {
+
         ServerSocket serverSocket = safeGetServerSocket();
         new Thread(new Runnable() {
             @Override
@@ -123,17 +120,18 @@ public class AppChannel {
                 }
             }
         }).start();
-        assert serverSocket != null;
-        writePort(serverSocket.getLocalPort());
+        // writePort(context.getFilesDir().getPath(), serverSocket.getLocalPort());
+        System.out.println("new version!!!\n");
         System.out.println("success start:" + serverSocket.getLocalPort());
         System.out.flush();
         return serverSocket.getLocalPort();
     }
 
-    public static void writePort(int port)  {
+    public static void writePort(String path, int port) {
         OutputStream out = null;
         try {
-            out = new FileOutputStream(Environment.getDataDirectory().getPath());
+            out = new FileOutputStream(path + "/server_port");
+            Log.d("Nightmare", path);
             out.write((port + "").getBytes());
             out.close();
         } catch (FileNotFoundException e) {
@@ -169,9 +167,6 @@ public class AppChannel {
                                 break;
                             case AppChannelProtocol.getAppInfos:
                                 handleAppInfos(os, context, data.replace(AppChannelProtocol.getAppInfos, ""));
-                                break;
-                            case AppChannelProtocol.getIconDatas:
-                                handleAllAppIcon(os, br, context, data.replace(AppChannelProtocol.getIconDatas, ""));
                                 break;
                             case AppChannelProtocol.getAppActivity:
                                 os.write(appInfo.getAppActivitys(data.replace(AppChannelProtocol.getAppActivity, "")).getBytes());
@@ -480,9 +475,11 @@ public class AppChannel {
             e.printStackTrace();
         }
         if (applicationInfo == null) {
+            print("applicationInfo == null");
             return null;
         }
-        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName);
+        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
+        print("getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
         AssetManager assetManager = null;
         try {
             assetManager = AssetManager.class.newInstance();
@@ -491,20 +488,21 @@ public class AppChannel {
         } catch (InstantiationException e) {
             e.printStackTrace();
         }
-        try {
-            assert assetManager != null;
-            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            assert assetManager != null;
+//            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//        } catch (InvocationTargetException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+//        }
         Resources resources = new Resources(assetManager, displayMetrics, configuration);
         Drawable icon;
         try {
-            icon = resources.getDrawable(applicationInfo.icon);
+            icon = applicationInfo.loadIcon(pm);
+//            icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
             Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
             e.printStackTrace();

@@ -1,4 +1,4 @@
-package com.nightmare.applib;
+package com.nightmare.applib_util;
 
 public class AppChannelProtocol {
     // 获得某个 package 的图标信息

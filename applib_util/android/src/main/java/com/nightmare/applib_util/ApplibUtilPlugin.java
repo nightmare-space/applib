@@ -10,6 +10,7 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+
 /** ApplibUtilPlugin */
 public class ApplibUtilPlugin implements FlutterPlugin, MethodCallHandler {
     /// The MethodChannel that will the communication between Flutter and native Android
@@ -22,7 +23,12 @@ public class ApplibUtilPlugin implements FlutterPlugin, MethodCallHandler {
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "apputils");
-        int port = AppChannel.startServer(flutterPluginBinding.getApplicationContext());
+//        int port = AppChannel.startServer(flutterPluginBinding.getApplicationContext());
+        try {
+            AppServer.startServerFromActivity(flutterPluginBinding.getApplicationContext());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         channel.setMethodCallHandler(this);
     }
 

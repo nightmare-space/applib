@@ -37,4 +37,5 @@ android {
 
 dependencies {
     implementation 'com.github.nightmare-space:applib:v0.0.15'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }

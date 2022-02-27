@@ -14,6 +14,8 @@ LOCAL_DIR=$(cd `dirname $0`; pwd)
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-30}
+echo $PLATFORM
+echo $ANDROID_HOME
 BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.1}
 
 BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
@@ -25,21 +27,24 @@ echo "Platform: android-$PLATFORM"
 echo "Build-tools: $BUILD_TOOLS"
 echo "Build dir: $BUILD_DIR"
 echo "$CLASSES_DIR/com/nightmare/applib"
-rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
+# rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
 
 mkdir -p "$CLASSES_DIR/com/nightmare/applib"
 cd $LOCAL_DIR/app/src/main/java
 echo "Compiling java sources..."
 
 javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
+    -Djava.ext.dirs=/Users/nightmare/Desktop/nightmare-space/applib \
     -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
     com/nightmare/applib/*.java
-
+cp -r $LOCAL_DIR/fi $CLASSES_DIR/
 echo "Dexing..."
 cd "$CLASSES_DIR"
 "$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \
     --output "$BUILD_DIR/classes.dex" \
     com/nightmare/applib/*.class \
+    fi/iki/elonen/*.class \
+    fi/iki/elonen/util/*.class
 
 echo "Archiving..."
 cd "$BUILD_DIR"
