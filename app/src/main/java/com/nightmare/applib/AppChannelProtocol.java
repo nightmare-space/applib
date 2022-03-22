@@ -7,6 +7,7 @@ public class AppChannelProtocol {
     public static final String getAllAppInfo = "allappinfo";
     // 获得给定的 app 的基本信息
     public static final String getAppInfos = "appinfos";
+    public static final String getTaskThumbnail= "taskthumbnail";
     public static final String getAppActivity = "appactivity";
     public static final String getAppPermissions = "apppermission";
     public static final String getAppDetail = "appdetail";

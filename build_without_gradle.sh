@@ -36,12 +36,14 @@ echo "Compiling java sources..."
 javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
     -Djava.ext.dirs=/Users/nightmare/Desktop/nightmare-space/applib \
     -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
-    com/nightmare/applib/*.java
+    com/nightmare/applib/*.java \
+    com/nightmare/applib/wrappers/*.java
 cp -r $LOCAL_DIR/fi $CLASSES_DIR/
 echo "Dexing..."
 cd "$CLASSES_DIR"
 "$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \
     --output "$BUILD_DIR/classes.dex" \
+    com/nightmare/applib/wrappers/*.class \
     com/nightmare/applib/*.class \
     fi/iki/elonen/*.class \
     fi/iki/elonen/util/*.class

@@ -1,7 +1,6 @@
 package com.nightmare.applib;
 
 import android.annotation.SuppressLint;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -21,18 +20,13 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
-import java.io.BufferedReader;
+
+import com.nightmare.applib.wrappers.IPackageManager;
+import com.nightmare.applib.wrappers.ServiceManager;
+
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,211 +35,63 @@ import java.util.List;
  */
 
 public class AppChannel {
-    Context context;
-    PackageManager pm;
-
+    IPackageManager pm;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6040;
     DisplayMetrics displayMetrics;
     Configuration configuration;
+    Context context;
 
-    public AppChannel(Context context) {
-        this.context = context;
-        pm = context.getPackageManager();
+    public AppChannel() {
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
         configuration = new Configuration();
         configuration.setToDefaults();
+        pm = new ServiceManager().getPackageManager();
+    }
 
+    public AppChannel(Context context) {
+        displayMetrics = new DisplayMetrics();
+        displayMetrics.setToDefaults();
+        configuration = new Configuration();
+        configuration.setToDefaults();
+        pm = new ServiceManager().getPackageManager();
+        this.context = context;
     }
 
 
-    public static void main(String[] arg) throws Exception {
-        Workarounds.prepareMainLooper();
-        if (arg.length != 0) {
-            Context ctx = getContextWithoutActivity();
-            AppChannel channel = new AppChannel(ctx);
-            channel.getAllAppInfo(false, true);
-            return;
-        }
-//        Workarounds.fillAppInfo();
-        Context ctx = getContextWithoutActivity();
-        startServer(ctx);
-        // 不能让进程退了
-        System.in.read();
-
-    }
-
-    public static Context getContextWithoutActivity() throws Exception {
-        @SuppressLint("PrivateApi")
-        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
-        Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
-        activityThreadConstructor.setAccessible(true);
-        Object activityThread = activityThreadConstructor.newInstance();
-        @SuppressLint("DiscouragedPrivateApi")
-        Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
-        return (Context) getSystemContextMethod.invoke(activityThread);
-    }
+//    public static Context getContextWithoutActivity() throws Exception {
+//        @SuppressLint("PrivateApi")
+//        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+//        Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
+//        activityThreadConstructor.setAccessible(true);
+//        Object activityThread = activityThreadConstructor.newInstance();
+//        @SuppressLint("DiscouragedPrivateApi")
+//        Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
+//        return (Context) getSystemContextMethod.invoke(activityThread);
+//    }
 
     public static void print(Object object) {
         System.out.println(">>>>" + object.toString());
         System.out.flush();
     }
 
-    // 更安全的拿到一个ServerSocket
-    // 有的时候会端口占用
-    public static ServerSocket safeGetServerSocket() {
-        for (int i = RANGE_START; i < RANGE_END; i++) {
-            try {
-                return new ServerSocket(i);
-            } catch (IOException e) {
-                print("端口" + i + "被占用");
-            }
-        }
-        return null;
-    }
-
-    // 返回端口号，最后给客户端连接的
-    public static int startServer(Context context) {
-
-        ServerSocket serverSocket = safeGetServerSocket();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    startServerWithServerSocket(serverSocket, context, 1);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-        // writePort(context.getFilesDir().getPath(), serverSocket.getLocalPort());
-        System.out.println("new version!!!\n");
-        System.out.println("success start:" + serverSocket.getLocalPort());
-        System.out.flush();
-        return serverSocket.getLocalPort();
-    }
-
-    public static void writePort(String path, int port) {
-        OutputStream out = null;
-        try {
-            out = new FileOutputStream(path + "/server_port");
-            Log.d("Nightmare", path);
-            out.write((port + "").getBytes());
-            out.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void startServerWithServerSocket(ServerSocket serverSocket, Context context, int thread) throws IOException {
-        while (true) {
-            print("线程" + thread + "等待下次连接");
-            Socket socket = serverSocket.accept();
-            print("线程" + thread + "连接成功");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        InputStream is = socket.getInputStream();
-                        OutputStream os = socket.getOutputStream();
-                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                        String data = br.readLine();
-                        String type = data.replaceAll(":.*", ":");
-                        print("线程" + thread + "type:" + type);
-                        AppChannel appInfo = new AppChannel(context);
-                        switch (type) {
-                            case AppChannelProtocol.getIconData:
-                                handleIcon(os, context, data.replace(AppChannelProtocol.getIconData, ""));
-                                break;
-                            case AppChannelProtocol.getAllAppInfo:
-                                String arg = data.replace(AppChannelProtocol.getAllAppInfo, "");
-                                handleAllAppInfo(os, context, arg.equals("1"));
-                                break;
-                            case AppChannelProtocol.getAppInfos:
-                                handleAppInfos(os, context, data.replace(AppChannelProtocol.getAppInfos, ""));
-                                break;
-                            case AppChannelProtocol.getAppActivity:
-                                os.write(appInfo.getAppActivitys(data.replace(AppChannelProtocol.getAppActivity, "")).getBytes());
-                            case AppChannelProtocol.getAppPermissions:
-                                os.write(appInfo.getAppPermissions(data.replace(AppChannelProtocol.getAppPermissions, "")).getBytes());
-                                break;
-                            case AppChannelProtocol.getAppDetail:
-                                os.write(appInfo.getAppDetail(data.replace(AppChannelProtocol.getAppDetail, "")).getBytes());
-                                break;
-                            case AppChannelProtocol.getAppMainActivity:
-                                os.write(appInfo.getAppMainActivity(data.replace(AppChannelProtocol.getAppMainActivity, "")).getBytes());
-                                break;
-                            case AppChannelProtocol.openAppByPackage:
-                                appInfo.openApp(data.replace(AppChannelProtocol.openAppByPackage, ""));
-                                break;
-                            case AppChannelProtocol.checkToken:
-                                os.write("OK".getBytes());
-                                break;
-                            default:
-                                socket.close();
-                                return;
-                        }
-                        socket.setReuseAddress(true);
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }).start();
-
-        }
-    }
-
-    public static void handleIcon(OutputStream outputStream, Context context, String packageName) throws IOException {
-        AppChannel appInfo = new AppChannel(context);
-        outputStream.write(appInfo.getBitmapBytes(packageName));
-    }
-
-    public static void handleAllAppIcon(OutputStream outputStream, BufferedReader br, Context context, String data) throws IOException {
-        List<String> id = stringToList(data);
-        AppChannel appInfo = new AppChannel(context);
-
-        for (int i = 0; i < id.size(); i++) {
-            Log.d("Nightmare", "return package:" + id.get(i));
-            byte[] bitmap = appInfo.getBitmapBytes(id.get(i));
-            // +1是那个分号
-            outputStream.write(id.get(i).length() + 1 + bitmap.length);
-            outputStream.write((id.get(i) + ":").getBytes());
-            outputStream.write(bitmap);
-            outputStream.flush();
-        }
-    }
-
-    public static void handleAppInfos(OutputStream outputStream, Context context, String data) throws IOException {
-        AppChannel appInfo = new AppChannel(context);
-        List<String> packages = stringToList(data);
-        outputStream.write(appInfo.getAppInfos(packages).getBytes());
-    }
-
-    public static void handleAllAppInfo(OutputStream outputStream, Context context, boolean isSystemApp) throws IOException {
-        AppChannel appInfo = new AppChannel(context);
-        outputStream.write(appInfo.getAllAppInfo(isSystemApp).getBytes());
-    }
-
-
     public String getAppInfos(List<String> packages) {
         StringBuilder builder = new StringBuilder();
         for (String packageName : packages) {
             PackageInfo packageInfo = null;
             try {
-                packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-            } catch (PackageManager.NameNotFoundException e) {
+                packageInfo = getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
             if (packageInfo != null) {
                 ApplicationInfo applicationInfo = packageInfo.applicationInfo;
                 builder.append(applicationInfo.packageName);
-                builder.append("\r").append(applicationInfo.loadLabel(pm));
+                builder.append("\r").append(getLabel(applicationInfo));
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     builder.append("\r").append(packageInfo.applicationInfo.minSdkVersion);
                 } else {
@@ -264,9 +110,11 @@ public class AppChannel {
                     PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
-                } catch (PackageManager.NameNotFoundException e) {
-                    builder.append("\r").append(true);
+                } catch (InvocationTargetException e) {
                     print(packageInfo.packageName + "为隐藏app");
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
                 }
                 builder.append("\r").append(applicationInfo.uid);
                 builder.append("\r").append(applicationInfo.sourceDir);
@@ -276,18 +124,68 @@ public class AppChannel {
         return builder.toString().trim();
     }
 
-    public void getAllAppInfo(boolean isSystemApp, boolean print) {
-        if (print) {
-            System.out.print(getAllAppInfo(isSystemApp));
+    //    public void getAllAppInfo(boolean isSystemApp, boolean print) {
+//        if (print) {
+//            System.out.print(getAllAppInfo(isSystemApp));
+//        }
+//    }
+    public List<String> getAppPackages() {
+        if (context != null) {
+            PackageManager pm = context.getPackageManager();
+            context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<String> packages = new ArrayList<String>();
+            List<PackageInfo> infos = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
+            for (PackageInfo info : infos) {
+                packages.add(info.packageName);
+            }
+            return packages;
+        } else {
+            return pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
+        }
+    }
+
+    public PackageInfo getPackageInfo(String packageName) throws InvocationTargetException, IllegalAccessException {
+        if (context != null) {
+            PackageManager pm = context.getPackageManager();
+            PackageInfo info = null;
+            try {
+                info = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            return info;
+        } else {
+            return pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+        }
+    }
+
+    public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
+        if (context != null) {
+            PackageManager pm = context.getPackageManager();
+            PackageInfo info = null;
+            try {
+                info = pm.getPackageInfo(packageName, flag);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            return info;
+        } else {
+            return pm.getPackageInfo(packageName, flag);
         }
     }
 
     // 这儿有crash
-    public String getAllAppInfo(boolean isSystemApp) {
-        @SuppressLint("QueryPermissionsNeeded")
-        List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
+    public String getAllAppInfo(boolean isSystemApp) throws InvocationTargetException, IllegalAccessException {
+        List<String> packages = getAppPackages();
+        if (packages == null) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
-        for (PackageInfo packageInfo : packages) {
+        for (String packageName : packages) {
+            PackageInfo packageInfo = getPackageInfo(packageName);
+            if (packageInfo == null) {
+                continue;
+            }
             int resultTag = packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM;
             if (isSystemApp) {
                 // 是否只列表系统应用
@@ -303,7 +201,7 @@ public class AppChannel {
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             builder.append(applicationInfo.packageName);
 //            Log.d("Nightmare", "getAllAppInfo package:" + applicationInfo.packageName);
-            builder.append("\r").append(applicationInfo.loadLabel(pm));
+            builder.append("\r").append(getLabel(applicationInfo));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 builder.append("\r").append(packageInfo.applicationInfo.minSdkVersion);
             } else {
@@ -322,7 +220,7 @@ public class AppChannel {
                 PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                 builder.append("\r").append(false);
-            } catch (PackageManager.NameNotFoundException e) {
+            } catch (InvocationTargetException | IllegalAccessException e) {
                 builder.append("\r").append(true);
             }
             builder.append("\r").append(applicationInfo.uid);
@@ -332,34 +230,79 @@ public class AppChannel {
         return builder.toString().trim();
     }
 
-    public void openApp(String packageName) {
+    public String getLabel(ApplicationInfo info) {
+        if (context != null) {
+            PackageManager pm = context.getPackageManager();
+            return (String) info.loadLabel(pm);
+        }
+
+        AssetManager assetManager = null;
         try {
-            Intent intent = new Intent();
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            ComponentName cName = new ComponentName(packageName, getAppMainActivity(packageName));
-            intent.setComponent(cName);
-            context.startActivity(intent);
-        } catch (Exception e) {
+            assetManager = AssetManager.class.newInstance();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
             e.printStackTrace();
         }
+        try {
+            assert assetManager != null;
+            assetManager.getClass().getMethod("addAssetPath", new Class[]{String.class}).invoke(assetManager, new Object[]{info.sourceDir});
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        Resources resources = new Resources(assetManager, displayMetrics, configuration);
+        int res = info.labelRes;
+        if (info.nonLocalizedLabel != null) {
+            return (String) info.nonLocalizedLabel;
+        }
+        if (res != 0) {
+            return (String) resources.getText(res);
+        }
+        return null;
     }
+//    public void openApp(String packageName) {
+//        try {
+//            Intent intent = new Intent();
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            ComponentName cName = new ComponentName(packageName, getAppMainActivity(packageName));
+//            intent.setComponent(cName);
+//            context.startActivity(intent);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public String getAppActivitys(String data) {
         StringBuilder builder = new StringBuilder();
         @SuppressLint("QueryPermissionsNeeded")
-        List<PackageInfo> packages = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
-        for (PackageInfo pack : packages) {
-            if (pack.packageName.equals(data)) {
+        List<String> packages = getAppPackages();
+        for (String packageName : packages) {
+            PackageInfo info = null;
+            try {
+                info = getPackageInfo(packageName);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            if (info.packageName.equals(data)) {
                 try {
-                    PackageInfo packageInfo = pm.getPackageInfo(data, PackageManager.GET_ACTIVITIES);
+                    PackageInfo packageInfo = getPackageInfo(data);
                     if (packageInfo.activities == null) {
                         return "";
                     }
-                    for (ActivityInfo info : packageInfo.activities) {
-                        builder.append(info.name).append("\n");
+                    for (ActivityInfo activityInfo : packageInfo.activities) {
+                        builder.append(activityInfo.name).append("\n");
                     }
 
-                } catch (PackageManager.NameNotFoundException e) {
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                    return builder.toString();
+                } catch (IllegalAccessException e) {
                     e.printStackTrace();
                     return builder.toString();
                 }
@@ -372,51 +315,51 @@ public class AppChannel {
 
     public String getAppPermissions(String data) {
         StringBuilder builder = new StringBuilder();
-        try {
-            PackageInfo packageInfo = pm.getPackageInfo(data, PackageManager.GET_UNINSTALLED_PACKAGES | PackageManager.GET_PERMISSIONS);
-            String[] usesPermissionsArray = packageInfo.requestedPermissions;
-            for (String usesPermissionName : usesPermissionsArray) {
-
-                //得到每个权限的名字,如:android.permission.INTERNET
-                print("usesPermissionName=" + usesPermissionName);
-                builder.append(usesPermissionName);
-                //通过usesPermissionName获取该权限的详细信息
-                PermissionInfo permissionInfo = pm.getPermissionInfo(usesPermissionName, 0);
-
-                //获得该权限属于哪个权限组,如:网络通信
-//                PermissionGroupInfo permissionGroupInfo = packageManager.getPermissionGroupInfo(permissionInfo.group, 0);
-//                System.out.println("permissionGroup=" + permissionGroupInfo.loadLabel(packageManager).toString());
-
-                //获取该权限的标签信息,比如:完全的网络访问权限
-                String permissionLabel = permissionInfo.loadLabel(pm).toString();
-                print("permissionLabel=" + permissionLabel);
-
-                //获取该权限的详细描述信息,比如:允许该应用创建网络套接字和使用自定义网络协议
-                //浏览器和其他某些应用提供了向互联网发送数据的途径,因此应用无需该权限即可向互联网发送数据.
-                String permissionDescription = permissionInfo.loadDescription(pm).toString();
-
-                builder.append(" ").append(permissionDescription);
-                boolean isHasPermission = PackageManager.PERMISSION_GRANTED == pm.checkPermission(permissionInfo.name, data);
-                builder.append(" ").append(isHasPermission).append("\r");
-                print("permissionDescription=" + permissionDescription);
-                print("===========================================");
-            }
-
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+//        try {
+//            PackageInfo packageInfo = getPackageInfo(data, PackageManager.GET_UNINSTALLED_PACKAGES | PackageManager.GET_PERMISSIONS)
+//            String[] usesPermissionsArray = packageInfo.requestedPermissions;
+//            for (String usesPermissionName : usesPermissionsArray) {
+//
+//                //得到每个权限的名字,如:android.permission.INTERNET
+//                print("usesPermissionName=" + usesPermissionName);
+//                builder.append(usesPermissionName);
+//                //通过usesPermissionName获取该权限的详细信息
+//                PermissionInfo permissionInfo = pm.getPermissionInfo(usesPermissionName, 0);
+//
+//                //获得该权限属于哪个权限组,如:网络通信
+////                PermissionGroupInfo permissionGroupInfo = packageManager.getPermissionGroupInfo(permissionInfo.group, 0);
+////                System.out.println("permissionGroup=" + permissionGroupInfo.loadLabel(packageManager).toString());
+//
+//                //获取该权限的标签信息,比如:完全的网络访问权限
+//                String permissionLabel = getLabel(packageInfo.applicationInfo);
+//                print("permissionLabel=" + permissionLabel);
+//
+//                //获取该权限的详细描述信息,比如:允许该应用创建网络套接字和使用自定义网络协议
+//                //浏览器和其他某些应用提供了向互联网发送数据的途径,因此应用无需该权限即可向互联网发送数据.
+//                String permissionDescription = permissionInfo.loadDescription(pm).toString();
+//
+//                builder.append(" ").append(permissionDescription);
+//                boolean isHasPermission = PackageManager.PERMISSION_GRANTED == pm.checkPermission(permissionInfo.name, data);
+//                builder.append(" ").append(isHasPermission).append("\r");
+//                print("permissionDescription=" + permissionDescription);
+//                print("===========================================");
+//            }
+//
+//        } catch (Exception e) {
+//            // TODO: handle exception
+//        }
         return builder.toString();
 
     }
 
     public String getAppMainActivity(String packageName) {
         StringBuilder builder = new StringBuilder();
-        Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
-        if (launchIntent != null) {
-            builder.append(launchIntent.getComponent().getClassName());
-        } else {
-            print(packageName + "启动失败");
-        }
+//        Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
+//        if (launchIntent != null) {
+//            builder.append(launchIntent.getComponent().getClassName());
+//        } else {
+//            print(packageName + "启动失败");
+//        }
         // 注释掉的是另外一种方法
 //        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
 //        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -435,12 +378,14 @@ public class AppChannel {
     public String getAppDetail(String data) {
         StringBuilder builder = new StringBuilder();
         try {
-            PackageInfo packageInfo = pm.getPackageInfo(data, PackageManager.GET_UNINSTALLED_PACKAGES);
+            PackageInfo packageInfo = getPackageInfo(data);
             builder.append(packageInfo.firstInstallTime).append("\r");
             builder.append(packageInfo.lastUpdateTime).append("\r");
             builder.append(packageInfo.applicationInfo.dataDir).append("\r");
             builder.append(packageInfo.applicationInfo.nativeLibraryDir);
-        } catch (PackageManager.NameNotFoundException e) {
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         return builder.toString();
@@ -452,7 +397,7 @@ public class AppChannel {
         return Arrays.asList(str);
     }
 
-    public byte[] getBitmapBytes(String packname) {
+    public byte[] getBitmapBytes(String packname) throws InvocationTargetException, IllegalAccessException {
         return Bitmap2Bytes(getBitmap(packname));
     }
 
@@ -466,14 +411,9 @@ public class AppChannel {
         return baos.toByteArray();
     }
 
-    public synchronized Bitmap getBitmap(String packname) {
-        ApplicationInfo applicationInfo = null;
-        try {
-            applicationInfo = pm.getApplicationInfo(
-                    packname, PackageManager.GET_UNINSTALLED_PACKAGES);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
+    public synchronized Bitmap getBitmap(String packageName) throws InvocationTargetException, IllegalAccessException {
+        PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+        ApplicationInfo applicationInfo = packageInfo.applicationInfo;
         if (applicationInfo == null) {
             print("applicationInfo == null");
             return null;
@@ -488,21 +428,21 @@ public class AppChannel {
         } catch (InstantiationException e) {
             e.printStackTrace();
         }
-//        try {
-//            assert assetManager != null;
-//            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        } catch (InvocationTargetException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchMethodException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            assert assetManager != null;
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
         Resources resources = new Resources(assetManager, displayMetrics, configuration);
         Drawable icon;
         try {
-            icon = applicationInfo.loadIcon(pm);
-//            icon = resources.getDrawable(applicationInfo.icon, null);
+//            icon = applicationInfo.loadIcon(pm);
+            icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
             Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
             e.printStackTrace();
@@ -525,14 +465,14 @@ public class AppChannel {
             return null;
         }
     }
-
-    public static Drawable getDrawable(Context context, int id) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return context.getDrawable(id);
-        } else if (Build.VERSION.SDK_INT >= 16) {
-            return context.getResources().getDrawable(id);
-        }
-        return null;
-    }
+//
+//    public static Drawable getDrawable(Context context, int id) {
+//        if (Build.VERSION.SDK_INT >= 21) {
+//            return context.getDrawable(id);
+//        } else if (Build.VERSION.SDK_INT >= 16) {
+//            return context.getResources().getDrawable(id);
+//        }
+//        return null;
+//    }
 
 }

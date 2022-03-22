@@ -1,20 +1,21 @@
 package com.nightmare.applib_util;
 
-import static com.nightmare.applib_util.AppChannel.getContextWithoutActivity;
-import static com.nightmare.applib_util.AppChannel.print;
-import static com.nightmare.applib_util.AppChannel.writePort;
 
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-
+import android.os.Build;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.List;
 
@@ -29,12 +30,20 @@ public class AppServer extends NanoHTTPD {
     static final int RANGE_END = 6040;
     AppChannel appInfo;
 
+    public static void print(Object object) {
+        System.out.println(">>>>" + object.toString());
+        System.out.flush();
+    }
+
     public static void main(String[] args) throws Exception {
         print("Welcome!!!");
-        Context ctx = getContextWithoutActivity();
+        ServerSocket serverSocket = safeGetServerSocket();
+        assert serverSocket != null;
+        serverSocket.setReuseAddress(true);
         AppServer server = safeGetServer();
-        server.appInfo = new AppChannel(ctx);
         Workarounds.prepareMainLooper();
+//        Context ctx = getContextWithoutActivity();
+        server.appInfo = new AppChannel();
         System.out.println("success start:" + server.getListeningPort());
         System.out.flush();
         // 不能让进程退了
@@ -54,19 +63,44 @@ public class AppServer extends NanoHTTPD {
         return null;
     }
 
+    // 更安全的拿到一个ServerSocket
+    // 有的时候会端口占用
+    public static ServerSocket safeGetServerSocket() {
+        for (int i = RANGE_START; i < RANGE_END; i++) {
+            try {
+                return new ServerSocket(i);
+            } catch (IOException e) {
+                print("端口" + i + "被占用");
+            }
+        }
+        return null;
+    }
+
     public static void startServerFromActivity(Context context) throws IOException {
-        print("123");
         AppServer server = safeGetServer();
-        server.appInfo = new AppChannel(context);
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
+        server.appInfo = new AppChannel(context);
         System.out.println("success start:" + server.getListeningPort());
         System.out.flush();
+    }
+
+    public static void writePort(String path, int port) {
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(path + "/server_port");
+            Log.d("Nightmare", path);
+            out.write((port + "").getBytes());
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Response serve(IHTTPSession session) {
         try {
-            print(session.getParameters());
             if (session.getUri().equals("/")) {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
             }
@@ -82,7 +116,9 @@ public class AppServer extends NanoHTTPD {
                 } else {
                     isSystemApp = Boolean.parseBoolean(line.get(0));
                 }
+                print("准备");
                 byte[] bytes = appInfo.getAllAppInfo(isSystemApp).getBytes();
+                print("完成");
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppInfos)) {
@@ -168,7 +204,9 @@ public class AppServer extends NanoHTTPD {
             System.out.println("serving: " + taskInfo.toString());
             jsonObject.put("id", taskInfo.id);
             jsonObject.put("persistentId", taskInfo.persistentId);
-            jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
+            }
             jsonArray.put(jsonObject);
         }
         return jsonArray;
