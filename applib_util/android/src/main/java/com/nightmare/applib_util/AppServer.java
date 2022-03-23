@@ -41,7 +41,7 @@ public class AppServer extends NanoHTTPD {
         assert serverSocket != null;
         serverSocket.setReuseAddress(true);
         AppServer server = safeGetServer();
-        Workarounds.prepareMainLooper();
+//         Workarounds.prepareMainLooper();
 //        Context ctx = getContextWithoutActivity();
         server.appInfo = new AppChannel();
         System.out.println("success start:" + server.getListeningPort());
