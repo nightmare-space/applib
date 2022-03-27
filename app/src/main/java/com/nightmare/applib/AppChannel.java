@@ -19,6 +19,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -27,7 +28,9 @@ import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,16 +69,16 @@ public class AppChannel {
     }
 
 
-//    public static Context getContextWithoutActivity() throws Exception {
-//        @SuppressLint("PrivateApi")
-//        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
-//        Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
-//        activityThreadConstructor.setAccessible(true);
-//        Object activityThread = activityThreadConstructor.newInstance();
-//        @SuppressLint("DiscouragedPrivateApi")
-//        Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
-//        return (Context) getSystemContextMethod.invoke(activityThread);
-//    }
+    public static Context getContextWithoutActivity() throws Exception {
+        @SuppressLint("PrivateApi")
+        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+        Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
+        activityThreadConstructor.setAccessible(true);
+        Object activityThread = activityThreadConstructor.newInstance();
+        @SuppressLint("DiscouragedPrivateApi")
+        Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
+        return (Context) getSystemContextMethod.invoke(activityThread);
+    }
 
     public static void print(Object object) {
         System.out.println(">>>>" + object.toString());
@@ -369,12 +372,22 @@ public class AppChannel {
 
     public String getAppMainActivity(String packageName) {
         StringBuilder builder = new StringBuilder();
+//        try {
+//            Class<?> cls = Class.forName("android.app.ApplicationPackageManager");
+//            ReflectUtil.listAllObject(cls);
+//        } catch (ClassNotFoundException e) {
+//            e.printStackTrace();
+//        }
 
-        try {
-            Class<?> cls = Class.forName("android.app.ApplicationPackageManager.java");
-            ReflectUtil.listAllObject(cls);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+//        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
+        if (context == null) {
+            try {
+                Looper.prepare();
+                context = getContextWithoutActivity();
+                Looper.loop();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         if (context != null) {
             PackageManager pm = context.getPackageManager();
@@ -386,9 +399,8 @@ public class AppChannel {
             }
             return builder.toString();
         }
-
         // 注释掉的是另外一种方法
-        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
+//        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, null, 0, 0);

@@ -54,3 +54,6 @@ jar cvf "$SERVER_BINARY" classes.dex
 rm -rf classes.dex classes
 
 echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
+
+
+cp -f $BUILD_DIR/$SERVER_BINARY /Users/nightmare/Desktop/nightmare-space/adb_tool/assets/
