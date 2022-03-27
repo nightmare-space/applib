@@ -146,22 +146,28 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppMainActivity)) {
-//                List<String> line = session.getParameters().get("package");
-//                String packageName = line.get(0);
-//                byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
-//                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+                List<String> line = session.getParameters().get("package");
+                String packageName = line.get(0);
+                byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+            }
+            if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
+                String packageName = session.getParameters().get("package").get(0);
+                String activity = session.getParameters().get("activity").get(0);
+                appInfo.openApp(packageName, activity);
+                byte[] result = "success".getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppActivity)) {
-//                List<String> line = session.getParameters().get("package");
-//                String packageName = line.get(0);
-//                byte[] bytes = appInfo.getAppActivitys(packageName).getBytes();
-//                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+                String packageName = session.getParameters().get("package").get(0);
+                byte[] bytes = appInfo.getAppActivitys(packageName).getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppPermissions)) {
-//                List<String> line = session.getParameters().get("package");
-//                String packageName = line.get(0);
-//                byte[] bytes = appInfo.getAppPermissions(packageName).getBytes();
-//                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+                List<String> line = session.getParameters().get("package");
+                String packageName = line.get(0);
+                byte[] bytes = appInfo.getAppPermissions(packageName).getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/thumb/")) {
                 int id = Integer.parseInt(session.getUri().substring("/thumb/".length()));
@@ -174,52 +180,6 @@ public class AppServer extends NanoHTTPD {
         } catch (Exception e) {
             e.printStackTrace();
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());
-        }
-    }
-
-    public static void listAllObject(Class clazz) {
-        try {
-
-            print("Class " + clazz.getName());
-            // 反射属性字段
-            Field[] fields = clazz.getDeclaredFields();
-
-            // 反射方法字段
-            java.lang.reflect.Method[] methods = clazz.getDeclaredMethods();
-
-            // 反射构造器
-            Constructor[] constuctors = clazz.getDeclaredConstructors();
-
-            print("FIELD========");
-            for (Field f : fields) {
-                System.out.print((char) 0x1b + "[32mTYPE:");
-                System.out.print((char) 0x1b + "[31m");
-                System.out.print(f.getType());
-                System.out.print((char) 0x1b);
-                System.out.println("[0;32m NAME:" + (char) 0x1b + "[31m" + f.getName() + (char) 0x1b + "[0m");
-                System.out.flush();
-            }
-
-            print("METHOD========");
-            for (java.lang.reflect.Method m : methods) {
-                System.out.print((char) 0x1b + "[33mMETHOD NAME:");
-                System.out.print((char) 0x1b + "[31m");
-                System.out.print(m.getName());
-                System.out.print((char) 0x1b);
-                System.out.print("[0;33m Parameter:" + (char) 0x1b + "[31m" + Arrays.toString(m.getParameters()) + (char) 0x1b + "[0m");
-                System.out.println((char) 0x1b + "[33m RETURE TYPE:" + (char) 0x1b + "[31m" + m.getGenericReturnType() + (char) 0x1b + "[0m");
-                System.out.flush();
-            }
-
-            print("CONSTUCTOR========");
-            for (Constructor c : constuctors) {
-                System.out.print((char) 0x1b);
-                System.out.print("[34m");
-                System.out.flush();
-                print("NAME:" + c.getName());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

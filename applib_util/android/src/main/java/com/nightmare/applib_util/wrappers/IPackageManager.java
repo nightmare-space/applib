@@ -1,7 +1,9 @@
 package com.nightmare.applib_util.wrappers;
 
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PermissionInfo;
+import android.content.pm.ResolveInfo;
 import android.os.IInterface;
 
 import java.lang.reflect.InvocationTargetException;
@@ -9,7 +11,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public class IPackageManager {
-    private final IInterface manager;
+    public final IInterface manager;
     private Method getPackageInfoMethod;
     private Method getInstalledPackagesMethod;
     private Method getPermissionInfo;
@@ -55,6 +57,29 @@ public class IPackageManager {
         try {
             return (PermissionInfo) getGetPermissionInfo().invoke(this.manager, new Object[]{packageName, flag});
         } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    private Method getQueryIntentActivities() throws NoSuchMethodException {
+        if (getInstalledPackagesMethod == null) {
+            Class<?> cls = manager.getClass();
+            getInstalledPackagesMethod = cls.getMethod("queryIntentActivities");
+        }
+        return getInstalledPackagesMethod;
+    }
+
+    public List<ResolveInfo> queryIntentActivities(Intent intent,
+                                            String resolvedType, int flags, int userId) {
+        try {
+            return (List<ResolveInfo>) getQueryIntentActivities().invoke(this.manager, new Object[]{intent, resolvedType, flags, userId});
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;

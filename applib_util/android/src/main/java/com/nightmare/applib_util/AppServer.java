@@ -1,11 +1,17 @@
 package com.nightmare.applib_util;
 
+import static com.nightmare.applib.AppChannel.print;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.Log;
+
+
+import com.nightmare.applib.Workarounds;
+import com.nightmare.applib_util.wrappers.ServiceManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -16,16 +22,21 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.ServerSocket;
+import java.util.Arrays;
 import java.util.List;
 
 import fi.iki.elonen.NanoHTTPD;
+
 
 public class AppServer extends NanoHTTPD {
     public AppServer(String address, int port) {
         super(address, port);
     }
 
+    public ServiceManager serviceManager = new ServiceManager();
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6040;
     AppChannel appInfo;
@@ -41,7 +52,7 @@ public class AppServer extends NanoHTTPD {
         assert serverSocket != null;
         serverSocket.setReuseAddress(true);
         AppServer server = safeGetServer();
-//         Workarounds.prepareMainLooper();
+        Workarounds.prepareMainLooper();
 //        Context ctx = getContextWithoutActivity();
         server.appInfo = new AppChannel();
         System.out.println("success start:" + server.getListeningPort());
@@ -116,9 +127,7 @@ public class AppServer extends NanoHTTPD {
                 } else {
                     isSystemApp = Boolean.parseBoolean(line.get(0));
                 }
-                print("准备");
                 byte[] bytes = appInfo.getAllAppInfo(isSystemApp).getBytes();
-                print("完成");
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppInfos)) {
@@ -132,15 +141,27 @@ public class AppServer extends NanoHTTPD {
                 byte[] bytes = appInfo.getAppDetail(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            if (session.getUri().startsWith("/" + AppChannelProtocol.getTaskThumbnail)) {
+                List<String> line = session.getParameters().get("id");
+                String id = line.get(0);
+                byte[] bytes = getTaskThumbnail(Integer.parseInt(id));
+                return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
+            }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppMainActivity)) {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
                 byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
+                String packageName = session.getParameters().get("package").get(0);
+                String activity = session.getParameters().get("activity").get(0);
+                appInfo.openApp(packageName, activity);
+                byte[] result = "success".getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
+            }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppActivity)) {
-                List<String> line = session.getParameters().get("package");
-                String packageName = line.get(0);
+                String packageName = session.getParameters().get("package").get(0);
                 byte[] bytes = appInfo.getAppActivitys(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
@@ -166,22 +187,40 @@ public class AppServer extends NanoHTTPD {
 
     private byte[] getTaskThumbnail(int id) throws Exception {
         long start = System.currentTimeMillis();
-        Object iam = getIAM();
-        Object thumbnail = iam.getClass().getMethod("getTaskSnapshot", Integer.TYPE, Boolean.TYPE).invoke(iam, id, false);
-        if (thumbnail == null) return null;
-        Object graphicBuffer = (Object) thumbnail.getClass().getMethod("getSnapshot").invoke(thumbnail);
-        if (graphicBuffer == null) return null;
-        System.out.println(System.currentTimeMillis() - start);
-        Bitmap bmp = (Bitmap) Bitmap.class.getMethod("createHardwareBitmap", graphicBuffer.getClass()).invoke(null, graphicBuffer);
+//        listAllObject(serviceManager.getActivityManager().manager.getClass());
+//        Object se = serviceManager.getActivityManager().manager.getClass().getMethod("getServices").invoke(serviceManager.getActivityManager().manager);
+
+        Class<?> cls = Class.forName("android.app.ActivityTaskManager");
+        java.lang.reflect.Method services = cls.getDeclaredMethod("getService");
+        Object iam = services.invoke(null);
+//        listAllObject(iam.getClass());
+//        listAllObject(iam.getClass());
+        java.lang.reflect.Method snapshotMethod = iam.getClass().getDeclaredMethod("getTaskSnapshot", int.class, boolean.class);
+        snapshotMethod.setAccessible(true);
+//        Bitmap.w
+        Object snapshot = snapshotMethod.invoke(iam, id, true);
+        if (snapshot == null) return null;
+//        listAllObject(snapshot.getClass());
+        java.lang.reflect.Field buffer = snapshot.getClass().getDeclaredField("mSnapshot");
+        buffer.setAccessible(true);
+        Object hardBuffer = buffer.get(snapshot);
+//        Object hardBuffer = Class.forName("android.hardware.HardwareBuffer").getMethod("createFromGraphicBuffer", buffer.getClass()).invoke(null, buffer);
+        Object colorSpace = snapshot.getClass().getMethod("getColorSpace").invoke(snapshot);
+        Class<?> bitmapCls = Class.forName("android.graphics.Bitmap");
+//        listAllObject(bitmapCls);
+//        Bitmap.wrapHardwareBuffer()
+        java.lang.reflect.Method wrapHardwareBufferMethod = bitmapCls.getMethod("wrapHardwareBuffer", hardBuffer.getClass(), Class.forName("android.graphics.ColorSpace"));
+        Bitmap bmp = (Bitmap) wrapHardwareBufferMethod.invoke(null, hardBuffer, colorSpace);
         if (bmp == null) return null;
         System.out.println("create " + (System.currentTimeMillis() - start));
         Bitmap scaledBmp = Bitmap.createScaledBitmap(bmp, bmp.getWidth(), bmp.getHeight(), false);
         System.out.println(System.currentTimeMillis() - start);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        scaledBmp.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+        scaledBmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         System.out.println(System.currentTimeMillis() - start);
         return baos.toByteArray();
     }
+
 
     public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags, int userId) throws Exception {
         Object iam = getIAM();
@@ -201,11 +240,16 @@ public class AppServer extends NanoHTTPD {
         JSONArray jsonArray = new JSONArray();
         for (ActivityManager.RecentTaskInfo taskInfo : tasks) {
             JSONObject jsonObject = new JSONObject();
-            System.out.println("serving: " + taskInfo.toString());
+//            System.out.println("serving: " + taskInfo.toString());
             jsonObject.put("id", taskInfo.id);
             jsonObject.put("persistentId", taskInfo.persistentId);
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
+                if (jsonObject.has("topPackage")) {
+                    PackageInfo packageInfo = appInfo.getPackageInfo(taskInfo.topActivity.getPackageName());
+                    jsonObject.put("label", appInfo.getLabel(packageInfo.applicationInfo));
+                }
             }
             jsonArray.put(jsonObject);
         }
