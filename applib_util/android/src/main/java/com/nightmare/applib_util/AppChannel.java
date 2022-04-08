@@ -378,10 +378,12 @@ public class AppChannel {
 //            e.printStackTrace();
 //        }
 
-        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
+        // ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
         if (context == null) {
             try {
+                Looper.prepare();
                 context = getContextWithoutActivity();
+                Looper.loop();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -397,7 +399,7 @@ public class AppChannel {
             return builder.toString();
         }
         // 注释掉的是另外一种方法
-        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
+        // ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, null, 0, 0);
