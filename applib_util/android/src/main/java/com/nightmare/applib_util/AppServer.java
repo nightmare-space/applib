@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -36,9 +37,8 @@ public class AppServer extends NanoHTTPD {
         super(address, port);
     }
 
-    public ServiceManager serviceManager = new ServiceManager();
-    static final int RANGE_START = 6000;
-    static final int RANGE_END = 6040;
+    static final int RANGE_START = 10000;
+    static final int RANGE_END = 10040;
     AppChannel appInfo;
 
     public static void print(Object object) {
@@ -113,9 +113,18 @@ public class AppServer extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         try {
             if (session.getUri().equals("/")) {
+                Log.d("Nightmare", session.getParameters().toString());
                 return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
             }
-            if (session.getUri().startsWith("/icon/")) {
+            if (session.getUri().startsWith("/icon")) {
+                Log.d("Nightmare", session.getParameters().toString());
+                Map<String, List<String>> params = session.getParameters();
+                if (!params.isEmpty()) {
+                    List<String> line = session.getParameters().get("path");
+                    String path = line.get(0);
+                    byte[] bytes = appInfo.getApkBitmapBytes(path);
+                    return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
+                }
                 byte[] bytes = appInfo.getBitmapBytes(session.getUri().substring("/icon/".length()));
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }

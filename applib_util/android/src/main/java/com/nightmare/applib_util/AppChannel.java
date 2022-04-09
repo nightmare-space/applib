@@ -19,6 +19,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -27,7 +28,9 @@ import com.nightmare.applib_util.wrappers.IPackageManager;
 import com.nightmare.applib_util.wrappers.ServiceManager;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -246,25 +249,7 @@ public class AppChannel {
             PackageManager pm = context.getPackageManager();
             return (String) info.loadLabel(pm);
         }
-
-        AssetManager assetManager = null;
-        try {
-            assetManager = AssetManager.class.newInstance();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert assetManager != null;
-            assetManager.getClass().getMethod("addAssetPath", new Class[]{String.class}).invoke(assetManager, new Object[]{info.sourceDir});
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
+        AssetManager assetManager = getAssetManagerFromPath(info.sourceDir);
         Resources resources = new Resources(assetManager, displayMetrics, configuration);
         int res = info.labelRes;
         if (info.nonLocalizedLabel != null) {
@@ -440,6 +425,10 @@ public class AppChannel {
         return Bitmap2Bytes(getBitmap(packname));
     }
 
+    public byte[] getApkBitmapBytes(String path) throws InvocationTargetException, IllegalAccessException {
+        return Bitmap2Bytes(getUninstallAPKIcon(path));
+    }
+
 
     static public byte[] Bitmap2Bytes(Bitmap bm) {
         if (bm == null) {
@@ -450,15 +439,7 @@ public class AppChannel {
         return baos.toByteArray();
     }
 
-    public synchronized Bitmap getBitmap(String packageName) throws InvocationTargetException, IllegalAccessException {
-        PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-        ApplicationInfo applicationInfo = packageInfo.applicationInfo;
-        if (applicationInfo == null) {
-            print("applicationInfo == null");
-            return null;
-        }
-//        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-//        print("getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
+    AssetManager getAssetManagerFromPath(String path) {
         AssetManager assetManager = null;
         try {
             assetManager = AssetManager.class.newInstance();
@@ -469,7 +450,7 @@ public class AppChannel {
         }
         try {
             assert assetManager != null;
-            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, path);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -477,10 +458,112 @@ public class AppChannel {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
+        return assetManager;
+    }
+
+
+    public static Drawable getApkIcon(Context context, String apkPath) {
+        PackageManager packageManager = context.getPackageManager();
+        PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
+        if (packageInfo != null) {
+            ApplicationInfo info = packageInfo.applicationInfo;
+            info.sourceDir = apkPath;
+            info.publicSourceDir = apkPath;
+            try {
+                return info.loadIcon(packageManager);
+            } catch (Exception e) {
+
+            }
+        }
+        return null;
+    }
+
+    //
+    public Bitmap getUninstallAPKIcon(String apkPath) {
+        String PATH_PackageParser = "android.content.pm.PackageParser";
+        String PATH_AssetManager = "android.content.res.AssetManager";
+        Drawable icon = getApkIcon(context,apkPath);
+//        try {
+//            // apk包的文件路径
+//            // 这是一个Package 解释器, 是隐藏的
+//            // 构造函数的参数只有一个, apk文件的路径
+//            // PackageParser packageParser = new PackageParser(apkPath);
+//            Class pkgParserCls = Class.forName(PATH_PackageParser);
+//            ReflectUtil.listAllObject(pkgParserCls);
+//            Class[] typeArgs = new Class[1];
+//            typeArgs[0] = String.class;
+//            Constructor pkgParserCt = pkgParserCls.getConstructor(typeArgs);
+//            Object[] valueArgs = new Object[1];
+//            valueArgs[0] = apkPath;
+//            Object pkgParser = pkgParserCt.newInstance(valueArgs);
+//            Log.d("ANDROID_LAB", "pkgParser:" + pkgParser.toString());
+//            // 这个是与显示有关的, 里面涉及到一些像素显示等等, 我们使用默认的情况
+//            DisplayMetrics metrics = new DisplayMetrics();
+//            metrics.setToDefaults();
+//            // PackageParser.Package mPkgInfo = packageParser.parsePackage(new
+//            // File(apkPath), apkPath,
+//            // metrics, 0);
+//            typeArgs = new Class[4];
+//            typeArgs[0] = File.class;
+//            typeArgs[1] = String.class;
+//            typeArgs[2] = DisplayMetrics.class;
+//            typeArgs[3] = Integer.TYPE;
+//            Method pkgParser_parsePackageMtd = pkgParserCls.getDeclaredMethod("parsePackage", typeArgs);
+//            valueArgs = new Object[4];
+//            valueArgs[0] = new File(apkPath);
+//            valueArgs[1] = apkPath;
+//            valueArgs[2] = metrics;
+//            valueArgs[3] = 0;
+//            Object pkgParserPkg = pkgParser_parsePackageMtd.invoke(pkgParser, valueArgs);
+//            // 应用程序信息包, 这个公开的, 不过有些函数, 变量没公开
+//            // ApplicationInfo info = mPkgInfo.applicationInfo;
+//            Field appInfoFld = pkgParserPkg.getClass().getDeclaredField("applicationInfo");
+//            ApplicationInfo info = (ApplicationInfo) appInfoFld.get(pkgParserPkg);
+//            // uid 输出为"-1"，原因是未安装，系统未分配其Uid。
+//            Log.d("ANDROID_LAB", "pkg:" + info.packageName + " uid=" + info.uid);
+//            AssetManager assetManager = getAssetManagerFromPath(info.sourceDir);
+//            Resources resources = new Resources(assetManager, displayMetrics, configuration);
+//            CharSequence label = null;
+//            if (info.labelRes != 0) {
+//                label = resources.getText(info.labelRes);
+//            }
+//            Log.d("ANDROID_LAB", "label=" + label);
+//            // 这里就是读取一个apk程序的图标
+//            if (info.icon != 0) {
+//                icon = resources.getDrawable(info.icon);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+        try {
+            if (icon == null) {
+                return null;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
+                Bitmap bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                icon.draw(canvas);
+                return bitmap;
+            } else {
+                return ((BitmapDrawable) icon).getBitmap();
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public synchronized Bitmap getBitmap(String packageName) throws InvocationTargetException, IllegalAccessException {
+        PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+        ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+        if (applicationInfo == null) {
+            print("applicationInfo == null");
+            return null;
+        }
+        AssetManager assetManager = getAssetManagerFromPath(applicationInfo.sourceDir);
         Resources resources = new Resources(assetManager, displayMetrics, configuration);
         Drawable icon;
         try {
-//            icon = applicationInfo.loadIcon(pm);
             icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
             Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
