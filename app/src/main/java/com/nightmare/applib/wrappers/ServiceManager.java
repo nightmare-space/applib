@@ -4,6 +4,9 @@ import android.annotation.SuppressLint;
 import android.os.IBinder;
 import android.os.IInterface;
 
+import com.nightmare.applib.ReflectUtil;
+
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 @SuppressLint("PrivateApi,DiscouragedPrivateApi")
@@ -16,6 +19,7 @@ public final class ServiceManager {
 
     private IPackageManager packageManager;
     private ActivityManager activityManager;
+    private DisplayManager displayManager;
 
     public ServiceManager() {
         try {
@@ -25,7 +29,7 @@ public final class ServiceManager {
         }
     }
 
-    private IInterface getService(String service, String type) {
+    public IInterface getService(String service, String type) {
         try {
             IBinder binder = (IBinder) getServiceMethod.invoke(null, service);
             Method asInterfaceMethod = Class.forName(type + "$Stub").getMethod("asInterface", IBinder.class);
@@ -35,12 +39,22 @@ public final class ServiceManager {
         }
     }
 
+    public DisplayManager getDisplayManager() {
+        if (displayManager == null) {
+            displayManager = new DisplayManager(getService("display", "android.hardware.display.IDisplayManager"));
+            IInterface iInterface = getService("media_projection", "android.media.projection.IMediaProjection");
+//            ReflectUtil.listAllObject(iInterface.getClass());
+        }
+        return displayManager;
+    }
+
     public IPackageManager getPackageManager() {
         if (packageManager == null) {
             packageManager = new IPackageManager(getService("package", "android.content.pm.IPackageManager"));
         }
         return packageManager;
     }
+
     public ActivityManager getActivityManager() {
         if (activityManager == null) {
             try {

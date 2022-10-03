@@ -46,9 +46,6 @@ public class AppServer extends NanoHTTPD {
 
     public static void main(String[] args) throws Exception {
         print("Welcome!!!");
-        ServerSocket serverSocket = safeGetServerSocket();
-        assert serverSocket != null;
-        serverSocket.setReuseAddress(true);
         AppServer server = safeGetServer();
         Workarounds.prepareMainLooper();
 //        Context ctx = getContextWithoutActivity();
@@ -115,6 +112,7 @@ public class AppServer extends NanoHTTPD {
             }
             if (session.getUri().startsWith("/icon/")) {
                 byte[] bytes = appInfo.getBitmapBytes(session.getUri().substring("/icon/".length()));
+                print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAllAppInfo)) {
@@ -150,6 +148,10 @@ public class AppServer extends NanoHTTPD {
                 String packageName = line.get(0);
                 byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+            }
+            if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
+                appInfo.creatVirtualDisplay();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
                 String packageName = session.getParameters().get("package").get(0);

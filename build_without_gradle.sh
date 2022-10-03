@@ -16,9 +16,10 @@ unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-30}
 echo $PLATFORM
 echo $ANDROID_HOME
-BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.1}
-
-BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
+BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.2}
+echo ${BUILD_DIR:-build}
+# BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
+BUILD_DIR="/Users/didi/Documents/GitHub/applib/${BUILD_DIR:-build}"
 CLASSES_DIR="$BUILD_DIR/classes"
 SERVER_DIR=$(dirname "$0")
 SERVER_BINARY=app_server
@@ -33,8 +34,8 @@ mkdir -p "$CLASSES_DIR/com/nightmare/applib"
 cd $LOCAL_DIR/app/src/main/java
 echo "Compiling java sources..."
 
-javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
-    -Djava.ext.dirs=/Users/nightmare/Desktop/nightmare-space/applib \
+/usr/bin/javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
+    -Djava.ext.dirs=/Users/didi/Documents/GitHub/applib \
     -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
     com/nightmare/applib/*.java \
     com/nightmare/applib/wrappers/*.java
@@ -56,4 +57,4 @@ rm -rf classes.dex classes
 echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
-cp -f $BUILD_DIR/$SERVER_BINARY /Users/nightmare/Desktop/nightmare-space/adb_tool/assets/
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/didi/Documents/GitHub/uncon/assets/'

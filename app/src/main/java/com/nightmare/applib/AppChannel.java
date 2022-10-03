@@ -1,6 +1,11 @@
 package com.nightmare.applib;
 
+import static android.content.Context.MEDIA_PROJECTION_SERVICE;
+
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Application;
+import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -15,13 +20,23 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AdaptiveIconDrawable;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.os.Binder;
 import android.os.Build;
+import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 
 
 import com.nightmare.applib.wrappers.IPackageManager;
@@ -29,6 +44,7 @@ import com.nightmare.applib.wrappers.ServiceManager;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -40,7 +56,9 @@ import java.util.List;
  */
 
 public class AppChannel {
+    private static final String TAG = "app_channel";
     IPackageManager pm;
+    com.nightmare.applib.wrappers.DisplayManager displayManager;
     ServiceManager serviceManager;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
@@ -56,6 +74,29 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
+        displayManager = serviceManager.getDisplayManager();
+        print("......" + Arrays.toString(displayManager.getDisplayIds()));
+        SurfaceTexture texture = new SurfaceTexture(textureID);
+        textureID++;
+        print("准备创建1");
+        Surface surface = new Surface(texture);
+//        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
+//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
+//                1 << 7);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Looper.prepare();
+                    Workarounds.fillAppInfo();
+                    context = getContextWithoutActivity();
+                    Looper.loop();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public AppChannel(Context context) {
@@ -70,14 +111,46 @@ public class AppChannel {
 
 
     public static Context getContextWithoutActivity() throws Exception {
-        @SuppressLint("PrivateApi")
         Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
         Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
         activityThreadConstructor.setAccessible(true);
         Object activityThread = activityThreadConstructor.newInstance();
-        @SuppressLint("DiscouragedPrivateApi")
+
+        // ActivityThread.sCurrentActivityThread = activityThread;
+        Field sCurrentActivityThreadField = activityThreadClass.getDeclaredField("sCurrentActivityThread");
+        sCurrentActivityThreadField.setAccessible(true);
+        sCurrentActivityThreadField.set(null, activityThread);
+
+        // ActivityThread.AppBindData appBindData = new ActivityThread.AppBindData();
+        Class<?> appBindDataClass = Class.forName("android.app.ActivityThread$AppBindData");
+        Constructor<?> appBindDataConstructor = appBindDataClass.getDeclaredConstructor();
+        appBindDataConstructor.setAccessible(true);
+        Object appBindData = appBindDataConstructor.newInstance();
+
+        ApplicationInfo applicationInfo = new ApplicationInfo();
+        applicationInfo.packageName = "com.android.shell";
+
+        // appBindData.appInfo = applicationInfo;
+        Field appInfoField = appBindDataClass.getDeclaredField("appInfo");
+        appInfoField.setAccessible(true);
+        appInfoField.set(appBindData, applicationInfo);
+
+        // activityThread.mBoundApplication = appBindData;
+        Field mBoundApplicationField = activityThreadClass.getDeclaredField("mBoundApplication");
+        mBoundApplicationField.setAccessible(true);
+        mBoundApplicationField.set(activityThread, appBindData);
+
+        // Context ctx = activityThread.getSystemContext();
         Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
-        return (Context) getSystemContextMethod.invoke(activityThread);
+
+        Context ctx = (Context) getSystemContextMethod.invoke(activityThread);
+        Application app = Instrumentation.newApplication(Application.class, ctx);
+
+        // activityThread.mInitialApplication = app;
+        Field mInitialApplicationField = activityThreadClass.getDeclaredField("mInitialApplication");
+        mInitialApplicationField.setAccessible(true);
+        mInitialApplicationField.set(activityThread, app);
+        return ctx;
     }
 
     public static void print(Object object) {
@@ -247,31 +320,31 @@ public class AppChannel {
             PackageManager pm = context.getPackageManager();
             return (String) info.loadLabel(pm);
         }
-
-        AssetManager assetManager = null;
-        try {
-            assetManager = AssetManager.class.newInstance();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert assetManager != null;
-            assetManager.getClass().getMethod("addAssetPath", new Class[]{String.class}).invoke(assetManager, new Object[]{info.sourceDir});
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        Resources resources = new Resources(assetManager, displayMetrics, configuration);
         int res = info.labelRes;
         if (info.nonLocalizedLabel != null) {
             return (String) info.nonLocalizedLabel;
         }
         if (res != 0) {
+            AssetManager assetManager = null;
+            try {
+                assetManager = AssetManager.class.newInstance();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
+            try {
+                assert assetManager != null;
+                assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, info.sourceDir);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+            print("getLabel:" + info.packageName);
+            Resources resources = new Resources(assetManager, displayMetrics, configuration);
             return (String) resources.getText(res);
         }
         return null;
@@ -370,6 +443,10 @@ public class AppChannel {
 
     }
 
+
+    /*
+    * 通过包名获取Main Activity
+    * */
     public String getAppMainActivity(String packageName) {
         StringBuilder builder = new StringBuilder();
 //        try {
@@ -380,15 +457,6 @@ public class AppChannel {
 //        }
 
 //        ReflectUtil.listAllObject(serviceManager.getPackageManager().manager.getClass());
-        if (context == null) {
-            try {
-                Looper.prepare();
-                context = getContextWithoutActivity();
-                Looper.loop();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         if (context != null) {
             PackageManager pm = context.getPackageManager();
             Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
@@ -459,7 +527,8 @@ public class AppChannel {
             return null;
         }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-//        print("getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
+        print("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+        print("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
         AssetManager assetManager = null;
         try {
             assetManager = AssetManager.class.newInstance();
@@ -484,12 +553,14 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
             icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
+            print("getBitmap package error:" + applicationInfo.packageName);
             Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
             return null;
         }
         try {
             if (icon == null) {
+                print(applicationInfo.packageName + "icon null");
                 return null;
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
@@ -499,13 +570,23 @@ public class AppChannel {
                 icon.draw(canvas);
                 return bitmap;
             } else {
-                return ((BitmapDrawable) icon).getBitmap();
+                int w = icon.getIntrinsicWidth();
+                int h = icon.getIntrinsicHeight();
+                Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                //设置画布的范围
+                icon.setBounds(0, 0, w, h);
+                icon.draw(canvas);
+                return bitmap;
+//                return ((BitmapDrawable) icon).getBitmap();
             }
         } catch (Exception e) {
+            print("Exception:" + e);
             return null;
         }
     }
-//
+
+    //
 //    public static Drawable getDrawable(Context context, int id) {
 //        if (Build.VERSION.SDK_INT >= 21) {
 //            return context.getDrawable(id);
@@ -514,5 +595,114 @@ public class AppChannel {
 //        }
 //        return null;
 //    }
+    int textureID = 10;
+
+    private boolean validatePackageName(int uid, String packageName) {
+        if (packageName != null) {
+            String[] packageNames = context.getPackageManager().getPackagesForUid(uid);
+            if (packageNames != null) {
+                for (String n : packageNames) {
+                    if (n.equals(packageName)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    void creatVirtualDisplay() {
+        final int callingUid = Binder.getCallingUid();
+        String[] packageNames = context.getPackageManager().getPackagesForUid(callingUid);
+        print("packageNames" + Arrays.toString(packageNames));
+        print("packageNames" + context.getPackageName());
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+//            MediaProjectionManager mProjectionManager = (MediaProjectionManager) this.context.getSystemService(MEDIA_PROJECTION_SERVICE);
+//
+//            IInterface iInterface = serviceManager.getService("media_projection", "android.media.projection.IMediaProjection");
+//            Intent intent = new Intent();
+//            Class<?> intentClazz = null;
+//            try {
+//                intentClazz = Class.forName("android.content.Intent");
+//            } catch (ClassNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            Method putExtra = null;
+//            try {
+//                putExtra = intentClazz.getDeclaredMethod("putExtra", String.class, IBinder.class);
+//            } catch (NoSuchMethodException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                putExtra.invoke(intent, "android.media.projection.extra.EXTRA_MEDIA_PROJECTION", iInterface.asBinder());
+//            } catch (IllegalAccessException e) {
+//                e.printStackTrace();
+//            } catch (InvocationTargetException e) {
+//                e.printStackTrace();
+//            }
+//            Class<?> cls = null;
+//            try {
+//                cls = Class.forName("android.media.projection.MediaProjection");
+//            } catch (ClassNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            Constructor<?> activityThreadConstructor = null;
+//            try {
+//                activityThreadConstructor = cls.getDeclaredConstructor(Context.class, Class.forName("android.media.projection.IMediaProjection"));
+//                activityThreadConstructor.setAccessible(true);
+////                ReflectUtil.listAllObject(activityThreadConstructor.getClass());
+//            } catch (NoSuchMethodException | ClassNotFoundException e) {
+//                e.printStackTrace();
+//            }
+//            try {
+//                Object activityThread = activityThreadConstructor.newInstance(context, iInterface.asBinder());
+////                ReflectUtil.listAllObject(activityThread.getClass());
+//            } catch (IllegalAccessException e) {
+//                e.printStackTrace();
+//            } catch (InstantiationException e) {
+//                e.printStackTrace();
+//            } catch (InvocationTargetException e) {
+//                e.printStackTrace();
+//            }
+        }
+        WindowManager windowManager = (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
+        print("初始化windowManager" + windowManager);
+        Display mDisplay = windowManager.getDefaultDisplay();
+        float refreshRate = mDisplay.getRefreshRate();
+        final DisplayMetrics metrics = new DisplayMetrics();
+//        // use getMetrics is 2030, use getRealMetrics is 2160, the diff is NavigationBar's height
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            mDisplay.getRealMetrics(metrics);
+        }
+        int mWidth = metrics.widthPixels;//size.x;
+        int mHeight = metrics.heightPixels;//size.y;
+        DisplayManager displayManager = null;
+        print("准备创建");
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            displayManager = (DisplayManager) this.context.getSystemService(Context.DISPLAY_SERVICE);
+            print(">>>" + displayManager);
+//        SurfaceView surfaceView = new SurfaceView(this);
+            SurfaceTexture texture = new SurfaceTexture(textureID);
+            textureID++;
+            print("准备创建1");
+            Surface surface = new Surface(texture);
+            print("准备创建2");
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                VirtualDisplay mVirtualDisplay = displayManager.createVirtualDisplay(
+                        "uncon-vd",
+                        400,
+                        400,
+                        400,
+                        surface,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
+                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
+                                1 << 7
+                );
+            }
+            print("准备创建3");
+        }
+    }
 
 }
