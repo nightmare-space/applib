@@ -1,1 +1,1 @@
-adb shell CLASSPATH=/sdcard/app_server app_process /sdcard/ com.nightmare.applib.AppChannel open
+adb shell CLASSPATH=/sdcard/app_server app_process /sdcard/ com.nightmare.applib.AppServer open

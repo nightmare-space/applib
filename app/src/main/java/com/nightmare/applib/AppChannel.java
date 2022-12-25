@@ -74,12 +74,12 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
-        displayManager = serviceManager.getDisplayManager();
-        print("......" + Arrays.toString(displayManager.getDisplayIds()));
-        SurfaceTexture texture = new SurfaceTexture(textureID);
+//        displayManager = serviceManager.getDisplayManager();
+//        print("......" + Arrays.toString(displayManager.getDisplayIds()));
+//        SurfaceTexture texture = new SurfaceTexture(textureID);
         textureID++;
         print("准备创建1");
-        Surface surface = new Surface(texture);
+//        Surface surface = new Surface(texture);
 //        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
 //                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
 //                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
