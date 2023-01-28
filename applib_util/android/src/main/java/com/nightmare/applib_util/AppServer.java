@@ -1,13 +1,14 @@
 package com.nightmare.applib_util;
 
-import static com.nightmare.applib.AppChannel.print;
-
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.Log;
+import android.view.Display;
 
 
 import com.nightmare.applib.Workarounds;
@@ -31,14 +32,14 @@ import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
-
 public class AppServer extends NanoHTTPD {
     public AppServer(String address, int port) {
         super(address, port);
     }
 
-    static final int RANGE_START = 10000;
-    static final int RANGE_END = 10040;
+    public ServiceManager serviceManager = new ServiceManager();
+    static final int RANGE_START = 6000;
+    static final int RANGE_END = 6040;
     AppChannel appInfo;
 
     public static void print(Object object) {
@@ -48,9 +49,6 @@ public class AppServer extends NanoHTTPD {
 
     public static void main(String[] args) throws Exception {
         print("Welcome!!!");
-        ServerSocket serverSocket = safeGetServerSocket();
-        assert serverSocket != null;
-        serverSocket.setReuseAddress(true);
         AppServer server = safeGetServer();
         Workarounds.prepareMainLooper();
 //        Context ctx = getContextWithoutActivity();
@@ -87,6 +85,9 @@ public class AppServer extends NanoHTTPD {
         return null;
     }
 
+    /*
+     * 与直接启动dex不同，从Activity中启动不用反射context上下问
+     * */
     public static void startServerFromActivity(Context context) throws IOException {
         AppServer server = safeGetServer();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
@@ -109,11 +110,11 @@ public class AppServer extends NanoHTTPD {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
     public Response serve(IHTTPSession session) {
         try {
             if (session.getUri().equals("/")) {
-                Log.d("Nightmare", session.getParameters().toString());
                 return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
             }
             if (session.getUri().startsWith("/icon")) {
@@ -126,6 +127,7 @@ public class AppServer extends NanoHTTPD {
                     return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
                 }
                 byte[] bytes = appInfo.getBitmapBytes(session.getUri().substring("/icon/".length()));
+                // print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAllAppInfo)) {
@@ -162,10 +164,15 @@ public class AppServer extends NanoHTTPD {
                 byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+//            if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
+//                appInfo.creatVirtualDisplay();
+//                return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
+//            }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
                 String packageName = session.getParameters().get("package").get(0);
                 String activity = session.getParameters().get("activity").get(0);
-                appInfo.openApp(packageName, activity);
+                String displayid = session.getParameters().get("displayId").get(0);
+                appInfo.openApp(packageName, activity, displayid);
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }
@@ -175,9 +182,21 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppPermissions)) {
+                // 获取App权限信息
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
                 byte[] bytes = appInfo.getAppPermissions(packageName).getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+            }
+            if (session.getUri().startsWith("/" + "displays")) {
+                DisplayManager displayManager = (DisplayManager) appInfo.context.getSystemService(Context.DISPLAY_SERVICE);
+                Display[] displays = displayManager.getDisplays();
+                StringBuilder builder = new StringBuilder();
+                for (Display display : displays) {
+                    builder.append(display.getDisplayId());
+                    builder.append("\n");
+                }
+                byte[] bytes = builder.toString().getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/thumb/")) {

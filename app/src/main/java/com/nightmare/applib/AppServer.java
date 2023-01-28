@@ -2,6 +2,7 @@ package com.nightmare.applib;
 
 import static com.nightmare.applib.AppChannel.print;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -26,6 +27,7 @@ import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -81,7 +83,9 @@ public class AppServer extends NanoHTTPD {
         }
         return null;
     }
-
+    /*
+    * 与直接启动dex不同，从Activity中启动不用反射context上下问
+    * */
     public static void startServerFromActivity(Context context) throws IOException {
         AppServer server = safeGetServer();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
@@ -110,9 +114,17 @@ public class AppServer extends NanoHTTPD {
             if (session.getUri().equals("/")) {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
             }
-            if (session.getUri().startsWith("/icon/")) {
+            if (session.getUri().startsWith("/icon")) {
+                Log.d("Nightmare", session.getParameters().toString());
+                Map<String, List<String>> params = session.getParameters();
+                if (!params.isEmpty()) {
+                    List<String> line = session.getParameters().get("path");
+                    String path = line.get(0);
+                    byte[] bytes = appInfo.getApkBitmapBytes(path);
+                    return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
+                }
                 byte[] bytes = appInfo.getBitmapBytes(session.getUri().substring("/icon/".length()));
-                print(bytes);
+                // print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAllAppInfo)) {
@@ -191,7 +203,7 @@ public class AppServer extends NanoHTTPD {
 //        Object se = serviceManager.getActivityManager().manager.getClass().getMethod("getServices").invoke(serviceManager.getActivityManager().manager);
 
         Class<?> cls = Class.forName("android.app.ActivityTaskManager");
-        java.lang.reflect.Method services = cls.getDeclaredMethod("getService");
+        @SuppressLint("BlockedPrivateApi") java.lang.reflect.Method services = cls.getDeclaredMethod("getService");
         Object iam = services.invoke(null);
 //        listAllObject(iam.getClass());
 //        listAllObject(iam.getClass());
