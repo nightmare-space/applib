@@ -48,13 +48,13 @@ public class AppServer extends NanoHTTPD {
 
     public static void main(String[] args) throws Exception {
         print("Welcome!!!");
-        AppServer server = safeGetServer();
-        Workarounds.prepareMainLooper();
-//        Context ctx = getContextWithoutActivity();
-        server.appInfo = new AppChannel();
-        System.out.println("success start:" + server.getListeningPort());
-        System.out.flush();
-        // 不能让进程退了
+//        AppServer server = safeGetServer();
+//        Workarounds.prepareMainLooper();
+////        Context ctx = getContextWithoutActivity();
+//        server.appInfo = new AppChannel();
+//        System.out.println("success start:" + server.getListeningPort());
+//        System.out.flush();
+//        // 不能让进程退了
         System.in.read();
     }
 
@@ -162,7 +162,7 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
-                appInfo.creatVirtualDisplay();
+//                appInfo.creatVirtualDisplay();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {

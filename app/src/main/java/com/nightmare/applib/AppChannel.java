@@ -68,6 +68,7 @@ public class AppChannel {
     Configuration configuration;
     Context context;
 
+    // 没有context的时候的构造函数，用于dex中创建这个对象
     public AppChannel() {
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
@@ -75,16 +76,18 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
-//        displayManager = serviceManager.getDisplayManager();
-//        print("......" + Arrays.toString(displayManager.getDisplayIds()));
-//        SurfaceTexture texture = new SurfaceTexture(textureID);
+        displayManager = serviceManager.getDisplayManager();
+        print("......" + Arrays.toString(displayManager.getDisplayIds()));
+        SurfaceTexture texture = new SurfaceTexture(textureID);
         textureID++;
         print("准备创建1");
-//        Surface surface = new Surface(texture);
-//        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-//                1 << 7);
+        Surface surface = new Surface(texture);
+        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
+                1 << 7);
+        print("-----》" + id);
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -530,7 +533,7 @@ public class AppChannel {
     }
 
 
-        public static Drawable getApkIcon(Context context, String apkPath) {
+    public static Drawable getApkIcon(Context context, String apkPath) {
         PackageManager packageManager = context.getPackageManager();
         PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
         if (packageInfo != null) {
@@ -550,7 +553,7 @@ public class AppChannel {
     public Bitmap getUninstallAPKIcon(String apkPath) {
         String PATH_PackageParser = "android.content.pm.PackageParser";
         String PATH_AssetManager = "android.content.res.AssetManager";
-        Drawable icon = getApkIcon(context,apkPath);
+        Drawable icon = getApkIcon(context, apkPath);
 //        try {
 //            // apk包的文件路径
 //            // 这是一个Package 解释器, 是隐藏的
@@ -725,99 +728,7 @@ public class AppChannel {
             }
         }
         return false;
-    }
 
-    void creatVirtualDisplay() {
-        final int callingUid = Binder.getCallingUid();
-        String[] packageNames = context.getPackageManager().getPackagesForUid(callingUid);
-        print("packageNames" + Arrays.toString(packageNames));
-        print("packageNames" + context.getPackageName());
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-//            MediaProjectionManager mProjectionManager = (MediaProjectionManager) this.context.getSystemService(MEDIA_PROJECTION_SERVICE);
-//
-//            IInterface iInterface = serviceManager.getService("media_projection", "android.media.projection.IMediaProjection");
-//            Intent intent = new Intent();
-//            Class<?> intentClazz = null;
-//            try {
-//                intentClazz = Class.forName("android.content.Intent");
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            Method putExtra = null;
-//            try {
-//                putExtra = intentClazz.getDeclaredMethod("putExtra", String.class, IBinder.class);
-//            } catch (NoSuchMethodException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                putExtra.invoke(intent, "android.media.projection.extra.EXTRA_MEDIA_PROJECTION", iInterface.asBinder());
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-//            Class<?> cls = null;
-//            try {
-//                cls = Class.forName("android.media.projection.MediaProjection");
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            Constructor<?> activityThreadConstructor = null;
-//            try {
-//                activityThreadConstructor = cls.getDeclaredConstructor(Context.class, Class.forName("android.media.projection.IMediaProjection"));
-//                activityThreadConstructor.setAccessible(true);
-////                ReflectUtil.listAllObject(activityThreadConstructor.getClass());
-//            } catch (NoSuchMethodException | ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                Object activityThread = activityThreadConstructor.newInstance(context, iInterface.asBinder());
-////                ReflectUtil.listAllObject(activityThread.getClass());
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            } catch (InstantiationException e) {
-//                e.printStackTrace();
-//            } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-        }
-        WindowManager windowManager = (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
-        print("初始化windowManager" + windowManager);
-        Display mDisplay = windowManager.getDefaultDisplay();
-        float refreshRate = mDisplay.getRefreshRate();
-        final DisplayMetrics metrics = new DisplayMetrics();
-//        // use getMetrics is 2030, use getRealMetrics is 2160, the diff is NavigationBar's height
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            mDisplay.getRealMetrics(metrics);
-        }
-        int mWidth = metrics.widthPixels;//size.x;
-        int mHeight = metrics.heightPixels;//size.y;
-        DisplayManager displayManager = null;
-        print("准备创建");
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            displayManager = (DisplayManager) this.context.getSystemService(Context.DISPLAY_SERVICE);
-            print(">>>" + displayManager);
-//        SurfaceView surfaceView = new SurfaceView(this);
-            SurfaceTexture texture = new SurfaceTexture(textureID);
-            textureID++;
-            print("准备创建1");
-            Surface surface = new Surface(texture);
-            print("准备创建2");
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                VirtualDisplay mVirtualDisplay = displayManager.createVirtualDisplay(
-                        "uncon-vd",
-                        400,
-                        400,
-                        400,
-                        surface,
-                        DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-                                1 << 7
-                );
-            }
-            print("准备创建3");
-        }
     }
 
 }
