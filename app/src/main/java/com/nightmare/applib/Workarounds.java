@@ -30,8 +30,11 @@ public final class Workarounds {
         Looper.prepareMainLooper();
     }
 
+    /*
+    * 这是从scrcpy中copy过来的
+    * */
     @SuppressLint("PrivateApi,DiscouragedPrivateApi")
-    public static void fillAppInfo() {
+    public static Context fillAppInfo() {
         try {
             // ActivityThread activityThread = new ActivityThread();
             Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
@@ -73,9 +76,11 @@ public final class Workarounds {
             Field mInitialApplicationField = activityThreadClass.getDeclaredField("mInitialApplication");
             mInitialApplicationField.setAccessible(true);
             mInitialApplicationField.set(activityThread, app);
+            return ctx;
         } catch (Throwable throwable) {
             // this is a workaround, so failing is not an error
-            Log.d("Nightmare","Could not fill app info: " + throwable.getMessage());
+            Log.d("Nightmare", "Could not fill app info: " + throwable.getMessage());
         }
+        return null;
     }
 }

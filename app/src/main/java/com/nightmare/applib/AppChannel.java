@@ -1,9 +1,6 @@
 package com.nightmare.applib;
 
-import static android.content.Context.MEDIA_PROJECTION_SERVICE;
-
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -20,30 +17,18 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
-import android.os.Binder;
 import android.os.Build;
-import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Looper;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
-import android.view.WindowManager;
-
-
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
-
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -51,6 +36,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.nightmare.applib.utils.Log;
+
 
 /**
  * Created by Nightmare on 2021/7/29.
@@ -76,25 +63,22 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
-        displayManager = serviceManager.getDisplayManager();
-        print("......" + Arrays.toString(displayManager.getDisplayIds()));
-        SurfaceTexture texture = new SurfaceTexture(textureID);
-        textureID++;
-        print("准备创建1");
-        Surface surface = new Surface(texture);
-        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-                1 << 7);
-        print("-----》" + id);
-
+        // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
-                    Workarounds.fillAppInfo();
-                    context = getContextWithoutActivity();
+                    FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
+                    PrintStream console = System.out;
+                    // 重定向输出，因为fillAppInfo会有一堆报错
+                    System.setErr(new PrintStream(fileOutputStream, false));
+                    System.setOut(new PrintStream(fileOutputStream, false));
+                    context = Workarounds.fillAppInfo();
+                    // 恢复输出
+                    System.setOut(console);
+                    System.setErr(console);
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -157,11 +141,6 @@ public class AppChannel {
         return ctx;
     }
 
-    public static void print(Object object) {
-        System.out.println(">>>>" + object.toString());
-        System.out.flush();
-    }
-
     public String getAppInfos(List<String> packages) {
         StringBuilder builder = new StringBuilder();
         for (String packageName : packages) {
@@ -196,7 +175,7 @@ public class AppChannel {
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
                 } catch (InvocationTargetException e) {
-                    print(packageInfo.packageName + "为隐藏app");
+                    Log.d(packageInfo.packageName + "为隐藏app");
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
@@ -450,7 +429,7 @@ public class AppChannel {
             if (launchIntent != null) {
                 builder.append(launchIntent.getComponent().getClassName());
             } else {
-                print(packageName + "获取启动Activity失败");
+                Log.d(packageName + "获取启动Activity失败");
             }
             return builder.toString();
         }
@@ -641,12 +620,12 @@ public class AppChannel {
             PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             if (applicationInfo == null) {
-                print("applicationInfo == null");
+                Log.d("applicationInfo == null");
                 return null;
             }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-            print("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-            print("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+            Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+            Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
             AssetManager assetManager = null;
             try {
                 assetManager = AssetManager.class.newInstance();
@@ -670,8 +649,8 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
                 icon = resources.getDrawable(applicationInfo.icon, null);
             } catch (Exception e) {
-                print("getBitmap package error:" + applicationInfo.packageName);
-                Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
+                Log.d("getBitmap package error:" + applicationInfo.packageName);
+                Log.d("getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
                 return null;
             }
@@ -700,7 +679,7 @@ public class AppChannel {
 //                return ((BitmapDrawable) icon).getBitmap();
             }
         } catch (Exception e) {
-            print("Exception:" + e);
+            Log.d("Exception:" + e);
             return null;
         }
     }
