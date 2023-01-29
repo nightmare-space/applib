@@ -25,6 +25,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 
 
+import com.nightmare.applib.ReflectUtil;
 import com.nightmare.applib.Workarounds;
 import com.nightmare.applib_util.wrappers.IPackageManager;
 import com.nightmare.applib_util.wrappers.ServiceManager;
@@ -110,16 +111,31 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
-//        displayManager = serviceManager.getDisplayManager();
-//        print("......" + Arrays.toString(displayManager.getDisplayIds()));
-//        SurfaceTexture texture = new SurfaceTexture(textureID);
-        textureID++;
-        print("准备创建1");
-//        Surface surface = new Surface(texture);
-//        int id = displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+        Class cls = null;
+        try {
+            cls = Class.forName("android.hardware.display.DisplayManagerGlobal");
+            Method getDefaultMethod = cls.getDeclaredMethod("getInstance");
+            Object appBindData = getDefaultMethod.invoke(null);
+            Method getd = appBindData.getClass().getDeclaredMethod("getDisplayIds");
+            int[] ids = (int[]) getd.invoke(appBindData);
+            print(Arrays.toString(ids));
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        SurfaceTexture texture = new SurfaceTexture(textureID);
+        Surface surface = new Surface(texture);
+//        displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
 //                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
 //                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
 //                1 << 7);
+
+//        print("......" + Arrays.toString(displayManager.getDisplayIds()));
+        textureID++;
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -127,6 +143,47 @@ public class AppChannel {
                     Looper.prepare();
                     Workarounds.fillAppInfo();
                     context = getContextWithoutActivity();
+                    String callingApp = context.getPackageManager().getNameForUid(Binder.getCallingUid());
+                    String[] packageNames = context.getPackageManager().getPackagesForUid(Binder.getCallingUid());
+                    print(Arrays.toString(packageNames));
+                    DisplayManager displayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+                    print(callingApp);
+
+                    Display[] ds = displayManager.getDisplays();
+                    print(Arrays.toString(ds));
+                    print("准备创建1");
+                    print(context.getPackageName());
+//                    VirtualDisplay id = displayManager.createVirtualDisplay("uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+//                            DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
+//                            DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
+//                            1 << 7);
+//                    print("-----》" + id);
+                    Class cls = null;
+                    try {
+                        cls = Class.forName("android.hardware.display.DisplayManagerGlobal");
+                        Method getDefaultMethod = cls.getDeclaredMethod("getInstance");
+                        Object appBindData = getDefaultMethod.invoke(null);
+                        Method getd = appBindData.getClass().getDeclaredMethod("getDisplayIds");
+                        ReflectUtil.listAllObject(appBindData.getClass());
+                        Field field = appBindData.getClass().getDeclaredField("mDm");
+                        field.setAccessible(true);
+                        Object ob = field.get(appBindData);
+                        ReflectUtil.listAllObject(ob.getClass());
+
+                        Method createVirtualDisplay = appBindData.getClass().getMethod("createVirtualDisplay", Context.class, String.class, int.class, int.class, int.class, Surface.class, int.class);
+                        int a = (int) createVirtualDisplay.invoke(appBindData, new Object[]{context, "name", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
+                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
+                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
+                                1 << 7});
+                        int[] ids = (int[]) getd.invoke(appBindData);
+                        print(Arrays.toString(ids));
+                    } catch (ClassNotFoundException | NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -379,7 +436,7 @@ public class AppChannel {
         return null;
     }
 
-    public void openApp(String packageName, String activity,String displayId) {
+    public void openApp(String packageName, String activity, String displayId) {
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);

@@ -56,6 +56,7 @@ public class AppServer extends NanoHTTPD {
         System.out.println("success start:" + server.getListeningPort());
         System.out.flush();
         // 不能让进程退了
+        
         System.in.read();
     }
 

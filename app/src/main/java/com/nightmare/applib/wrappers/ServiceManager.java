@@ -41,9 +41,19 @@ public final class ServiceManager {
 
     public DisplayManager getDisplayManager() {
         if (displayManager == null) {
-            displayManager = new DisplayManager(getService("display", "android.hardware.display.IDisplayManager"));
+//            displayManager = new DisplayManager(getService("display", "android.hardware.display.IDisplayManager"));
+//            displayManager = new DisplayManager(getService("display", "android.hardware.display.DisplayManagerGlobal "));
             IInterface iInterface = getService("media_projection", "android.media.projection.IMediaProjection");
 //            ReflectUtil.listAllObject(iInterface.getClass());
+            Class<?> cls = null;
+            try {
+                cls = Class.forName("android.hardware.display.DisplayManagerGlobal");
+                Method getDefaultMethod = cls.getDeclaredMethod("getInstance");
+                IInterface am = (IInterface) getDefaultMethod.invoke(null);
+                displayManager=new DisplayManager(am);
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
         return displayManager;
     }

@@ -2,7 +2,6 @@ apply plugin: 'com.android.library'
 
 
 apply plugin: 'com.github.dcendents.android-maven'
-// 其中username需要替换为你在github上的用户名
 group = 'com.github.nightmare-space'
 android {
     compileSdk 30
