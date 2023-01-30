@@ -1,49 +1,6 @@
 package com.nightmare.applib_util;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityOptions;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PermissionInfo;
-import android.content.pm.ResolveInfo;
-import android.content.res.AssetManager;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.AdaptiveIconDrawable;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.os.Looper;
-import android.util.DisplayMetrics;
-import android.util.Log;
-
-
-import com.nightmare.applib.ReflectUtil;
-import com.nightmare.applib.Workarounds;
-import com.nightmare.applib_util.wrappers.IPackageManager;
-import com.nightmare.applib_util.wrappers.ServiceManager;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static android.content.Context.MEDIA_PROJECTION_SERVICE;
-
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -60,27 +17,18 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
-import android.os.Binder;
 import android.os.Build;
-import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Looper;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
-import android.view.WindowManager;
-
-
+import com.nightmare.applib.wrappers.IPackageManager;
+import com.nightmare.applib.wrappers.ServiceManager;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -88,6 +36,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import com.nightmare.applib_util.utils.Log;
+
 
 /**
  * Created by Nightmare on 2021/7/29.
@@ -96,6 +46,7 @@ import java.util.List;
 public class AppChannel {
     private static final String TAG = "app_channel";
     IPackageManager pm;
+    com.nightmare.applib.wrappers.DisplayManager displayManager;
     ServiceManager serviceManager;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
@@ -104,6 +55,7 @@ public class AppChannel {
     Configuration configuration;
     Context context;
 
+    // 没有context的时候的构造函数，用于dex中创建这个对象
     public AppChannel() {
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
@@ -111,79 +63,22 @@ public class AppChannel {
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
-        Class cls = null;
-        try {
-            cls = Class.forName("android.hardware.display.DisplayManagerGlobal");
-            Method getDefaultMethod = cls.getDeclaredMethod("getInstance");
-            Object appBindData = getDefaultMethod.invoke(null);
-            Method getd = appBindData.getClass().getDeclaredMethod("getDisplayIds");
-            int[] ids = (int[]) getd.invoke(appBindData);
-            print(Arrays.toString(ids));
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        SurfaceTexture texture = new SurfaceTexture(textureID);
-        Surface surface = new Surface(texture);
-//        displayManager.createVirtualDisplay("com.android.shell", "uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-//                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-//                1 << 7);
-
-//        print("......" + Arrays.toString(displayManager.getDisplayIds()));
-        textureID++;
-
+        // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
-                    Workarounds.fillAppInfo();
-                    context = getContextWithoutActivity();
-                    String callingApp = context.getPackageManager().getNameForUid(Binder.getCallingUid());
-                    String[] packageNames = context.getPackageManager().getPackagesForUid(Binder.getCallingUid());
-                    print(Arrays.toString(packageNames));
-                    DisplayManager displayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
-                    print(callingApp);
-
-                    Display[] ds = displayManager.getDisplays();
-                    print(Arrays.toString(ds));
-                    print("准备创建1");
-                    print(context.getPackageName());
-//                    VirtualDisplay id = displayManager.createVirtualDisplay("uncon-vd", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-//                            DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-//                            DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-//                            1 << 7);
-//                    print("-----》" + id);
-                    Class cls = null;
-                    try {
-                        cls = Class.forName("android.hardware.display.DisplayManagerGlobal");
-                        Method getDefaultMethod = cls.getDeclaredMethod("getInstance");
-                        Object appBindData = getDefaultMethod.invoke(null);
-                        Method getd = appBindData.getClass().getDeclaredMethod("getDisplayIds");
-                        ReflectUtil.listAllObject(appBindData.getClass());
-                        Field field = appBindData.getClass().getDeclaredField("mDm");
-                        field.setAccessible(true);
-                        Object ob = field.get(appBindData);
-                        ReflectUtil.listAllObject(ob.getClass());
-
-                        Method createVirtualDisplay = appBindData.getClass().getMethod("createVirtualDisplay", Context.class, String.class, int.class, int.class, int.class, Surface.class, int.class);
-                        int a = (int) createVirtualDisplay.invoke(appBindData, new Object[]{context, "name", 100, 100, 300, surface, DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-                                1 << 7});
-                        int[] ids = (int[]) getd.invoke(appBindData);
-                        print(Arrays.toString(ids));
-                    } catch (ClassNotFoundException | NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+                    FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
+                    PrintStream console = System.out;
+                    // 重定向输出，因为fillAppInfo会有一堆报错
+                    System.setErr(new PrintStream(fileOutputStream, false));
+                    System.setOut(new PrintStream(fileOutputStream, false));
+                    context = Workarounds.fillAppInfo();
+                    // 恢复输出
+                    System.setOut(console);
+                    System.setErr(console);
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -246,11 +141,6 @@ public class AppChannel {
         return ctx;
     }
 
-    public static void print(Object object) {
-        System.out.println(">>>>" + object.toString());
-        System.out.flush();
-    }
-
     public String getAppInfos(List<String> packages) {
         StringBuilder builder = new StringBuilder();
         for (String packageName : packages) {
@@ -285,7 +175,7 @@ public class AppChannel {
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
                 } catch (InvocationTargetException e) {
-                    print(packageInfo.packageName + "为隐藏app");
+                    Log.d(packageInfo.packageName + "为隐藏app");
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
@@ -306,7 +196,7 @@ public class AppChannel {
     public List<String> getAppPackages() {
         if (context != null) {
             PackageManager pm = context.getPackageManager();
-            context.getSystemService(Context.ACTIVITY_SERVICE);
+//            context.getSystemService(Context.ACTIVITY_SERVICE);
             List<String> packages = new ArrayList<String>();
             List<PackageInfo> infos = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
             for (PackageInfo info : infos) {
@@ -356,9 +246,7 @@ public class AppChannel {
         }
         StringBuilder builder = new StringBuilder();
         for (String packageName : packages) {
-//            print("获取" + packageName + "Package Info start");
             PackageInfo packageInfo = getPackageInfo(packageName);
-//            print("获取" + packageName + "Package Info done");
 //            ActivityInfo[] activityInfos = packageInfo.activities;
 //            for (ActivityInfo info : activityInfos) {
 //                print(packageName + " Activity Info" + info.name);
@@ -396,19 +284,11 @@ public class AppChannel {
             }
             builder.append("\r").append(applicationInfo.enabled);
             try {
-                if (context != null) {
-                    // Android13 没有getPackageInfo api
-                    PackageManager pm = context.getPackageManager();
-                    PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
-                } else {
-                    // 只有被隐藏的app会拿不到，所以捕捉到异常后，标记这个app就是被隐藏的
-                    PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                // 只有被隐藏的app会拿不到，所以捕捉到异常后，标记这个app就是被隐藏的
+                PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
-                }
                 builder.append("\r").append(false);
             } catch (InvocationTargetException | IllegalAccessException e) {
-                builder.append("\r").append(true);
-            } catch (PackageManager.NameNotFoundException e) {
                 builder.append("\r").append(true);
             }
             builder.append("\r").append(applicationInfo.uid);
@@ -436,17 +316,13 @@ public class AppChannel {
         return null;
     }
 
-    public void openApp(String packageName, String activity, String displayId) {
+    public void openApp(String packageName, String activity) {
         try {
             Intent intent = new Intent();
-            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);
-            ActivityOptions options = null;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
-            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
-            context.startActivity(intent, options.toBundle());
+            context.startActivity(intent);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -553,7 +429,7 @@ public class AppChannel {
             if (launchIntent != null) {
                 builder.append(launchIntent.getComponent().getClassName());
             } else {
-                print(packageName + "获取启动Activity失败");
+                Log.d(packageName + "获取启动Activity失败");
             }
             return builder.toString();
         }
@@ -727,7 +603,6 @@ public class AppChannel {
         }
     }
 
-    // 通过报名获取Bitmap
     public synchronized Bitmap getBitmap(String packageName) throws InvocationTargetException, IllegalAccessException {
         Drawable icon = null;
         if (null != context) {
@@ -745,12 +620,12 @@ public class AppChannel {
             PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             if (applicationInfo == null) {
-                print("applicationInfo == null");
+                Log.d("applicationInfo == null");
                 return null;
             }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-            print("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-            print("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+            Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+            Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
             AssetManager assetManager = null;
             try {
                 assetManager = AssetManager.class.newInstance();
@@ -774,8 +649,8 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
                 icon = resources.getDrawable(applicationInfo.icon, null);
             } catch (Exception e) {
-                print("getBitmap package error:" + applicationInfo.packageName);
-                Log.e("Nightmare", "getBitmap package error:" + applicationInfo.packageName);
+                Log.d("getBitmap package error:" + applicationInfo.packageName);
+                Log.d("getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
                 return null;
             }
@@ -804,7 +679,7 @@ public class AppChannel {
 //                return ((BitmapDrawable) icon).getBitmap();
             }
         } catch (Exception e) {
-            print("Exception:" + e);
+            Log.d("Exception:" + e);
             return null;
         }
     }
@@ -832,99 +707,7 @@ public class AppChannel {
             }
         }
         return false;
-    }
 
-    void creatVirtualDisplay() {
-        final int callingUid = Binder.getCallingUid();
-        String[] packageNames = context.getPackageManager().getPackagesForUid(callingUid);
-        print("packageNames" + Arrays.toString(packageNames));
-        print("packageNames" + context.getPackageName());
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-//            MediaProjectionManager mProjectionManager = (MediaProjectionManager) this.context.getSystemService(MEDIA_PROJECTION_SERVICE);
-//
-//            IInterface iInterface = serviceManager.getService("media_projection", "android.media.projection.IMediaProjection");
-//            Intent intent = new Intent();
-//            Class<?> intentClazz = null;
-//            try {
-//                intentClazz = Class.forName("android.content.Intent");
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            Method putExtra = null;
-//            try {
-//                putExtra = intentClazz.getDeclaredMethod("putExtra", String.class, IBinder.class);
-//            } catch (NoSuchMethodException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                putExtra.invoke(intent, "android.media.projection.extra.EXTRA_MEDIA_PROJECTION", iInterface.asBinder());
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-//            Class<?> cls = null;
-//            try {
-//                cls = Class.forName("android.media.projection.MediaProjection");
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            Constructor<?> activityThreadConstructor = null;
-//            try {
-//                activityThreadConstructor = cls.getDeclaredConstructor(Context.class, Class.forName("android.media.projection.IMediaProjection"));
-//                activityThreadConstructor.setAccessible(true);
-////                ReflectUtil.listAllObject(activityThreadConstructor.getClass());
-//            } catch (NoSuchMethodException | ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                Object activityThread = activityThreadConstructor.newInstance(context, iInterface.asBinder());
-////                ReflectUtil.listAllObject(activityThread.getClass());
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            } catch (InstantiationException e) {
-//                e.printStackTrace();
-//            } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//            }
-        }
-        WindowManager windowManager = (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
-        print("初始化windowManager" + windowManager);
-        Display mDisplay = windowManager.getDefaultDisplay();
-        float refreshRate = mDisplay.getRefreshRate();
-        final DisplayMetrics metrics = new DisplayMetrics();
-//        // use getMetrics is 2030, use getRealMetrics is 2160, the diff is NavigationBar's height
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            mDisplay.getRealMetrics(metrics);
-        }
-        int mWidth = metrics.widthPixels;//size.x;
-        int mHeight = metrics.heightPixels;//size.y;
-        DisplayManager displayManager = null;
-        print("准备创建");
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            displayManager = (DisplayManager) this.context.getSystemService(Context.DISPLAY_SERVICE);
-            print(">>>" + displayManager);
-//        SurfaceView surfaceView = new SurfaceView(this);
-            SurfaceTexture texture = new SurfaceTexture(textureID);
-            textureID++;
-            print("准备创建1");
-            Surface surface = new Surface(texture);
-            print("准备创建2");
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                VirtualDisplay mVirtualDisplay = displayManager.createVirtualDisplay(
-                        "uncon-vd",
-                        400,
-                        400,
-                        400,
-                        surface,
-                        DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION |
-                                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC |
-                                1 << 7
-                );
-            }
-            print("准备创建3");
-        }
     }
 
 }

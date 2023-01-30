@@ -1,18 +1,14 @@
 package com.nightmare.applib_util;
 
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.util.Log;
 import android.view.Display;
 
-
 import com.nightmare.applib.Workarounds;
-import com.nightmare.applib_util.wrappers.ServiceManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,43 +19,42 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.net.ServerSocket;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
+import com.nightmare.applib_util.utils.Log;
+
+/**
+ * 基于HTTP服务提供能力
+ */
 public class AppServer extends NanoHTTPD {
     public AppServer(String address, int port) {
         super(address, port);
     }
 
-    public ServiceManager serviceManager = new ServiceManager();
-    static final int RANGE_START = 6000;
-    static final int RANGE_END = 6040;
-    AppChannel appInfo;
+    // 端口尝试的范围
+    static final int RANGE_START = 14000;
+    static final int RANGE_END = 14040;
 
-    public static void print(Object object) {
-        System.out.println(">>>>" + object.toString());
-        System.out.flush();
-    }
+    AppChannel appChannel;
 
     public static void main(String[] args) throws Exception {
-        print("Welcome!!!");
+        Log.d("Welcome!!!");
         AppServer server = safeGetServer();
         Workarounds.prepareMainLooper();
-//        Context ctx = getContextWithoutActivity();
-        server.appInfo = new AppChannel();
-        System.out.println("success start:" + server.getListeningPort());
-        System.out.flush();
-        // 不能让进程退了
-        
+        // 这个时候构造的是一个没有Context的Channel
+        server.appChannel = new AppChannel();
+        Log.d("success start port : >" + server.getListeningPort() + "<");
+        // 让进程等待
         System.in.read();
     }
 
+    /**
+     * 安全获得服务器的的方法
+     */
     public static AppServer safeGetServer() {
         for (int i = RANGE_START; i < RANGE_END; i++) {
             AppServer server = new AppServer("0.0.0.0", i);
@@ -67,41 +62,54 @@ public class AppServer extends NanoHTTPD {
                 server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 return server;
             } catch (IOException e) {
-                print("端口" + i + "被占用");
+                Log.d("端口" + i + "被占用");
             }
         }
         return null;
     }
 
-    // 更安全的拿到一个ServerSocket
-    // 有的时候会端口占用
+    /**
+     * 更安全的拿到一个ServerSocket
+     * 有的时候会端口占用
+     *
+     * @return
+     */
     public static ServerSocket safeGetServerSocket() {
         for (int i = RANGE_START; i < RANGE_END; i++) {
             try {
                 return new ServerSocket(i);
             } catch (IOException e) {
-                print("端口" + i + "被占用");
+                Log.d("端口" + i + "被占用");
             }
         }
         return null;
     }
 
-    /*
+    /**
      * 与直接启动dex不同，从Activity中启动不用反射context上下问
-     * */
+     *
+     * @param context
+     * @throws IOException
+     */
     public static void startServerFromActivity(Context context) throws IOException {
         AppServer server = safeGetServer();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
-        server.appInfo = new AppChannel(context);
+        server.appChannel = new AppChannel(context);
         System.out.println("success start:" + server.getListeningPort());
         System.out.flush();
     }
 
+    /**
+     * 写入端口号，方便不同进程同App，获得这个端口号
+     *
+     * @param path
+     * @param port
+     */
     public static void writePort(String path, int port) {
         OutputStream out = null;
         try {
             out = new FileOutputStream(path + "/server_port");
-            Log.d("Nightmare", path);
+            Log.d(path);
             out.write((port + "").getBytes());
             out.close();
         } catch (FileNotFoundException e) {
@@ -111,94 +119,104 @@ public class AppServer extends NanoHTTPD {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
     public Response serve(IHTTPSession session) {
         try {
             if (session.getUri().equals("/")) {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
             }
+            // 获取图标
             if (session.getUri().startsWith("/icon")) {
-                Log.d("Nightmare", session.getParameters().toString());
+                Log.d(session.getParameters().toString());
                 Map<String, List<String>> params = session.getParameters();
                 if (!params.isEmpty()) {
                     List<String> line = session.getParameters().get("path");
                     String path = line.get(0);
-                    byte[] bytes = appInfo.getApkBitmapBytes(path);
+                    byte[] bytes = appChannel.getApkBitmapBytes(path);
                     return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
                 }
-                byte[] bytes = appInfo.getBitmapBytes(session.getUri().substring("/icon/".length()));
+                byte[] bytes = appChannel.getBitmapBytes(session.getUri().substring("/icon/".length()));
                 // print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 获取所有的应用信息
+            // 包含被隐藏的，被冻结的
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAllAppInfo)) {
-                boolean isSystemApp;
+                boolean isSystemApp = false;
                 List<String> line = session.getParameters().get("is_system_app");
-                if (line == null || line.isEmpty()) {
-                    isSystemApp = false;
-                } else {
+                if (line != null && !line.isEmpty()) {
                     isSystemApp = Boolean.parseBoolean(line.get(0));
                 }
-                byte[] bytes = appInfo.getAllAppInfo(isSystemApp).getBytes();
+                byte[] bytes = appChannel.getAllAppInfo(isSystemApp).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 获取指定App列表的信息
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppInfos)) {
-                List<String> line = session.getParameters().get("apps");
-                byte[] bytes = appInfo.getAppInfos(line).getBytes();
+                List<String> packages = session.getParameters().get("apps");
+                byte[] bytes = appChannel.getAppInfos(packages).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 获取单个App的详细信息
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppDetail)) {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
-                byte[] bytes = appInfo.getAppDetail(packageName).getBytes();
+                byte[] bytes = appChannel.getAppDetail(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 获取缩略图
             if (session.getUri().startsWith("/" + AppChannelProtocol.getTaskThumbnail)) {
                 List<String> line = session.getParameters().get("id");
                 String id = line.get(0);
                 byte[] bytes = getTaskThumbnail(Integer.parseInt(id));
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 通过报名获取Main Activity
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppMainActivity)) {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
-                byte[] bytes = appInfo.getAppMainActivity(packageName).getBytes();
+                byte[] bytes = appChannel.getAppMainActivity(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
-//            if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
+            // 创建虚拟显示器
+            if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
 //                appInfo.creatVirtualDisplay();
-//                return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
-//            }
+                return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
+            }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
+                // 要保证参数存在，不然服务可能会崩
+                // 待测试
                 String packageName = session.getParameters().get("package").get(0);
                 String activity = session.getParameters().get("activity").get(0);
-                String displayid = session.getParameters().get("displayId").get(0);
-                appInfo.openApp(packageName, activity, displayid);
+                appChannel.openApp(packageName, activity);
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }
+            // 获取一个App的所有Activity
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppActivity)) {
                 String packageName = session.getParameters().get("package").get(0);
-                byte[] bytes = appInfo.getAppActivitys(packageName).getBytes();
+                byte[] bytes = appChannel.getAppActivitys(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            // 获取App的权限信息
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppPermissions)) {
-                // 获取App权限信息
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
-                byte[] bytes = appInfo.getAppPermissions(packageName).getBytes();
+                byte[] bytes = appChannel.getAppPermissions(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + "displays")) {
-                DisplayManager displayManager = (DisplayManager) appInfo.context.getSystemService(Context.DISPLAY_SERVICE);
-                Display[] displays = displayManager.getDisplays();
-                StringBuilder builder = new StringBuilder();
-                for (Display display : displays) {
-                    builder.append(display.getDisplayId());
-                    builder.append("\n");
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+                    Display[] displays = displayManager.getDisplays();
+                    StringBuilder builder = new StringBuilder();
+                    for (Display display : displays) {
+                        builder.append(display.getDisplayId());
+                        builder.append("\n");
+                    }
+                    byte[] bytes = builder.toString().getBytes();
+                    return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
                 }
-                byte[] bytes = builder.toString().getBytes();
-                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/thumb/")) {
                 int id = Integer.parseInt(session.getUri().substring("/thumb/".length()));
@@ -276,8 +294,8 @@ public class AppServer extends NanoHTTPD {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
                 if (jsonObject.has("topPackage")) {
-                    PackageInfo packageInfo = appInfo.getPackageInfo(taskInfo.topActivity.getPackageName());
-                    jsonObject.put("label", appInfo.getLabel(packageInfo.applicationInfo));
+                    PackageInfo packageInfo = appChannel.getPackageInfo(taskInfo.topActivity.getPackageName());
+                    jsonObject.put("label", appChannel.getLabel(packageInfo.applicationInfo));
                 }
             }
             jsonArray.put(jsonObject);
