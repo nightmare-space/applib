@@ -8,8 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:global_repository/global_repository.dart';
 
 class RemoteAppChannel implements AppChannel {
-  RemoteAppChannel() {
-    api = Api(Dio(), baseUrl: 'http://127.0.0.1:${getPort()}');
+  RemoteAppChannel({int? port}) {
+    api = Api(Dio(), baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
   }
   @override
   int? port;
