@@ -8,6 +8,8 @@ import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.view.Display;
 
+import androidx.annotation.RequiresApi;
+
 import com.nightmare.applib.Workarounds;
 
 import org.json.JSONArray;
@@ -20,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -119,6 +122,7 @@ public class AppServer extends NanoHTTPD {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
     public Response serve(IHTTPSession session) {
         try {
@@ -182,12 +186,17 @@ public class AppServer extends NanoHTTPD {
 //                appInfo.creatVirtualDisplay();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
             }
-            if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
+            if (session.getUri().startsWith("/" + com.nightmare.applib.AppChannelProtocol.openAppByPackage)) {
                 // 要保证参数存在，不然服务可能会崩
                 // 待测试
                 String packageName = session.getParameters().get("package").get(0);
                 String activity = session.getParameters().get("activity").get(0);
-                appChannel.openApp(packageName, activity);
+//                String id = session.getParameters().get("displayId").get(0);
+//                String id = appChannel.context.getDisplay().getDisplayId() + "";
+                DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+                Display[] displays = displayManager.getDisplays();
+                Log.d("当前display" + Arrays.toString(displays));
+                appChannel.openApp(packageName, activity, "2");
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }

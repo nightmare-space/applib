@@ -1,6 +1,7 @@
 package com.nightmare.applib_util;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityOptions;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -23,8 +24,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +39,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import com.nightmare.applib_util.utils.Log;
 
 
@@ -285,7 +289,7 @@ public class AppChannel {
             builder.append("\r").append(applicationInfo.enabled);
             try {
                 // 只有被隐藏的app会拿不到，所以捕捉到异常后，标记这个app就是被隐藏的
-                PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                PackageInfo withoutHidePackage = getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                 builder.append("\r").append(false);
             } catch (InvocationTargetException | IllegalAccessException e) {
@@ -316,13 +320,20 @@ public class AppChannel {
         return null;
     }
 
-    public void openApp(String packageName, String activity) {
+
+    public void openApp(String packageName, String activity, String displayId) {
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);
+            ActivityOptions options = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
+            }
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
             context.startActivity(intent);
+            context.startActivity(intent, options.toBundle());
         } catch (Exception e) {
             e.printStackTrace();
         }

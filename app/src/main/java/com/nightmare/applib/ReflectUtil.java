@@ -12,9 +12,9 @@ public class ReflectUtil {
         System.out.flush();
     }
 
-//    public static void listAllObject(Object object) {
-//        listAllObject(object.getClass());
-//    }
+    public static void listAllObject(Object object) {
+        listAllObject(object.getClass());
+    }
 
     public static void listAllObject(Class clazz) {
         try {

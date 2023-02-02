@@ -1,6 +1,7 @@
 package com.nightmare.applib;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityOptions;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -23,11 +24,15 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -36,6 +41,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import com.nightmare.applib.utils.Log;
 
 
@@ -54,20 +60,40 @@ public class AppChannel {
     DisplayMetrics displayMetrics;
     Configuration configuration;
     Context context;
+    boolean hasRealContext = false;
 
     // 没有context的时候的构造函数，用于dex中创建这个对象
     public AppChannel() {
+        Log.d("AppChannel 无参构造");
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
         configuration = new Configuration();
         configuration.setToDefaults();
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
+//        try {
+//            FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
+//            PrintStream console = System.out;
+//            // 重定向输出，因为fillAppInfo会有一堆报错
+//            System.setErr(new PrintStream(fileOutputStream, false));
+//            System.setOut(new PrintStream(fileOutputStream, false));
+//            Looper.prepare();
+//            context = Workarounds.fillAppInfo();
+//            Log.d("获取到的Context:" + context.toString());
+//            Looper.loop();
+//            // 恢复输出
+//            System.setOut(console);
+//            System.setErr(console);
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
         // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+
+                    Log.d("Runnable");
                     // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
                     FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
@@ -79,6 +105,7 @@ public class AppChannel {
                     // 恢复输出
                     System.setOut(console);
                     System.setErr(console);
+                    Log.d("获取到的Context:" + context.toString());
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -95,6 +122,7 @@ public class AppChannel {
         serviceManager = new ServiceManager();
         pm = serviceManager.getPackageManager();
         this.context = context;
+        hasRealContext = true;
     }
 
 
@@ -209,18 +237,7 @@ public class AppChannel {
     }
 
     public PackageInfo getPackageInfo(String packageName) throws InvocationTargetException, IllegalAccessException {
-        if (context != null) {
-            PackageManager pm = context.getPackageManager();
-            PackageInfo info = null;
-            try {
-                info = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            return info;
-        } else {
-            return pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-        }
+        return getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
     }
 
     public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
@@ -285,7 +302,8 @@ public class AppChannel {
             builder.append("\r").append(applicationInfo.enabled);
             try {
                 // 只有被隐藏的app会拿不到，所以捕捉到异常后，标记这个app就是被隐藏的
-                PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                // TODO 下面这行代码在Android下有异常
+                PackageInfo withoutHidePackage = getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                 builder.append("\r").append(false);
             } catch (InvocationTargetException | IllegalAccessException e) {
@@ -316,13 +334,31 @@ public class AppChannel {
         return null;
     }
 
-    public void openApp(String packageName, String activity) {
+    public void openApp(String packageName, String activity, String displayId) {
+        if (!hasRealContext) {
+            String cmd = "am start --display " + displayId + " -n " + packageName + "/" + activity;
+            Log.d("start activity cmd : " + cmd);
+            // adb -s $serial shell am start -n $packageName/$activity
+            try {
+                Runtime.getRuntime().exec(cmd);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        //TODO 无context用命令行启动
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);
+            ActivityOptions options = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
+            }
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
             context.startActivity(intent);
+            context.startActivity(intent, options.toBundle());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -471,11 +507,13 @@ public class AppChannel {
         return Arrays.asList(str);
     }
 
-    public byte[] getBitmapBytes(String packname) throws InvocationTargetException, IllegalAccessException {
+    public byte[] getBitmapBytes(String packname) throws
+            InvocationTargetException, IllegalAccessException {
         return Bitmap2Bytes(getBitmap(packname));
     }
 
-    public byte[] getApkBitmapBytes(String path) throws InvocationTargetException, IllegalAccessException {
+    public byte[] getApkBitmapBytes(String path) throws
+            InvocationTargetException, IllegalAccessException {
         return Bitmap2Bytes(getUninstallAPKIcon(path));
     }
 
@@ -603,58 +641,67 @@ public class AppChannel {
         }
     }
 
-    public synchronized Bitmap getBitmap(String packageName) throws InvocationTargetException, IllegalAccessException {
-        Drawable icon = null;
-        if (null != context) {
-            PackageManager pm = context.getPackageManager();
-            try {
-//                PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-//                ApplicationInfo applicationInfo = packageInfo.applicationInfo;
 
-                icon = pm.getApplicationIcon(packageName);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-//            context.getDrawable(pm)
-        } else {
-            PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
-            ApplicationInfo applicationInfo = packageInfo.applicationInfo;
-            if (applicationInfo == null) {
-                Log.d("applicationInfo == null");
-                return null;
-            }
-//        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-            Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-            Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
-            AssetManager assetManager = null;
-            try {
-                assetManager = AssetManager.class.newInstance();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            }
-            try {
-                assert assetManager != null;
-                assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
-            Resources resources = new Resources(assetManager, displayMetrics, configuration);
-            try {
-//            icon = applicationInfo.loadIcon(pm);
-                icon = resources.getDrawable(applicationInfo.icon, null);
-            } catch (Exception e) {
-                Log.d("getBitmap package error:" + applicationInfo.packageName);
-                Log.d("getBitmap package error:" + applicationInfo.packageName);
-//            e.printStackTrace();
-                return null;
-            }
+    /**
+     * @param packageName
+     * @return 应用的Bitmap对象
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+    public synchronized Bitmap getBitmap(String packageName) throws
+            InvocationTargetException, IllegalAccessException {
+        Drawable icon = null;
+//        if (null != context) {
+//            PackageManager pm = context.getPackageManager();
+//            try {
+////                PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+////                ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+//
+//                icon = pm.getApplicationIcon(packageName);
+//            } catch (PackageManager.NameNotFoundException e) {
+//                e.printStackTrace();
+//            }
+////            context.getDrawable(pm)
+//        } else {
+//        ReflectUtil.listAllObject(pm);
+        PackageInfo packageInfo = getPackageInfo(packageName);
+        ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+        if (applicationInfo == null) {
+            Log.d("applicationInfo == null");
+            return null;
         }
+//        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
+        Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+        Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+        AssetManager assetManager = null;
+        try {
+            assetManager = AssetManager.class.newInstance();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert assetManager != null;
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        Resources resources = new Resources(assetManager, displayMetrics, configuration);
+        try {
+//            icon = applicationInfo.loadIcon(pm);
+            icon = resources.getDrawable(applicationInfo.icon, null);
+        } catch (Exception e) {
+            Log.d("getBitmap package error:" + applicationInfo.packageName);
+            Log.d("getBitmap package error:" + applicationInfo.packageName);
+//            e.printStackTrace();
+            return null;
+        }
+//        }
 
         try {
             if (icon == null) {

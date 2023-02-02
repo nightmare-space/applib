@@ -28,9 +28,11 @@ public class IPackageManager {
     }
 
     private Method getGetPackageInfoMethod() throws NoSuchMethodException {
+        // TODO 改了需要确定是否影响Android12
         if (getPackageInfoMethod == null) {
             Class<?> cls = manager.getClass();
-            getPackageInfoMethod = cls.getMethod("getPackageInfo", String.class, int.class, int.class);
+            getPackageInfoMethod = cls.getDeclaredMethod("getPackageInfo", String.class, int.class);
+            getPackageInfoMethod.setAccessible(true);
         }
         return getPackageInfoMethod;
     }
@@ -53,7 +55,7 @@ public class IPackageManager {
 
     public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
         try {
-            return (PackageInfo) getGetPackageInfoMethod().invoke(this.manager, new Object[]{packageName, flag, 0});
+            return (PackageInfo) getGetPackageInfoMethod().invoke(this.manager, new Object[]{packageName, flag});
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }

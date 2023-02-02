@@ -60,3 +60,4 @@ echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
 cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/didi/Documents/GitHub/uncon/assets/'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/didi/Documents/GitHub/adb_tool/assets'

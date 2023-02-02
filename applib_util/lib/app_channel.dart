@@ -2,6 +2,9 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+export 'interface/app_channel.dart';
+export 'foundation/app.dart';
+export 'foundation/app_details.dart';
 
 class ApplibUtil {
   static const MethodChannel _channel = MethodChannel('apputils');

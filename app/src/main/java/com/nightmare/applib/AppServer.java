@@ -5,7 +5,9 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
+import android.view.Display;
 
 
 import org.json.JSONArray;
@@ -46,8 +48,12 @@ public class AppServer extends NanoHTTPD {
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
         Log.d("success start port : >" + server.getListeningPort() + "<");
+//        writePort("/sdcard", server.getListeningPort());
         // 让进程等待
-        System.in.read();
+//        System.in.read();
+        while (true) {
+            Thread.sleep(1000);
+        }
     }
 
     /**
@@ -125,7 +131,7 @@ public class AppServer extends NanoHTTPD {
             }
             // 获取图标
             if (session.getUri().startsWith("/icon")) {
-                Log.d(session.getParameters().toString());
+//                Log.d(session.getParameters().toString());
                 Map<String, List<String>> params = session.getParameters();
                 if (!params.isEmpty()) {
                     List<String> line = session.getParameters().get("path");
@@ -185,7 +191,8 @@ public class AppServer extends NanoHTTPD {
                 // 待测试
                 String packageName = session.getParameters().get("package").get(0);
                 String activity = session.getParameters().get("activity").get(0);
-                appChannel.openApp(packageName, activity);
+                String id = session.getParameters().get("displayId").get(0);
+                appChannel.openApp(packageName, activity, id);
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }
@@ -200,6 +207,17 @@ public class AppServer extends NanoHTTPD {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
                 byte[] bytes = appChannel.getAppPermissions(packageName).getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
+            }
+            if (session.getUri().startsWith("/" + "displays")) {
+                DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+                Display[] displays = displayManager.getDisplays();
+                StringBuilder builder = new StringBuilder();
+                for (Display display : displays) {
+                    builder.append(display.getDisplayId());
+                    builder.append("\n");
+                }
+                byte[] bytes = builder.toString().getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");
