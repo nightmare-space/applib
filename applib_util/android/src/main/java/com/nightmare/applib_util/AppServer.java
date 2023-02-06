@@ -28,7 +28,7 @@ import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
-import com.nightmare.applib_util.utils.Log;
+import com.nightmare.applib_util.utils.Lg;
 
 /**
  * 基于HTTP服务提供能力
@@ -45,12 +45,12 @@ public class AppServer extends NanoHTTPD {
     AppChannel appChannel;
 
     public static void main(String[] args) throws Exception {
-        Log.d("Welcome!!!");
+        Lg.d("Welcome!!!");
         AppServer server = safeGetServer();
         Workarounds.prepareMainLooper();
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
-        Log.d("success start port : >" + server.getListeningPort() + "<");
+        Lg.d("success start port : >" + server.getListeningPort() + "<");
         // 让进程等待
         System.in.read();
     }
@@ -65,7 +65,7 @@ public class AppServer extends NanoHTTPD {
                 server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 return server;
             } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
+                Lg.d("端口" + i + "被占用");
             }
         }
         return null;
@@ -82,7 +82,7 @@ public class AppServer extends NanoHTTPD {
             try {
                 return new ServerSocket(i);
             } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
+                Lg.d("端口" + i + "被占用");
             }
         }
         return null;
@@ -112,7 +112,7 @@ public class AppServer extends NanoHTTPD {
         OutputStream out = null;
         try {
             out = new FileOutputStream(path + "/server_port");
-            Log.d(path);
+            Lg.d(path);
             out.write((port + "").getBytes());
             out.close();
         } catch (FileNotFoundException e) {
@@ -131,7 +131,7 @@ public class AppServer extends NanoHTTPD {
             }
             // 获取图标
             if (session.getUri().startsWith("/icon")) {
-                Log.d(session.getParameters().toString());
+                Lg.d(session.getParameters().toString());
                 Map<String, List<String>> params = session.getParameters();
                 if (!params.isEmpty()) {
                     List<String> line = session.getParameters().get("path");
@@ -195,7 +195,7 @@ public class AppServer extends NanoHTTPD {
 //                String id = appChannel.context.getDisplay().getDisplayId() + "";
                 DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
                 Display[] displays = displayManager.getDisplays();
-                Log.d("当前display" + Arrays.toString(displays));
+                Lg.d("当前display" + Arrays.toString(displays));
                 appChannel.openApp(packageName, activity, "2");
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);

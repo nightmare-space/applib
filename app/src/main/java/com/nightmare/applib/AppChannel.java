@@ -199,11 +199,12 @@ public class AppChannel {
                 builder.append("\r").append(applicationInfo.enabled);
                 try {
                     // 只有被隐藏的app会拿不到
-                    PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                    PackageInfo withoutHidePackage = getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
                 } catch (InvocationTargetException e) {
                     Log.d(packageInfo.packageName + "为隐藏app");
+                    builder.append("\r").append(true);
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();

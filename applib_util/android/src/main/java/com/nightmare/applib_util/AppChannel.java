@@ -24,6 +24,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
@@ -40,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.nightmare.applib_util.utils.Log;
+import com.nightmare.applib_util.utils.Lg;
 
 
 /**
@@ -175,11 +176,11 @@ public class AppChannel {
                 builder.append("\r").append(applicationInfo.enabled);
                 try {
                     // 只有被隐藏的app会拿不到
-                    PackageInfo withoutHidePackage = pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                    packageInfo = getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
                 } catch (InvocationTargetException e) {
-                    Log.d(packageInfo.packageName + "为隐藏app");
+                    Lg.d(packageInfo.packageName + "为隐藏app");
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
@@ -280,7 +281,11 @@ public class AppChannel {
                 builder.append("\r").append("null");
             }
             builder.append("\r").append(applicationInfo.targetSdkVersion);
-            builder.append("\r").append(packageInfo.versionName);
+//            Log.e("Nightmare", packageInfo.versionName + "");
+            // 修复
+            //  3.2rc
+            //        破解软件TG频道：@fun_apk
+            builder.append("\r").append(packageInfo.versionName.replaceAll("\n", ""));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 builder.append("\r").append(packageInfo.getLongVersionCode());
             } else {
@@ -295,7 +300,9 @@ public class AppChannel {
             } catch (InvocationTargetException | IllegalAccessException e) {
                 builder.append("\r").append(true);
             }
+//            Log.e("Nightmare", applicationInfo.uid + "");
             builder.append("\r").append(applicationInfo.uid);
+//            Log.e("Nightmare", applicationInfo.sourceDir);
             builder.append("\r").append(applicationInfo.sourceDir);
             builder.append("\n");
         }
@@ -440,7 +447,7 @@ public class AppChannel {
             if (launchIntent != null) {
                 builder.append(launchIntent.getComponent().getClassName());
             } else {
-                Log.d(packageName + "获取启动Activity失败");
+                Lg.d(packageName + "获取启动Activity失败");
             }
             return builder.toString();
         }
@@ -631,12 +638,12 @@ public class AppChannel {
             PackageInfo packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
             ApplicationInfo applicationInfo = packageInfo.applicationInfo;
             if (applicationInfo == null) {
-                Log.d("applicationInfo == null");
+                Lg.d("applicationInfo == null");
                 return null;
             }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-            Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-            Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+            Lg.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+            Lg.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
             AssetManager assetManager = null;
             try {
                 assetManager = AssetManager.class.newInstance();
@@ -660,8 +667,8 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
                 icon = resources.getDrawable(applicationInfo.icon, null);
             } catch (Exception e) {
-                Log.d("getBitmap package error:" + applicationInfo.packageName);
-                Log.d("getBitmap package error:" + applicationInfo.packageName);
+                Lg.d("getBitmap package error:" + applicationInfo.packageName);
+                Lg.d("getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
                 return null;
             }
@@ -690,7 +697,7 @@ public class AppChannel {
 //                return ((BitmapDrawable) icon).getBitmap();
             }
         } catch (Exception e) {
-            Log.d("Exception:" + e);
+            Lg.d("Exception:" + e);
             return null;
         }
     }

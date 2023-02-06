@@ -9,6 +9,10 @@ import 'package:global_repository/global_repository.dart';
 
 class RemoteAppChannel implements AppChannel {
   RemoteAppChannel({int? port}) {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      port = 0;
+    }
+    this.port = port;
     api = Api(Dio(), baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
   }
   @override
@@ -41,6 +45,7 @@ class RemoteAppChannel implements AppChannel {
     /// 为了减少数据包大小，自定义了一个简单的协议，没用 json
     for (int i = 0; i < infos.length; i++) {
       List<String> infoList = infos[i].split('\r');
+      // Log.d('infoList line$i $infoList');
       final AppInfo appInfo = AppInfo(
         infoList[0],
         appName: infoList[1],
