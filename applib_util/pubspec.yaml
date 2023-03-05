@@ -10,15 +10,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  # dio自动生成
+  retrofit: ^3.0.1+1
   dio: ^4.0.0
   global_repository:
     git: https://github.com/nightmare-space/global_repository
   # 序列化json的
   json_annotation: ^4.5.0
-
-  # dio自动生成
-  retrofit: ^3.0.1+1
 dev_dependencies:
   flutter_test:
     sdk: flutter

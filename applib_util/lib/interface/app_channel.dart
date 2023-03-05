@@ -1,4 +1,5 @@
 import 'package:app_channel/foundation/app.dart';
+import 'package:app_channel/model/tasks.dart';
 
 /// 抽象的一层 channel
 /// 其他地方依赖抽象
@@ -36,4 +37,9 @@ abstract class AppChannel {
   Future<void> openApp(String packageName, String activity, String id);
 
   Future<List<String>> getDisplays();
+
+  Future<Tasks> getTasks();
+
+  /// 创建虚拟显示器
+  void createVirtualDisplay(int width, int height);
 }

@@ -4,15 +4,16 @@ import 'dart:io';
 import 'package:app_channel/api/api.dart';
 import 'package:app_channel/foundation/app.dart';
 import 'package:app_channel/interface/app_channel.dart';
+import 'package:app_channel/model/tasks.dart';
 import 'package:dio/dio.dart';
 import 'package:global_repository/global_repository.dart';
 
 class RemoteAppChannel implements AppChannel {
-  RemoteAppChannel({int? port}) {
+  RemoteAppChannel({this.port}) {
+    Log.v('RemoteAppChannel Instance port:$port');
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      port = 0;
+      port ??= 0;
     }
-    this.port = port;
     api = Api(Dio(), baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
   }
   @override
@@ -37,6 +38,7 @@ class RemoteAppChannel implements AppChannel {
   Future<List<AppInfo>> getAllAppInfo(bool isSystemApp) async {
     Stopwatch watch = Stopwatch();
     watch.start();
+    Log.i(port);
     final result = await api.getAllAppInfo(is_system_app: isSystemApp);
     final List<String> infos = (result).split('\n');
     Log.e('watch -> ${watch.elapsed}');
@@ -122,10 +124,17 @@ class RemoteAppChannel implements AppChannel {
   }
 
   /// 获得DisplayID List
+  @override
   Future<List<String>> getDisplays() async {
     String result = await api.displays();
     Log.i(result);
     return result.trim().split('\n');
+  }
+
+  @override
+  Future<Tasks> getTasks() async {
+    Tasks result = await api.getTasks();
+    return result;
   }
 
   @override
@@ -170,5 +179,10 @@ class RemoteAppChannel implements AppChannel {
   @override
   Future<String> getFileSize(String path) async {
     return await exec('stat -c "%s" $path');
+  }
+
+  @override
+  void createVirtualDisplay(int width, int height) {
+    api.createVirtualDisplay(width: width.toString(), height: height.toString());
   }
 }

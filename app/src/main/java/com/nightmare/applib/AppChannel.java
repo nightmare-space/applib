@@ -6,6 +6,7 @@ import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
@@ -17,19 +18,30 @@ import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.display.DisplayManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.view.SurfaceView;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.nightmare.applib.utils.ServerUtil;
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -53,7 +65,6 @@ public class AppChannel {
     private static final String TAG = "app_channel";
     IPackageManager pm;
     com.nightmare.applib.wrappers.DisplayManager displayManager;
-    ServiceManager serviceManager;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6040;
@@ -69,24 +80,7 @@ public class AppChannel {
         displayMetrics.setToDefaults();
         configuration = new Configuration();
         configuration.setToDefaults();
-        serviceManager = new ServiceManager();
-        pm = serviceManager.getPackageManager();
-//        try {
-//            FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
-//            PrintStream console = System.out;
-//            // 重定向输出，因为fillAppInfo会有一堆报错
-//            System.setErr(new PrintStream(fileOutputStream, false));
-//            System.setOut(new PrintStream(fileOutputStream, false));
-//            Looper.prepare();
-//            context = Workarounds.fillAppInfo();
-//            Log.d("获取到的Context:" + context.toString());
-//            Looper.loop();
-//            // 恢复输出
-//            System.setOut(console);
-//            System.setErr(console);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
+        pm = ServiceManager.getPackageManager();
         // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
         new Thread(new Runnable() {
             @Override
@@ -102,9 +96,34 @@ public class AppChannel {
                     System.setErr(new PrintStream(fileOutputStream, false));
                     System.setOut(new PrintStream(fileOutputStream, false));
                     context = Workarounds.fillAppInfo();
+                    // ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
                     // 恢复输出
                     System.setOut(console);
                     System.setErr(console);
+//                     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+//                     layoutParams.format = PixelFormat.RGBA_8888;
+//                     layoutParams.width = 0;
+//                     layoutParams.height = 0;
+// //        layoutParams.gravity = Gravity.TOP & Gravity.LEFT;
+// //        window.setGravity(Gravity.CENTER);
+//                     layoutParams.x = 0;
+//                     layoutParams.y = 0;
+//                     layoutParams.type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+//                     layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+//                             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN//将window放置在整个屏幕之内,无视其他的装饰(比如状态栏)
+//                             | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS//允许window扩展值屏幕之外
+//                             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+//                             | WindowManager.LayoutParams.FLAG_FULLSCREEN//当这个window显示的时候,隐藏所有的装饰物(比如状态栏)这个flag允许window使用整个屏幕区域
+//                             | WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER//标记在其它窗口的LayoutParams.flags中的存在情况而不断地被调整
+//                     ;
+//                     WindowManager windowManager = (WindowManager) wrapper.getSystemService(Context.WINDOW_SERVICE);
+//                     TextView imageView = new TextView(wrapper);
+//                     final int callingUid = Binder.getCallingUid();
+//                     Log.d("callingUid: " + callingUid);
+//                     Log.d("Package name: " + wrapper.getPackageName());
+// //                    Bitmap bitmap = getLoacalBitmap("/sdcard/test.jpg"); //从本地取图片(在cdcard中获取)  //
+// //                    imageView.setImageBitmap(bitmap); //设置Bitmap
+//                     windowManager.addView(imageView, layoutParams);
                     Log.d("获取到的Context:" + context.toString());
                     Looper.loop();
                 } catch (Exception e) {
@@ -114,13 +133,39 @@ public class AppChannel {
         }).start();
     }
 
+    class ContextWrapperWrapper extends ContextWrapper {
+        public ContextWrapperWrapper(Context base) {
+            super(base);
+        }
+
+        @Override
+        public String getPackageName() {
+            // `Workarounds.getContext().getPackageName()` always returns `android`,
+            // but `createVirtualDisplay` will validate the package name againest current
+            // uid.
+            // For ADB shell, the uid is 2000 (shell) and the only avaiable package name is
+            // `com.android.shell`
+            return "com.android.shell";
+        }
+    }
+
+    public static Bitmap getLoacalBitmap(String url) {
+        try {
+            FileInputStream fis = new FileInputStream(url);
+            return BitmapFactory.decodeStream(fis);  ///把流转化为Bitmap图片
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public AppChannel(Context context) {
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
         configuration = new Configuration();
         configuration.setToDefaults();
-        serviceManager = new ServiceManager();
-        pm = serviceManager.getPackageManager();
+        pm = ServiceManager.getPackageManager();
         this.context = context;
         hasRealContext = true;
     }
@@ -347,7 +392,6 @@ public class AppChannel {
             }
             return;
         }
-        //TODO 无context用命令行启动
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

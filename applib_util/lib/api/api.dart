@@ -1,7 +1,9 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'package:app_channel/foundation/protocol.dart';
+import 'package:app_channel/model/tasks.dart';
 import 'package:dio/dio.dart' hide Headers;
+import 'package:flutter/foundation.dart';
 import 'package:retrofit/retrofit.dart';
 part 'api.g.dart';
 
@@ -64,6 +66,20 @@ abstract class Api {
   @GET('/displays')
   Future<String> displays({
     @DioOptions() RequestOptions? options,
+  });
+
+  /// 获得显示器列表
+  @GET('/tasks')
+  Future<Tasks> getTasks({
+    @DioOptions() RequestOptions? options,
+  });
+
+  /// 获得显示器列表
+  @POST('/createVirtualDisplay')
+  Future<String> createVirtualDisplay({
+    @DioOptions() RequestOptions? options,
+    @Query("width") required String width,
+    @Query("height") required String height,
   });
 }
 

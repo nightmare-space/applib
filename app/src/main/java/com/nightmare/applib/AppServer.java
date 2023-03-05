@@ -2,12 +2,14 @@ package com.nightmare.applib;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.TaskInfo;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.view.Display;
+import android.view.SurfaceView;
 
 
 import org.json.JSONArray;
@@ -26,6 +28,8 @@ import java.util.Map;
 import fi.iki.elonen.NanoHTTPD;
 
 import com.nightmare.applib.utils.Log;
+import com.nightmare.applib.utils.ServerUtil;
+import com.nightmare.applib.wrappers.ServiceManager;
 
 /**
  * 基于HTTP服务提供能力
@@ -35,59 +39,25 @@ public class AppServer extends NanoHTTPD {
         super(address, port);
     }
 
-    // 端口尝试的范围
-    static final int RANGE_START = 14000;
-    static final int RANGE_END = 14040;
-
     AppChannel appChannel;
 
     public static void main(String[] args) throws Exception {
         Log.d("Welcome!!!");
-        AppServer server = safeGetServer();
+        AppServer server = ServerUtil.safeGetServer();
         Workarounds.prepareMainLooper();
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
         Log.d("success start port : >" + server.getListeningPort() + "<");
 //        writePort("/sdcard", server.getListeningPort());
         // 让进程等待
+        // 不能用 System.in.read(),如果执行 app_process 是类似于
+        // Process.run 等方法就会出现异常，System.in.read()需要宿主进程由标准终端调用
 //        System.in.read();
         while (true) {
             Thread.sleep(1000);
         }
     }
 
-    /**
-     * 安全获得服务器的的方法
-     */
-    public static AppServer safeGetServer() {
-        for (int i = RANGE_START; i < RANGE_END; i++) {
-            AppServer server = new AppServer("0.0.0.0", i);
-            try {
-                server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-                return server;
-            } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 更安全的拿到一个ServerSocket
-     * 有的时候会端口占用
-     *
-     * @return
-     */
-    public static ServerSocket safeGetServerSocket() {
-        for (int i = RANGE_START; i < RANGE_END; i++) {
-            try {
-                return new ServerSocket(i);
-            } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
-            }
-        }
-        return null;
-    }
 
     /**
      * 与直接启动dex不同，从Activity中启动不用反射context上下问
@@ -96,7 +66,7 @@ public class AppServer extends NanoHTTPD {
      * @throws IOException
      */
     public static void startServerFromActivity(Context context) throws IOException {
-        AppServer server = safeGetServer();
+        AppServer server = ServerUtil.safeGetServer();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
         server.appChannel = new AppChannel(context);
         System.out.println("success start:" + server.getListeningPort());
@@ -110,7 +80,7 @@ public class AppServer extends NanoHTTPD {
      * @param port
      */
     public static void writePort(String path, int port) {
-        OutputStream out = null;
+        OutputStream out;
         try {
             out = new FileOutputStream(path + "/server_port");
             Log.d(path);
@@ -126,8 +96,9 @@ public class AppServer extends NanoHTTPD {
     @Override
     public Response serve(IHTTPSession session) {
         try {
-            if (session.getUri().equals("/")) {
-                return newFixedLengthResponse(Response.Status.OK, "application/json", genJson().toString());
+            // 获取最近任务
+            if (session.getUri().startsWith("/tasks")) {
+                return newFixedLengthResponse(Response.Status.OK, "application/json", getRecentTasksJson().toString());
             }
             // 获取图标
             if (session.getUri().startsWith("/icon")) {
@@ -183,7 +154,10 @@ public class AppServer extends NanoHTTPD {
             }
             // 创建虚拟显示器
             if (session.getUri().startsWith("/" + AppChannelProtocol.createVirtualDisplay)) {
-//                appInfo.creatVirtualDisplay();
+                SurfaceView surfaceView = new SurfaceView(appChannel.context);
+                String width = session.getParameters().get("width").get(0);
+                String height = session.getParameters().get("height").get(0);
+                ServiceManager.getDisplayManager().createVirtualDisplay(surfaceView.getHolder().getSurface(), Integer.parseInt(width), Integer.parseInt(height));
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "ok");
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
@@ -277,8 +251,9 @@ public class AppServer extends NanoHTTPD {
         return iam;
     }
 
-    private JSONArray genJson() throws Exception {
+    private JSONObject getRecentTasksJson() throws Exception {
         List<ActivityManager.RecentTaskInfo> tasks = getRecentTasks(5, 0, 0);
+        JSONObject jsonObjectResult = new JSONObject();
         JSONArray jsonArray = new JSONArray();
         for (ActivityManager.RecentTaskInfo taskInfo : tasks) {
             JSONObject jsonObject = new JSONObject();
@@ -287,7 +262,15 @@ public class AppServer extends NanoHTTPD {
             jsonObject.put("persistentId", taskInfo.persistentId);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // 30是安卓11
+                    @SuppressLint("BlockedPrivateApi") java.lang.reflect.Field field = TaskInfo.class.getDeclaredField("displayId");
+                    field.setAccessible(true);
+                    Object displayId = field.get(taskInfo);
+                    jsonObject.put("displayId", displayId);
+                }
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
+                jsonObject.put("topAcivity", taskInfo.topActivity == null ? null : taskInfo.topActivity.getClassName());
                 if (jsonObject.has("topPackage")) {
                     PackageInfo packageInfo = appChannel.getPackageInfo(taskInfo.topActivity.getPackageName());
                     jsonObject.put("label", appChannel.getLabel(packageInfo.applicationInfo));
@@ -295,6 +278,7 @@ public class AppServer extends NanoHTTPD {
             }
             jsonArray.put(jsonObject);
         }
-        return jsonArray;
+        jsonObjectResult.put("datas", jsonArray);
+        return jsonObjectResult;
     }
 }
