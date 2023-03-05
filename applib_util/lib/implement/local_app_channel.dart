@@ -183,11 +183,16 @@ class RemoteAppChannel implements AppChannel {
 
   @override
   Future<int> createVirtualDisplay(int width, int height, int density) async {
-    String response = await api.createVirtualDisplay(
-      width: width.toString(),
-      height: height.toString(),
-      density: density.toString(),
-    );
-    return int.parse(response);
+    try {
+      String response = await api.createVirtualDisplay(
+        width: width.toString(),
+        height: height.toString(),
+        density: density.toString(),
+      );
+      return int.parse(response);
+    }on DioError catch (e) {
+      Log.e('createVirtualDisplay error -> ${e.message}');
+      return 0;
+    }
   }
 }
