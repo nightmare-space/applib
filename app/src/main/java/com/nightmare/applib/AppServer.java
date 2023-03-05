@@ -161,7 +161,8 @@ public class AppServer extends NanoHTTPD {
                 Display display = ServiceManager.getDisplayManager().createVirtualDisplay(
                         surfaceView.getHolder().getSurface(),
                         Integer.parseInt(width),
-                        Integer.parseInt(height), Integer.parseInt(density)
+                        Integer.parseInt(height),
+                        Integer.parseInt(density)
                 );
                 return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplayId() + "");
             }

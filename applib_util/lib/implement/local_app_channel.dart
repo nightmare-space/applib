@@ -190,8 +190,8 @@ class RemoteAppChannel implements AppChannel {
         density: density.toString(),
       );
       return int.parse(response);
-    }on DioError catch (e) {
-      Log.e('createVirtualDisplay error -> ${e.message}');
+    } on DioError catch (e) {
+      Log.e('createVirtualDisplay Error -> ${e.message} ${e.error} ${e.response}');
       return 0;
     }
   }
