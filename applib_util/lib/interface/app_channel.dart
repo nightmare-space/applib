@@ -41,5 +41,5 @@ abstract class AppChannel {
   Future<Tasks> getTasks();
 
   /// 创建虚拟显示器
-  void createVirtualDisplay(int width, int height);
+  Future<int> createVirtualDisplay(int width, int height);
 }
