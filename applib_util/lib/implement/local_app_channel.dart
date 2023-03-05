@@ -182,8 +182,12 @@ class RemoteAppChannel implements AppChannel {
   }
 
   @override
-  Future<int> createVirtualDisplay(int width, int height) async {
-    String response = await api.createVirtualDisplay(width: width.toString(), height: height.toString());
+  Future<int> createVirtualDisplay(int width, int height, int density) async {
+    String response = await api.createVirtualDisplay(
+      width: width.toString(),
+      height: height.toString(),
+      density: density.toString(),
+    );
     return int.parse(response);
   }
 }

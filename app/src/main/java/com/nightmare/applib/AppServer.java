@@ -157,7 +157,12 @@ public class AppServer extends NanoHTTPD {
                 SurfaceView surfaceView = new SurfaceView(appChannel.context);
                 String width = session.getParameters().get("width").get(0);
                 String height = session.getParameters().get("height").get(0);
-                Display display = ServiceManager.getDisplayManager().createVirtualDisplay(surfaceView.getHolder().getSurface(), Integer.parseInt(width), Integer.parseInt(height));
+                String density = session.getParameters().get("density").get(0);
+                Display display = ServiceManager.getDisplayManager().createVirtualDisplay(
+                        surfaceView.getHolder().getSurface(),
+                        Integer.parseInt(width),
+                        Integer.parseInt(height), Integer.parseInt(density)
+                );
                 return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplayId() + "");
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {

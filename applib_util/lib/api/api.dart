@@ -80,6 +80,7 @@ abstract class Api {
     @DioOptions() RequestOptions? options,
     @Query("width") required String width,
     @Query("height") required String height,
+    @Query("density") required String density,
   });
 }
 

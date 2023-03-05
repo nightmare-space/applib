@@ -239,11 +239,13 @@ class _Api implements Api {
     options,
     required width,
     required height,
+    required density,
   }) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'width': width,
       r'height': height,
+      r'density': density,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};

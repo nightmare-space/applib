@@ -11,21 +11,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 
 import java.lang.reflect.Method;
+
 public final class DisplayManager {
     private final Object manager; // instance of hidden class android.hardware.display.DisplayManagerGlobal
 
     public DisplayManager(Object manager) {
         this.manager = manager;
     }
-
-
-
 
 
     public int[] getDisplayIds() {
@@ -69,14 +68,13 @@ public final class DisplayManager {
         }
     }
 
-    public Display createVirtualDisplay(Surface surface, int width, int height)
+    public Display createVirtualDisplay(Surface surface, int width, int height, int density)
             throws NoSuchMethodException, ClassNotFoundException, SecurityException, IllegalAccessException,
             IllegalArgumentException, InstantiationException, InvocationTargetException, NoSuchFieldException {
         FakePackageNameContext wrapper = new FakePackageNameContext();
         Log.d("Package name: " + wrapper.getPackageName());
 
         String name = "scrcpy-virtual";
-        int density = 200;
         int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1 << 0;
         int VIRTUAL_DISPLAY_FLAG_PRESENTATION = 1 << 1;
         int VIRTUAL_DISPLAY_FLAG_SECURE = 1 << 2;
