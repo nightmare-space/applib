@@ -274,11 +274,14 @@ public class AppServer extends NanoHTTPD {
                     Object displayId = field.get(taskInfo);
                     jsonObject.put("displayId", displayId);
                 }
-                jsonObject.put("topPackage", taskInfo.topActivity == null ? null : taskInfo.topActivity.getPackageName());
-                jsonObject.put("topAcivity", taskInfo.topActivity == null ? null : taskInfo.topActivity.getClassName());
-                if (jsonObject.has("topPackage")) {
+                // 有的任务后台久了，会拿不到topActivity
+                jsonObject.put("topPackage", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getPackageName());
+                jsonObject.put("topAcivity", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getClassName());
+                if (taskInfo.topActivity == null) {
                     PackageInfo packageInfo = appChannel.getPackageInfo(taskInfo.topActivity.getPackageName());
                     jsonObject.put("label", appChannel.getLabel(packageInfo.applicationInfo));
+                } else {
+                    jsonObject.put("label", "");
                 }
             }
             jsonArray.put(jsonObject);
