@@ -1,16 +1,12 @@
 package com.nightmare.applib.wrappers;
 
-import com.nightmare.applib.Workarounds;
-import com.nightmare.applib.utils.Log;
+import com.nightmare.applib.utils.L;
 
 import android.view.Display;
 import android.view.Surface;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -72,7 +68,7 @@ public final class DisplayManager {
             throws NoSuchMethodException, ClassNotFoundException, SecurityException, IllegalAccessException,
             IllegalArgumentException, InstantiationException, InvocationTargetException, NoSuchFieldException {
         FakePackageNameContext wrapper = new FakePackageNameContext();
-        Log.d("Package name: " + wrapper.getPackageName());
+        L.d("Package name: " + wrapper.getPackageName());
 
         String name = "scrcpy-virtual";
         int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1 << 0;

@@ -1,5 +1,7 @@
 package com.nightmare.applib;
 
+import static android.content.Context.WINDOW_SERVICE;
+
 import android.annotation.SuppressLint;
 import android.app.ActivityOptions;
 import android.app.Application;
@@ -20,22 +22,18 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.hardware.display.DisplayManager;
-import android.os.Binder;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
-import android.view.SurfaceView;
+import android.view.Display;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.FrameLayout;
 
-import com.nightmare.applib.utils.ServerUtil;
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
@@ -54,7 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.nightmare.applib.utils.Log;
+import com.nightmare.applib.utils.L;
 
 
 /**
@@ -75,7 +73,7 @@ public class AppChannel {
 
     // 没有context的时候的构造函数，用于dex中创建这个对象
     public AppChannel() {
-        Log.d("AppChannel 无参构造");
+        L.d("AppChannel 无参构造");
         displayMetrics = new DisplayMetrics();
         displayMetrics.setToDefaults();
         configuration = new Configuration();
@@ -87,7 +85,7 @@ public class AppChannel {
             public void run() {
                 try {
 
-                    Log.d("Runnable");
+                    L.d("Runnable");
                     // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
                     FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
@@ -96,7 +94,7 @@ public class AppChannel {
                     System.setErr(new PrintStream(fileOutputStream, false));
                     System.setOut(new PrintStream(fileOutputStream, false));
                     context = Workarounds.fillAppInfo();
-                    // ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
+                     ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
                     // 恢复输出
                     System.setOut(console);
                     System.setErr(console);
@@ -124,7 +122,8 @@ public class AppChannel {
 // //                    Bitmap bitmap = getLoacalBitmap("/sdcard/test.jpg"); //从本地取图片(在cdcard中获取)  //
 // //                    imageView.setImageBitmap(bitmap); //设置Bitmap
 //                     windowManager.addView(imageView, layoutParams);
-                    Log.d("获取到的Context:" + context.toString());
+                    testFunc(context);
+                    L.d("获取到的Context:" + context.toString());
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -133,6 +132,51 @@ public class AppChannel {
         }).start();
     }
 
+    void testFunc(Context context) {
+        WindowManager windowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
+
+        FrameLayout unconViewWrapper = new FrameLayout(context);
+        unconViewWrapper.setBackgroundColor(Color.BLUE);
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+        layoutParams.format = PixelFormat.RGBA_8888;
+        layoutParams.width = 0;
+        layoutParams.height = 0;
+//        layoutParams.gravity = Gravity.TOP & Gravity.LEFT;
+//        window.setGravity(Gravity.CENTER);
+        layoutParams.x = 0;
+        layoutParams.y = 0;
+        layoutParams.type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN//将window放置在整个屏幕之内,无视其他的装饰(比如状态栏)
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS//允许window扩展值屏幕之外
+                | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+                | WindowManager.LayoutParams.FLAG_FULLSCREEN//当这个window显示的时候,隐藏所有的装饰物(比如状态栏)这个flag允许window使用整个屏幕区域
+                | WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER//标记在其它窗口的LayoutParams.flags中的存在情况而不断地被调整
+        ;
+
+        windowManager.addView(unconViewWrapper, layoutParams);
+
+    }
+    class FakePackageNameContext extends ContextWrapper {
+        public FakePackageNameContext() {
+            super(null);
+        }
+
+        @Override
+        public String getPackageName() {
+            // `Workarounds.getContext().getPackageName()` always returns `android`,
+            // but `createVirtualDisplay` will validate the package name againest current
+            // uid.
+            // For ADB shell, the uid is 2000 (shell) and the only avaiable package name is
+            // `com.android.shell`
+            return "com.android.shell";
+        }
+
+        @Override
+        public Display getDisplay() {
+            return null;
+        }
+    }
     class ContextWrapperWrapper extends ContextWrapper {
         public ContextWrapperWrapper(Context base) {
             super(base);
@@ -248,7 +292,7 @@ public class AppChannel {
 //                    Log.w("Nightmare", withoutHidePackage.applicationInfo.loadLabel(context.getPackageManager()) + "");
                     builder.append("\r").append(false);
                 } catch (InvocationTargetException e) {
-                    Log.d(packageInfo.packageName + "为隐藏app");
+                    L.d(packageInfo.packageName + "为隐藏app");
                     builder.append("\r").append(true);
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
@@ -383,7 +427,7 @@ public class AppChannel {
     public void openApp(String packageName, String activity, String displayId) {
         if (!hasRealContext) {
             String cmd = "am start --display " + displayId + " -n " + packageName + "/" + activity;
-            Log.d("start activity cmd : " + cmd);
+            L.d("start activity cmd : " + cmd);
             // adb -s $serial shell am start -n $packageName/$activity
             try {
                 Runtime.getRuntime().exec(cmd);
@@ -510,7 +554,7 @@ public class AppChannel {
             if (launchIntent != null) {
                 builder.append(launchIntent.getComponent().getClassName());
             } else {
-                Log.d(packageName + "获取启动Activity失败");
+                L.d(packageName + "获取启动Activity失败");
             }
             return builder.toString();
         }
@@ -712,12 +756,12 @@ public class AppChannel {
         PackageInfo packageInfo = getPackageInfo(packageName);
         ApplicationInfo applicationInfo = packageInfo.applicationInfo;
         if (applicationInfo == null) {
-            Log.d("applicationInfo == null");
+            L.d("applicationInfo == null");
             return null;
         }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-        Log.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-        Log.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+        L.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+        L.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
         AssetManager assetManager = null;
         try {
             assetManager = AssetManager.class.newInstance();
@@ -741,8 +785,8 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
             icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
-            Log.d("getBitmap package error:" + applicationInfo.packageName);
-            Log.d("getBitmap package error:" + applicationInfo.packageName);
+            L.d("getBitmap package error:" + applicationInfo.packageName);
+            L.d("getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
             return null;
         }
@@ -771,7 +815,7 @@ public class AppChannel {
 //                return ((BitmapDrawable) icon).getBitmap();
             }
         } catch (Exception e) {
-            Log.d("Exception:" + e);
+            L.d("Exception:" + e);
             return null;
         }
     }

@@ -21,13 +21,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.util.List;
 import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
-import com.nightmare.applib.utils.Log;
+import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ServerUtil;
 import com.nightmare.applib.wrappers.ServiceManager;
 
@@ -42,12 +41,12 @@ public class AppServer extends NanoHTTPD {
     AppChannel appChannel;
 
     public static void main(String[] args) throws Exception {
-        Log.d("Welcome!!!");
+        L.d("Welcome!!!");
         AppServer server = ServerUtil.safeGetServer();
         Workarounds.prepareMainLooper();
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
-        Log.d("success start port : >" + server.getListeningPort() + "<");
+        L.d("success start port : >" + server.getListeningPort() + "<");
 //        writePort("/sdcard", server.getListeningPort());
         // 让进程等待
         // 不能用 System.in.read(),如果执行 app_process 是类似于
@@ -83,7 +82,7 @@ public class AppServer extends NanoHTTPD {
         OutputStream out;
         try {
             out = new FileOutputStream(path + "/server_port");
-            Log.d(path);
+            L.d(path);
             out.write((port + "").getBytes());
             out.close();
         } catch (FileNotFoundException e) {

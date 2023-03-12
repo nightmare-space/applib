@@ -23,7 +23,7 @@ public class ServerUtil {
                 server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 return server;
             } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
+                L.d("端口" + i + "被占用");
             }
         }
         return null;
@@ -41,7 +41,7 @@ public class ServerUtil {
             try {
                 return new ServerSocket(i);
             } catch (IOException e) {
-                Log.d("端口" + i + "被占用");
+                L.d("端口" + i + "被占用");
             }
         }
         return null;
