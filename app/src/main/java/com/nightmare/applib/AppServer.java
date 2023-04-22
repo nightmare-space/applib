@@ -10,11 +10,8 @@ import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.view.Display;
 import android.view.SurfaceView;
-
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -23,9 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-
 import fi.iki.elonen.NanoHTTPD;
-
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ServerUtil;
 import com.nightmare.applib.wrappers.ServiceManager;

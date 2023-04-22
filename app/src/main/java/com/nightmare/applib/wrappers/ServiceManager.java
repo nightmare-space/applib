@@ -14,6 +14,7 @@ public final class ServiceManager {
     public static final int USER_ID = 0;
 
     private static final Method GET_SERVICE_METHOD;
+
     static {
         try {
             GET_SERVICE_METHOD = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
@@ -22,11 +23,11 @@ public final class ServiceManager {
         }
     }
 
-//    private static WindowManager windowManager;
+    //    private static WindowManager windowManager;
     private static DisplayManager displayManager;
     private static IPackageManager packageManager;
-//    private static InputManager inputManager;
-//    private static PowerManager powerManager;
+    private static InputManager inputManager;
+    //    private static PowerManager powerManager;
 //    private static StatusBarManager statusBarManager;
 //    private static ClipboardManager clipboardManager;
     private static ActivityManager activityManager;
@@ -59,25 +60,38 @@ public final class ServiceManager {
                 Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
                 Object dmg = getInstanceMethod.invoke(null);
                 displayManager = new DisplayManager(dmg);
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                     InvocationTargetException e) {
                 throw new AssertionError(e);
             }
         }
         return displayManager;
     }
 
-//    public static InputManager getInputManager() {
-//        if (inputManager == null) {
-//            try {
-//                Method getInstanceMethod = android.hardware.input.InputManager.class.getDeclaredMethod("getInstance");
-//                android.hardware.input.InputManager im = (android.hardware.input.InputManager) getInstanceMethod.invoke(null);
-//                inputManager = new InputManager(im);
-//            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-//                throw new AssertionError(e);
-//            }
-//        }
-//        return inputManager;
-//    }
+    //    public static InputManager getInputManager() {
+////        if (inputManager == null) {
+////            try {
+////                Method getInstanceMethod = android.hardware.input.InputManager.class.getDeclaredMethod("getInstance");
+////                android.hardware.input.InputManager im = (android.hardware.input.InputManager) getInstanceMethod.invoke(null);
+////                inputManager = new InputManager(im);
+////            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+////                throw new AssertionError(e);
+////            }
+////        }
+////        return inputManager;
+////    }
+    public static InputManager getInputManager() {
+        if (inputManager == null) {
+            try {
+                Method getInstanceMethod = android.hardware.input.InputManager.class.getDeclaredMethod("getInstance");
+                android.hardware.input.InputManager im = (android.hardware.input.InputManager) getInstanceMethod.invoke(null);
+                inputManager = new InputManager(im);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                throw new AssertionError(e);
+            }
+        }
+        return inputManager;
+    }
 
 //    public static PowerManager getPowerManager() {
 //        if (powerManager == null) {

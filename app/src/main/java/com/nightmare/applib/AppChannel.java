@@ -29,9 +29,12 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.view.PointerIcon;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 
 import com.nightmare.applib.wrappers.IPackageManager;
@@ -84,7 +87,6 @@ public class AppChannel {
             @Override
             public void run() {
                 try {
-
                     L.d("Runnable");
                     // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
@@ -94,10 +96,34 @@ public class AppChannel {
                     System.setErr(new PrintStream(fileOutputStream, false));
                     System.setOut(new PrintStream(fileOutputStream, false));
                     context = Workarounds.fillAppInfo();
-                     ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
+                    ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
                     // 恢复输出
                     System.setOut(console);
                     System.setErr(console);
+                    L.d("icon get start");
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        Bitmap bitmap = getBitmap("com.nightmare.adbtools");
+                        PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
+                        L.d("icon -> " + icon);
+                        boolean isSuccess = ServiceManager.getInputManager().setCustomPointerIcon(icon);
+//                        Button view = new Button(wrapper);
+//                        view.requestFocus();
+//                        view.requestPointerCapture();
+//                        Method method4 = ServiceManager.getInputManager().getManager().getClass().getMethod("setPointerIconType", int.class);
+////                        Settings.System.putInt(context.getContentResolver(), "pointer_speed", -7);
+//                        Object object = method4.invoke(ServiceManager.getInputManager().getManager(), 2000);
+//                        L.d("object -> " + object);
+//                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
+//                        field.setAccessible(true);
+//                        ReflectUtil.listAllObject(field.get(ServiceManager.getInputManager().getManager()));
+//                        ReflectUtil.listAllObject(ServiceManager.getInputManager().getManager());
+
+//                        L.d(method4.invoke(ServiceManager.getInputManager().getManager()));
+//                        Constructor constructor = Class.forName("com.android.server.input.NativeInputManagerService").getDeclaredConstructor(Context.class);
+//                        Object ob = constructor.newInstance(wrapper);
+//                        method4.invoke(ServiceManager.getInputManager().getManager(), wrapper);
+                        L.d("isSuccess -> " + isSuccess);
+                    }
 //                     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
 //                     layoutParams.format = PixelFormat.RGBA_8888;
 //                     layoutParams.width = 0;
@@ -157,6 +183,7 @@ public class AppChannel {
         windowManager.addView(unconViewWrapper, layoutParams);
 
     }
+
     class FakePackageNameContext extends ContextWrapper {
         public FakePackageNameContext() {
             super(null);
@@ -177,6 +204,7 @@ public class AppChannel {
             return null;
         }
     }
+
     class ContextWrapperWrapper extends ContextWrapper {
         public ContextWrapperWrapper(Context base) {
             super(base);
