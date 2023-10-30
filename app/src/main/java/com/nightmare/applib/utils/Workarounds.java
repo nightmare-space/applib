@@ -1,4 +1,4 @@
-package com.nightmare.applib;
+package com.nightmare.applib.utils;
 
 import android.annotation.SuppressLint;
 import android.app.Application;

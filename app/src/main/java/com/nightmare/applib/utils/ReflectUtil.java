@@ -1,8 +1,11 @@
-package com.nightmare.applib;
+package com.nightmare.applib.utils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /// 反射工具类
 public class ReflectUtil {
@@ -40,12 +43,15 @@ public class ReflectUtil {
 
             print("METHOD========");
             for (java.lang.reflect.Method m : methods) {
-                System.out.print((char) 0x1b + "[33mMETHOD NAME:");
-                System.out.print((char) 0x1b + "[31m");
-                System.out.print(m.getName());
+                System.out.print((char) 0x1b + "[35m" + m.getGenericReturnType() + " ");
                 System.out.print((char) 0x1b);
-                System.out.print("[0;33m Parameter:" + (char) 0x1b + "[31m" + Arrays.toString(m.getParameters()) + (char) 0x1b + "[0m");
-                System.out.println((char) 0x1b + "[33m RETURE TYPE:" + (char) 0x1b + "[31m" + m.getGenericReturnType() + (char) 0x1b + "[0m");
+                System.out.print("[34m" + m.getName());
+                List<Parameter> parameters = new ArrayList<>();
+                System.out.print("(" + (char) 0x1b + "[33m");
+                for (int i = 0; i < m.getParameterCount(); i++) {
+                    System.out.print(m.getParameters()[i].getParameterizedType() + " " + m.getParameters()[i].getName() + ",");
+                }
+                System.out.print((char) 0x1b + "[0m)\n");
                 System.out.flush();
             }
 

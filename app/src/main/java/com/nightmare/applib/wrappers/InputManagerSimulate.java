@@ -1,17 +1,19 @@
 package com.nightmare.applib.wrappers;
 
-import android.os.Build;
 import android.view.InputEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
 
 import com.nightmare.applib.utils.L;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public final class InputManager {
+//InputManagerSimulate
+//InputManagerProxy
+//InputManagerDelegate
+//InputManagerReflector
+public final class InputManagerSimulate {
 
     public static final int INJECT_INPUT_EVENT_MODE_ASYNC = 0;
     public static final int INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT = 1;
@@ -23,7 +25,7 @@ public final class InputManager {
     private static Method setDisplayIdMethod;
     private static Method setActionButtonMethod;
 
-    public InputManager(android.hardware.input.InputManager manager) {
+    public InputManagerSimulate(android.hardware.input.InputManager manager) {
         this.manager = manager;
     }
 

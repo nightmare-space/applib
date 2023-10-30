@@ -7,11 +7,18 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
+import android.hardware.input.InputManager;
 import android.os.Build;
+import android.os.SystemClock;
 import android.view.Display;
+import android.view.InputDevice;
+import android.view.InputEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -20,9 +27,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+
 import fi.iki.elonen.NanoHTTPD;
+
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ServerUtil;
+import com.nightmare.applib.utils.Workarounds;
+import com.nightmare.applib.wrappers.InputManagerSimulate;
 import com.nightmare.applib.wrappers.ServiceManager;
 
 /**
@@ -42,6 +53,7 @@ public class AppServer extends NanoHTTPD {
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
         L.d("success start port : >" + server.getListeningPort() + "<");
+
 //        writePort("/sdcard", server.getListeningPort());
         // 让进程等待
         // 不能用 System.in.read(),如果执行 app_process 是类似于
@@ -85,6 +97,11 @@ public class AppServer extends NanoHTTPD {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Object getParams(IHTTPSession session) {
+        Map<String, List<String>> params = session.getParameters();
+        return params.get(0);
     }
 
     @Override
@@ -139,7 +156,7 @@ public class AppServer extends NanoHTTPD {
                 byte[] bytes = getTaskThumbnail(Integer.parseInt(id));
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
-            // 通过报名获取Main Activity
+            // 通过包名获取Main Activity
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppMainActivity)) {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
@@ -194,12 +211,46 @@ public class AppServer extends NanoHTTPD {
                 byte[] bytes = builder.toString().getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
+            if (session.getUri().startsWith("/" + "injectInputEvent")) {
+                String displayId = session.getParameters().get("displayId").get(0);
+                String type = session.getParameters().get("type").get(0);
+                String code = session.getParameters().get("code").get(0);
+                String value = session.getParameters().get("value").get(0);
+                String repeat = session.getParameters().get("repeat").get(0);
+                String flags = session.getParameters().get("flags").get(0);
+                String source = session.getParameters().get("source").get(0);
+                String policyFlags = session.getParameters().get("policyFlags").get(0);
+                String downTime = session.getParameters().get("downTime").get(0);
+                String deviceId = session.getParameters().get("deviceId").get(0);
+                String scanCode = session.getParameters().get("scanCode").get(0);
+                String metaState = session.getParameters().get("metaState").get(0);
+                String edgeFlags = session.getParameters().get("edgeFlags").get(0);
+                String xPrecision = session.getParameters().get("xPrecision").get(0);
+                String yPrecision = session.getParameters().get("yPrecision").get(0);
+                String xCursorPosition = session.getParameters().get("xCursorPosition").get(0);
+                String yCursorPosition = session.getParameters().get("yCursorPosition").get(0);
+                String displayWidth = session.getParameters().get("displayWidth").get(0);
+                String displayHeight = session.getParameters().get("displayHeight").get(0);
+                String pointerCount = session.getParameters().get("pointerCount").get(0);
+                String pointerProperties = session.getParameters().get("pointerProperties").get(0);
+                String pointerCoords = session.getParameters().get("pointerCoords").get(0);
+                String buttonState = session.getParameters().get("buttonState").get(0);
+                String motionEventId = session.getParameters().get("motionEventId").get(0);
+                String metaState1 = session.getParameters().get("metaState1").get(0);
+                String buttonState1 = session.getParameters().get("buttonState1").get(0);
+                String xPrecision1 = session.getParameters().get("xPrecision1").get(0);
+                String yPrecision1 = session.getParameters().get("yPrecision1").get(0);
+                InputDispatcher inputDispatcher = new InputDispatcher();
+                inputDispatcher.injectEvent();
+//                ServiceManager.getInputManager().injectInputEvent()
+            }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");
         } catch (Exception e) {
             e.printStackTrace();
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());
         }
     }
+
 
     private byte[] getTaskThumbnail(int id) throws Exception {
         long start = System.currentTimeMillis();

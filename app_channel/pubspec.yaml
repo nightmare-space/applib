@@ -16,7 +16,7 @@ dependencies:
   global_repository:
     git: https://github.com/nightmare-space/global_repository
   # 序列化json的
-  json_annotation: ^4.5.0
+  json_annotation: ^4.8.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

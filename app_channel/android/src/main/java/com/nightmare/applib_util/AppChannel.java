@@ -332,14 +332,15 @@ public class AppChannel {
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);
+//           intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             ActivityOptions options = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
+                options = ActivityOptions.makeBasic();
+                options.setLaunchDisplayId(Integer.parseInt(displayId));
             }
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
-            context.startActivity(intent);
+            // context.startActivity(intent);
             context.startActivity(intent, options.toBundle());
         } catch (Exception e) {
             e.printStackTrace();

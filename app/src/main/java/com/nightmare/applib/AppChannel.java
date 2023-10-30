@@ -29,14 +29,14 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.PointerIcon;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.FrameLayout;
 
+import com.nightmare.applib.utils.ReflectUtil;
+import com.nightmare.applib.utils.Workarounds;
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
@@ -113,10 +113,11 @@ public class AppChannel {
 ////                        Settings.System.putInt(context.getContentResolver(), "pointer_speed", -7);
 //                        Object object = method4.invoke(ServiceManager.getInputManager().getManager(), 2000);
 //                        L.d("object -> " + object);
-//                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
-//                        field.setAccessible(true);
+                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
+                        field.setAccessible(true);
 //                        ReflectUtil.listAllObject(field.get(ServiceManager.getInputManager().getManager()));
 //                        ReflectUtil.listAllObject(ServiceManager.getInputManager().getManager());
+//                        ReflectUtil.listAllObject(Class.forName("com.android.server.input.InputManagerService"));
 
 //                        L.d(method4.invoke(ServiceManager.getInputManager().getManager()));
 //                        Constructor constructor = Class.forName("com.android.server.input.NativeInputManagerService").getDeclaredConstructor(Context.class);
@@ -471,10 +472,13 @@ public class AppChannel {
             ActivityOptions options = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
+                ReflectUtil.listAllObject(options);
+//                options.setLaunchWindowingMode();
+
             }
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
-            context.startActivity(intent);
+//            context.startActivity(intent);
             context.startActivity(intent, options.toBundle());
         } catch (Exception e) {
             e.printStackTrace();

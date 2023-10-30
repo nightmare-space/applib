@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.os.IBinder;
 import android.os.IInterface;
 
+import com.nightmare.applib.utils.ReflectUtil;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -26,7 +28,7 @@ public final class ServiceManager {
     //    private static WindowManager windowManager;
     private static DisplayManager displayManager;
     private static IPackageManager packageManager;
-    private static InputManager inputManager;
+    private static InputManagerSimulate inputManager;
     //    private static PowerManager powerManager;
 //    private static StatusBarManager statusBarManager;
 //    private static ClipboardManager clipboardManager;
@@ -80,12 +82,14 @@ public final class ServiceManager {
 ////        }
 ////        return inputManager;
 ////    }
-    public static InputManager getInputManager() {
+    public static InputManagerSimulate getInputManager() {
         if (inputManager == null) {
             try {
+                IInterface interfac = getService("input", "android.hardware.input.IInputManager");
+                ReflectUtil.listAllObject(interfac);
                 Method getInstanceMethod = android.hardware.input.InputManager.class.getDeclaredMethod("getInstance");
                 android.hardware.input.InputManager im = (android.hardware.input.InputManager) getInstanceMethod.invoke(null);
-                inputManager = new InputManager(im);
+                inputManager = new InputManagerSimulate(im);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 throw new AssertionError(e);
             }
