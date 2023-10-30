@@ -1,4 +1,4 @@
-adb push 'build/app_server' /sdcard/app_server1
+adb push 'build/app_server' /sdcard/app_server
 # adb push 'fork' /data/local/tmp/fork
 # adb shell chmod +x /data/local/tmp/fork
 # adb push '.\scripts\app-release.apk' /sdcard/

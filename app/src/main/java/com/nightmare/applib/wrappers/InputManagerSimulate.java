@@ -5,6 +5,7 @@ import android.view.MotionEvent;
 import android.view.PointerIcon;
 
 import com.nightmare.applib.utils.L;
+import com.nightmare.applib.utils.ReflectUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -19,19 +20,16 @@ public final class InputManagerSimulate {
     public static final int INJECT_INPUT_EVENT_MODE_WAIT_FOR_RESULT = 1;
     public static final int INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH = 2;
 
-    private final android.hardware.input.InputManager manager;
+    private final Object manager;
     private Method injectInputEventMethod;
 
     private static Method setDisplayIdMethod;
     private static Method setActionButtonMethod;
 
-    public InputManagerSimulate(android.hardware.input.InputManager manager) {
+    public InputManagerSimulate(Object manager) {
         this.manager = manager;
     }
 
-    public android.hardware.input.InputManager getManager() {
-        return manager;
-    }
 
     private Method getInjectInputEventMethod() throws NoSuchMethodException {
         if (injectInputEventMethod == null) {
@@ -57,37 +55,6 @@ public final class InputManagerSimulate {
         return setDisplayIdMethod;
     }
 
-    private Method getSetCustomPointerIconMethod() throws NoSuchMethodException {
-        if (setDisplayIdMethod == null) {
-            setDisplayIdMethod = manager.getClass().getMethod("setCustomPointerIcon", PointerIcon.class);
-        }
-        return setDisplayIdMethod;
-    }
-
-    public boolean setCustomPointerIcon(PointerIcon pointerIcon) {
-        try {
-            Method method = getSetCustomPointerIconMethod();
-            method.invoke(manager, pointerIcon);
-//            Method method1 = manager.getClass().getMethod("setPointerSpeedUnchecked", int.class);
-//            method1.invoke(manager, 100);
-//            Method method1 = manager.getClass().getMethod("setPointerIconType", int.class);
-//            Object o = method1.invoke(manager, 1002);
-//            Method method4 = manager.getClass().getMethod("get", int.class);
-//            method4.invoke(manager, 0);
-//
-//            Method method2 = manager.getClass().getMethod("setPointerAcceleration", float.class, int.class);
-//            method2.invoke(manager, 2000000.0, 0);
-//            Method method3 = manager.getClass().getMethod("getPointerSpeedSetting");
-//            Object object = method3.invoke(manager);
-//            L.d(object);
-            return true;
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            L.d("Cannot associate a display id to the input event" + e);
-            return false;
-        }
-    }
-
-
     public static boolean setDisplayId(InputEvent inputEvent, int displayId) {
         try {
             Method method = getSetDisplayIdMethod();
@@ -98,6 +65,37 @@ public final class InputManagerSimulate {
             return false;
         }
     }
+
+//    private Method getSetCustomPointerIconMethod() throws NoSuchMethodException {
+//        if (setDisplayIdMethod == null) {
+//            setDisplayIdMethod = manager.getClass().getMethod("setCustomPointerIcon", PointerIcon.class);
+//        }
+//        return setDisplayIdMethod;
+//    }
+
+//    public boolean setCustomPointerIcon(PointerIcon pointerIcon) {
+//        try {
+//            Method method = getSetCustomPointerIconMethod();
+//            method.invoke(manager, pointerIcon);
+////            Method method1 = manager.getClass().getMethod("setPointerSpeedUnchecked", int.class);
+////            method1.invoke(manager, 100);
+////            Method method1 = manager.getClass().getMethod("setPointerIconType", int.class);
+////            Object o = method1.invoke(manager, 1002);
+////            Method method4 = manager.getClass().getMethod("get", int.class);
+////            method4.invoke(manager, 0);
+////
+////            Method method2 = manager.getClass().getMethod("setPointerAcceleration", float.class, int.class);
+////            method2.invoke(manager, 2000000.0, 0);
+////            Method method3 = manager.getClass().getMethod("getPointerSpeedSetting");
+////            Object object = method3.invoke(manager);
+////            L.d(object);
+//            return true;
+//        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+//            L.d("Cannot associate a display id to the input event" + e);
+//            return false;
+//        }
+//    }
+
 
     private static Method getSetActionButtonMethod() throws NoSuchMethodException {
         if (setActionButtonMethod == null) {

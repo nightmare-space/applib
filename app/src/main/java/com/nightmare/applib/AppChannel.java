@@ -87,7 +87,7 @@ public class AppChannel {
             @Override
             public void run() {
                 try {
-                    L.d("Runnable");
+                    L.d("Runnable run");
                     // Looper.prepare() Looper.loop() 不能移除
                     Looper.prepare();
                     FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
@@ -105,7 +105,7 @@ public class AppChannel {
                         Bitmap bitmap = getBitmap("com.nightmare.adbtools");
                         PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
                         L.d("icon -> " + icon);
-                        boolean isSuccess = ServiceManager.getInputManager().setCustomPointerIcon(icon);
+//                        boolean isSuccess = ServiceManager.getInputManager().setCustomPointerIcon(icon);
 //                        Button view = new Button(wrapper);
 //                        view.requestFocus();
 //                        view.requestPointerCapture();
@@ -113,8 +113,8 @@ public class AppChannel {
 ////                        Settings.System.putInt(context.getContentResolver(), "pointer_speed", -7);
 //                        Object object = method4.invoke(ServiceManager.getInputManager().getManager(), 2000);
 //                        L.d("object -> " + object);
-                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
-                        field.setAccessible(true);
+//                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
+//                        field.setAccessible(true);
 //                        ReflectUtil.listAllObject(field.get(ServiceManager.getInputManager().getManager()));
 //                        ReflectUtil.listAllObject(ServiceManager.getInputManager().getManager());
 //                        ReflectUtil.listAllObject(Class.forName("com.android.server.input.InputManagerService"));
@@ -123,7 +123,7 @@ public class AppChannel {
 //                        Constructor constructor = Class.forName("com.android.server.input.NativeInputManagerService").getDeclaredConstructor(Context.class);
 //                        Object ob = constructor.newInstance(wrapper);
 //                        method4.invoke(ServiceManager.getInputManager().getManager(), wrapper);
-                        L.d("isSuccess -> " + isSuccess);
+//                        L.d("isSuccess -> " + isSuccess);
                     }
 //                     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
 //                     layoutParams.format = PixelFormat.RGBA_8888;

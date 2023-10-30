@@ -48,3 +48,7 @@ AppChannel.startServer(getApplicationContext());
 由于这个库是基于套接字的，所以只要能使用套接字的app开发语言，例如java，dart，c语言，都能使用。
 但是java本就能直接拿到安卓api，就没必要再使用这样的中间层。
 适用于flutter，可以在dart中用套接字拿到本机app信息，也适用于jni开发，可以直接在c语言拿到本机的app信息。
+
+
+
+lsof | awk -v uid=shell '$3 == uid' | grep 14000 | awk '{print $2}' | xargs kill -9

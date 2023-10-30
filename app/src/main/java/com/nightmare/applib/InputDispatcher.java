@@ -11,6 +11,9 @@ import com.nightmare.applib.wrappers.InputManagerSimulate;
 import com.nightmare.applib.wrappers.ServiceManager;
 
 public class InputDispatcher {
+    public InputDispatcher() {
+        initPointers();
+    }
 
     private long lastTouchDown;
     private final PointersState pointersState = new PointersState();
@@ -21,8 +24,27 @@ public class InputDispatcher {
     private static final int POINTER_ID_VIRTUAL_MOUSE = -3;
     private static final int DEFAULT_DEVICE_ID = 0;
 
-    private final int displayId = 0;
+    private int displayId = 0;
     public static final int INJECT_MODE_ASYNC = InputManagerSimulate.INJECT_INPUT_EVENT_MODE_ASYNC;
+
+    private void initPointers() {
+        for (int i = 0; i < PointersState.MAX_POINTERS; ++i) {
+            MotionEvent.PointerProperties props = new MotionEvent.PointerProperties();
+            props.toolType = MotionEvent.TOOL_TYPE_FINGER;
+
+            MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+            coords.orientation = 0;
+            coords.size = 0;
+
+            pointerProperties[i] = props;
+            pointerCoords[i] = coords;
+        }
+    }
+
+    public void setDisplayId(int id) {
+        L.d("setDisplayId: " + id);
+        displayId = id;
+    }
 
     public boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
         long now = SystemClock.uptimeMillis();
