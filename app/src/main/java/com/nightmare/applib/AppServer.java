@@ -188,6 +188,19 @@ public class AppServer extends NanoHTTPD {
                 byte[] result = "success".getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
             }
+            if (session.getUri().startsWith("/" + "stopActivity")) {
+                String packageName = session.getParameters().get("package").get(0);
+                String cmd = "am force-stop " + packageName;
+                L.d("stopActivity activity cmd : " + cmd);
+                // adb -s $serial shell am start -n $packageName/$activity
+                try {
+                    Runtime.getRuntime().exec(cmd);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                byte[] result = "success".getBytes();
+                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(result), result.length);
+            }
             // 获取一个App的所有Activity
             if (session.getUri().startsWith("/" + AppChannelProtocol.getAppActivity)) {
                 String packageName = session.getParameters().get("package").get(0);

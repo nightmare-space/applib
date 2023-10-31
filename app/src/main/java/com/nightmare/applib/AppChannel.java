@@ -468,6 +468,8 @@ public class AppChannel {
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // 取消activity动画
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT | Intent.FLAG_ACTIVITY_NEW_TASK);
             ActivityOptions options = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

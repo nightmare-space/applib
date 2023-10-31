@@ -3,6 +3,7 @@
 #include <stdlib.h>
 int main(int argc, char *argv[])
 {
+    printf("hello\n");
     // 执行子命令
     // 打印 argv
     for (int i = 0; i < argc; i++)
@@ -10,7 +11,6 @@ int main(int argc, char *argv[])
         printf("argv[%d] = %s\n", i, argv[i]);
     }
     
-    printf("hello\n");
     pid_t pid = fork();
 
     if (pid < 0)
