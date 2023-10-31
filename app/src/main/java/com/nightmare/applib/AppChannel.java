@@ -794,8 +794,8 @@ public class AppChannel {
             return null;
         }
 //        Log.d("Nightmare", "getBitmap package:" + applicationInfo.packageName + "icon:" + applicationInfo.icon);
-        L.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
-        L.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
+        // L.d("getBitmap package:" + applicationInfo.packageName + " icon:" + applicationInfo.icon);
+        // L.d("applicationInfo.sourceDir:" + applicationInfo.sourceDir);
         AssetManager assetManager = null;
         try {
             assetManager = AssetManager.class.newInstance();
@@ -819,7 +819,6 @@ public class AppChannel {
 //            icon = applicationInfo.loadIcon(pm);
             icon = resources.getDrawable(applicationInfo.icon, null);
         } catch (Exception e) {
-            L.d("getBitmap package error:" + applicationInfo.packageName);
             L.d("getBitmap package error:" + applicationInfo.packageName);
 //            e.printStackTrace();
             return null;

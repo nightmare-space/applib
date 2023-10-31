@@ -24,7 +24,7 @@ public class L {
         // Append to file
         try {
             if (fileOut == null) {
-                fileOut = new PrintStream(new FileOutputStream("/sdcard/app_server_log", true));
+                fileOut = new PrintStream(new FileOutputStream("/sdcard/app_server_log", false));
             }
             fileOut.println(sb);
         } catch (FileNotFoundException e) {
