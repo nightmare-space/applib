@@ -1,5 +1,5 @@
 #!/bin/bash
-export NDK_HOME=/Users/didi/Library/Android/sdk/ndk/21.0.6113669 # or set to your ndk home
+export NDK_HOME=/Users/nightmare/Library/Android/sdk/ndk/21.1.6352462  # or set to your ndk home
 
 export MAKE_PATH=build/make-cache
 

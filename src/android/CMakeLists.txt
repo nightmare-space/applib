@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6) # cmake version
+cmake_minimum_required (VERSION 2.8.12) # cmake version
 
 project(fork) # project name
 
