@@ -52,3 +52,7 @@ AppChannel.startServer(getApplicationContext());
 
 
 adb shell "lsof | awk -v uid=shell '$3 == uid' | grep 14000 | awk '{print $2}' | xargs kill -9"
+
+lsof | awk -v uid=shell '$3 == uid' | grep 14000 | awk '{print $2}' | xargs kill -9
+lsof | awk -v uid=shell '$3 == uid' | grep 14001 | awk '{print $2}' | xargs kill -9
+lsof | awk -v uid=shell '$3 == uid' | grep 14002 | awk '{print $2}' | xargs kill -9
