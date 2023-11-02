@@ -66,6 +66,7 @@ public class InputDispatcher {
 
         int source;
         if (pointerId == POINTER_ID_MOUSE || pointerId == POINTER_ID_VIRTUAL_MOUSE) {
+            L.d("mouse event (pointerId=" + pointerId + ")");
             // real mouse event (forced by the client when --forward-on-click)
             pointerProperties[pointerIndex].toolType = MotionEvent.TOOL_TYPE_MOUSE;
             source = InputDevice.SOURCE_MOUSE;
