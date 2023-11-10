@@ -102,9 +102,9 @@ public class AppChannel {
                     System.setErr(console);
                     L.d("icon get start");
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                        Bitmap bitmap = getBitmap("com.nightmare.adbtools");
-                        PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
-                        L.d("icon -> " + icon);
+//                        Bitmap bitmap = getBitmap("com.nightmare.adbtools");
+//                        PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
+//                        L.d("icon -> " + icon);
 //                        boolean isSuccess = ServiceManager.getInputManager().setCustomPointerIcon(icon);
 //                        Button view = new Button(wrapper);
 //                        view.requestFocus();
