@@ -42,7 +42,7 @@ public class InputDispatcher {
     }
 
     public void setDisplayId(int id) {
-        L.d("setDisplayId: " + id);
+        // L.d("setDisplayId: " + id);
         displayId = id;
     }
 

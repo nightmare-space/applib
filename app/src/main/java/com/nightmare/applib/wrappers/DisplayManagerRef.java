@@ -15,10 +15,10 @@ import android.os.Handler;
 
 import java.lang.reflect.Method;
 
-public final class DisplayManager {
+public final class DisplayManagerRef {
     private final Object manager; // instance of hidden class android.hardware.display.DisplayManagerGlobal
 
-    public DisplayManager(Object manager) {
+    public DisplayManagerRef(Object manager) {
         this.manager = manager;
     }
 

@@ -226,7 +226,7 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + "injectInputEvent")) {
-                L.d("injectInputEvent invoke params -> " + session.getParms());
+//                L.d("injectInputEvent invoke params -> " + session.getParms());
 //                String displayId = session.getParameters().get("displayId").get(0);
 //                String type = session.getParameters().get("type").get(0);
 //                String code = session.getParameters().get("code").get(0);

@@ -27,16 +27,17 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
-import android.view.PointerIcon;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import com.nightmare.applib.utils.ReflectUtil;
 import com.nightmare.applib.utils.Workarounds;
+import com.nightmare.applib.wrappers.DisplayManagerRef;
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
@@ -65,7 +66,7 @@ import com.nightmare.applib.utils.L;
 public class AppChannel {
     private static final String TAG = "app_channel";
     IPackageManager pm;
-    com.nightmare.applib.wrappers.DisplayManager displayManager;
+    DisplayManagerRef displayManagerRef;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6040;
@@ -101,7 +102,54 @@ public class AppChannel {
                     System.setOut(console);
                     System.setErr(console);
                     L.d("icon get start");
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    DisplayManager dm = (DisplayManager) wrapper.getSystemService(Context.DISPLAY_SERVICE);
+//                    void setGlobalUserPreferredDisplayMode(android.view.Display$Mode arg0,)
+                    dm.registerDisplayListener(new DisplayManager.DisplayListener() {
+                        @Override
+                        public void onDisplayAdded(int displayId) {
+                            L.d("onDisplayAdded invoked displayId:" + displayId);
+                        }
+
+                        @Override
+                        public void onDisplayRemoved(int displayId) {
+                            L.d("onDisplayRemoved invoked displayId:" + displayId);
+
+                        }
+
+                        @Override
+                        public void onDisplayChanged(int displayId) {
+                            L.d("onDisplayChanged invoked displayId:" + displayId);
+                        }
+                    }, null);
+//                    Display display = wm.getDefaultDisplay();
+                    DisplayManager displayManager = (DisplayManager) wrapper.getSystemService(Context.DISPLAY_SERVICE);
+
+//                    ReflectUtil.listAllObject(displayManager);
+                    Display[] displays = displayManager.getDisplays();
+//                    ReflectUtil.listAllObject(displays[0]);
+                    for (Display display : displays) {
+                        Display.Mode[] modes = display.getSupportedModes();
+//                        L.d("modes -> " + Arrays.toString(modes));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                            L.d("start->"+display.getMode());
+                        }
+                        if (display.getDisplayId() != 0) {
+                            Method method = null;
+                            try {
+                                method = display.getClass().getDeclaredMethod("setUserPreferredDisplayMode", Display.Mode.class);
+                                method.setAccessible(true);
+                                method.invoke(display, modes[2]);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                                    L.d("end->"+display.getMode());
+                                }
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+//                  display.setUserPreferredDisplayMode
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 //                        Bitmap bitmap = getBitmap("com.nightmare.adbtools");
 //                        PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
 //                        L.d("icon -> " + icon);

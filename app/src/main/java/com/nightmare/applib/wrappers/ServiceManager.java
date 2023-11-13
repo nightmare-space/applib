@@ -4,8 +4,6 @@ import android.annotation.SuppressLint;
 import android.os.IBinder;
 import android.os.IInterface;
 
-import com.nightmare.applib.utils.ReflectUtil;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -26,7 +24,7 @@ public final class ServiceManager {
     }
 
     //    private static WindowManager windowManager;
-    private static DisplayManager displayManager;
+    private static DisplayManagerRef displayManagerRef;
     private static IPackageManager packageManager;
     private static InputManagerSimulate inputManager;
     //    private static PowerManager powerManager;
@@ -55,19 +53,19 @@ public final class ServiceManager {
 //        return windowManager;
 //    }
 
-    public static DisplayManager getDisplayManager() {
-        if (displayManager == null) {
+    public static DisplayManagerRef getDisplayManager() {
+        if (displayManagerRef == null) {
             try {
                 Class<?> clazz = Class.forName("android.hardware.display.DisplayManagerGlobal");
                 Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
                 Object dmg = getInstanceMethod.invoke(null);
-                displayManager = new DisplayManager(dmg);
+                displayManagerRef = new DisplayManagerRef(dmg);
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                      InvocationTargetException e) {
                 throw new AssertionError(e);
             }
         }
-        return displayManager;
+        return displayManagerRef;
     }
 
     //    public static InputManager getInputManager() {
