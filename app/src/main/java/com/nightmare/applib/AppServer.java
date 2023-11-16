@@ -38,6 +38,7 @@ import com.nightmare.applib.wrappers.ServiceManager;
 
 /**
  * 基于HTTP服务提供能力
+ * @noinspection deprecation
  */
 public class AppServer extends NanoHTTPD {
     public AppServer(String address, int port) {
@@ -226,51 +227,27 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             if (session.getUri().startsWith("/" + "injectInputEvent")) {
-//                L.d("injectInputEvent invoke params -> " + session.getParms());
-//                String displayId = session.getParameters().get("displayId").get(0);
-//                String type = session.getParameters().get("type").get(0);
-//                String code = session.getParameters().get("code").get(0);
-//                String value = session.getParameters().get("value").get(0);
-//                String repeat = session.getParameters().get("repeat").get(0);
-//                String flags = session.getParameters().get("flags").get(0);
-//                String source = session.getParameters().get("source").get(0);
-//                String policyFlags = session.getParameters().get("policyFlags").get(0);
-//                String downTime = session.getParameters().get("downTime").get(0);
-//                String deviceId = session.getParameters().get("deviceId").get(0);
-//                String scanCode = session.getParameters().get("scanCode").get(0);
-//                String metaState = session.getParameters().get("metaState").get(0);
-//                String edgeFlags = session.getParameters().get("edgeFlags").get(0);
-//                String xPrecision = session.getParameters().get("xPrecision").get(0);
-//                String yPrecision = session.getParameters().get("yPrecision").get(0);
-//                String xCursorPosition = session.getParameters().get("xCursorPosition").get(0);
-//                String yCursorPosition = session.getParameters().get("yCursorPosition").get(0);
-//                String displayWidth = session.getParameters().get("displayWidth").get(0);
-//                String displayHeight = session.getParameters().get("displayHeight").get(0);
-//                String pointerCount = session.getParameters().get("pointerCount").get(0);
-//                String pointerProperties = session.getParameters().get("pointerProperties").get(0);
-//                String pointerCoords = session.getParameters().get("pointerCoords").get(0);
-//                String buttonState = session.getParameters().get("buttonState").get(0);
-//                String motionEventId = session.getParameters().get("motionEventId").get(0);
-//                String metaState1 = session.getParameters().get("metaState1").get(0);
-//                String buttonState1 = session.getParameters().get("buttonState1").get(0);
-//                String xPrecision1 = session.getParameters().get("xPrecision1").get(0);
-//                String yPrecision1 = session.getParameters().get("yPrecision1").get(0);
                 String action = session.getParms().get("action");
-                int actionInt = Integer.parseInt(action);
                 String pointerId = session.getParms().get("pointerId");
-                long pointerIdInt = Long.parseLong(pointerId);
-                String x = session.getParms().get("x");
-                int xInt = Integer.parseInt(x);
-                String y = session.getParms().get("y");
-                int yInt = Integer.parseInt(y);
                 String deviceWidth = session.getParms().get("width");
-                int widthInt = Integer.parseInt(deviceWidth);
                 String deviceHeight = session.getParms().get("height");
+                String x = session.getParms().get("x");
+                String y = session.getParms().get("y");
+                String displayId = session.getParms().get("displayId");
+                String actionButton = session.getParms().get("actionButton");
+                String buttons = session.getParms().get("buttons");
+                int displayIdInt = Integer.parseInt(displayId);
+                int actionInt = Integer.parseInt(action);
+                long pointerIdInt = Long.parseLong(pointerId);
+                int xInt = Integer.parseInt(x);
+                int yInt = Integer.parseInt(y);
+                int widthInt = Integer.parseInt(deviceWidth);
                 int heightInt = Integer.parseInt(deviceHeight);
+                int actionButtonInt = Integer.parseInt(actionButton);
+                int buttonsInt = Integer.parseInt(buttons);
                 Position position = new Position(xInt, yInt, widthInt, heightInt);
-                int displayId = Integer.parseInt(session.getParms().get("displayId"));
-                inputDispatcher.setDisplayId(displayId);
-                inputDispatcher.injectTouch(actionInt, pointerIdInt, position, 0f, 0, 0);
+                inputDispatcher.setDisplayId(displayIdInt);
+                inputDispatcher.injectTouch(actionInt, pointerIdInt, position, 0f, actionButtonInt, buttonsInt);
                 return newFixedLengthResponse(Response.Status.OK, "application/text", "ok");
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");

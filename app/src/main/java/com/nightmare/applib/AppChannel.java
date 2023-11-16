@@ -127,26 +127,26 @@ public class AppChannel {
 //                    ReflectUtil.listAllObject(displayManager);
                     Display[] displays = displayManager.getDisplays();
 //                    ReflectUtil.listAllObject(displays[0]);
-                    for (Display display : displays) {
-                        Display.Mode[] modes = display.getSupportedModes();
-//                        L.d("modes -> " + Arrays.toString(modes));
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                            L.d("start->"+display.getMode());
-                        }
-                        if (display.getDisplayId() != 0) {
-                            Method method = null;
-                            try {
-                                method = display.getClass().getDeclaredMethod("setUserPreferredDisplayMode", Display.Mode.class);
-                                method.setAccessible(true);
-                                method.invoke(display, modes[2]);
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                                    L.d("end->"+display.getMode());
-                                }
-                            } catch (IllegalAccessException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    }
+//                    for (Display display : displays) {
+//                        Display.Mode[] modes = display.getSupportedModes();
+////                        L.d("modes -> " + Arrays.toString(modes));
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+////                            L.d("start->"+display.getMode());
+//                        }
+//                        if (display.getDisplayId() != 0) {
+//                            Method method = null;
+//                            try {
+//                                method = display.getClass().getDeclaredMethod("setUserPreferredDisplayMode", Display.Mode.class);
+//                                method.setAccessible(true);
+//                                method.invoke(display, modes[2]);
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+////                                    L.d("end->"+display.getMode());
+//                                }
+//                            } catch (IllegalAccessException e) {
+//                                throw new RuntimeException(e);
+//                            }
+//                        }
+//                    }
 //                  display.setUserPreferredDisplayMode
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

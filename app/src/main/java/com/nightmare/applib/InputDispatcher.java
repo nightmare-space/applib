@@ -46,7 +46,8 @@ public class InputDispatcher {
         displayId = id;
     }
 
-    public boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
+    public synchronized boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
+        L.d("injectTouch start invoked");
         long now = SystemClock.uptimeMillis();
 
         Point point = position.getPoint();
@@ -109,6 +110,7 @@ public class InputDispatcher {
                     MotionEvent downEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_DOWN, pointerCount, pointerProperties,
                             pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                     if (!injectEvent(downEvent, INJECT_MODE_ASYNC)) {
+//                        L.d("injectTouch actionButton = buttons action = MotionEvent.ACTION_DOWN downEvent->" + downEvent);
                         return false;
                     }
                 }
@@ -117,9 +119,11 @@ public class InputDispatcher {
                 MotionEvent pressEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_PRESS, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                 if (!InputManagerSimulate.setActionButton(pressEvent, actionButton)) {
+//                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_DOWN");
                     return false;
                 }
                 if (!injectEvent(pressEvent, INJECT_MODE_ASYNC)) {
+//                    L.d("injectTouch injectEvent(pressEvent, INJECT_MODE_ASYNC pressEvent->" + pressEvent);
                     return false;
                 }
 
@@ -131,17 +135,21 @@ public class InputDispatcher {
                 MotionEvent releaseEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_RELEASE, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                 if (!InputManagerSimulate.setActionButton(releaseEvent, actionButton)) {
+//                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_UP");
                     return false;
                 }
                 if (!injectEvent(releaseEvent, INJECT_MODE_ASYNC)) {
+//                    L.d("injectEvent(releaseEvent, INJECT_MODE_ASYNC) releaseEvent->" + releaseEvent);
                     return false;
                 }
 
                 if (buttons == 0) {
+                    L.d("Last button released: ACTION_UP");
                     // Last button released: ACTION_UP
                     MotionEvent upEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_UP, pointerCount, pointerProperties,
                             pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                     if (!injectEvent(upEvent, INJECT_MODE_ASYNC)) {
+//                        L.d("injectEvent(upEvent, INJECT_MODE_ASYNC) upEvent->" + upEvent);
                         return false;
                     }
                 }
@@ -153,6 +161,7 @@ public class InputDispatcher {
         MotionEvent event = MotionEvent
                 .obtain(lastTouchDown, now, action, pointerCount, pointerProperties, pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source,
                         0);
+        L.d("injectEvent(event, INJECT_MODE_ASYNC) event->" + event);
         return injectEvent(event, INJECT_MODE_ASYNC);
     }
 
@@ -170,6 +179,7 @@ public class InputDispatcher {
         }
 
         if (displayId != 0 && !InputManagerSimulate.setDisplayId(inputEvent, displayId)) {
+            L.d("Could not set input event display id");
             return false;
         }
 
