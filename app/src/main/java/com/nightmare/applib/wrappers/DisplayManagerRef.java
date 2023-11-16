@@ -1,6 +1,7 @@
 package com.nightmare.applib.wrappers;
 
 import com.nightmare.applib.utils.L;
+import com.nightmare.applib.utils.ReflectUtil;
 
 import android.view.Display;
 import android.view.Surface;
@@ -135,18 +136,37 @@ public final class DisplayManagerRef {
             return display;
         } catch (NoSuchMethodException e) {
         }
+        ReflectUtil.listAllObject(manager);
+        try {
+            // Android 13
+            Method createVirtualDisplay = manager.getClass().getMethod("createVirtualDisplay",
+                    Context.class,
+                    MediaProjection.class,
+                    Class.forName("android.hardware.display.VirtualDisplayConfig"),
+                    Class.forName("android.hardware.display.VirtualDisplay$Callback"),
+                    Executor.class,
+                    Context.class);
+            Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null, wrapper);
+            Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
+            Display display = (Display) getDisplay.invoke(virtualDisplay);
+            return display;
+        } catch (NoSuchMethodException e) {
+        }
 
-        // Android 13
-        Method createVirtualDisplay = manager.getClass().getMethod("createVirtualDisplay",
-                Context.class,
-                MediaProjection.class,
-                Class.forName("android.hardware.display.VirtualDisplayConfig"),
-                Class.forName("android.hardware.display.VirtualDisplay$Callback"),
-                Executor.class,
-                Context.class);
-        Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null, wrapper);
-        Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
-        Display display = (Display) getDisplay.invoke(virtualDisplay);
-        return display;
+        try {
+            // Android 14
+            Method createVirtualDisplay = manager.getClass().getMethod("createVirtualDisplay",
+                    Context.class,
+                    MediaProjection.class,
+                    Class.forName("android.hardware.display.VirtualDisplayConfig"),
+                    Class.forName("android.hardware.display.VirtualDisplay$Callback"),
+                    Executor.class);
+            Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null);
+            Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
+            Display display = (Display) getDisplay.invoke(virtualDisplay);
+            return display;
+        } catch (NoSuchMethodException e) {
+        }
+        return null;
     }
 }
