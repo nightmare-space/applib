@@ -1,1 +1,2 @@
-curl --location --request POST 'http://192.168.115.160:14000/createVirtualDisplay?width=1920&height=1080&density=100'
+curl --location --request POST 'http://192.168.0.106:14000/createVirtualDisplay?width=1920&height=1080&density=100'
+curl --location --request POST 'http://192.168.0.106:14000/resize_vd?width=1920&height=1080&density=100&id=12'

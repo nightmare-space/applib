@@ -1,0 +1,1 @@
+adb shell am start-activity -W -S --activityType 0 --activity-brought-to-front --display 38 -n com.nightmare.sula/.MainActivity

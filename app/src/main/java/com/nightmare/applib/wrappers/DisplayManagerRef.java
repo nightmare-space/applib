@@ -3,6 +3,7 @@ package com.nightmare.applib.wrappers;
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ReflectUtil;
 
+import android.hardware.display.VirtualDisplay;
 import android.view.Display;
 import android.view.Surface;
 
@@ -65,7 +66,7 @@ public final class DisplayManagerRef {
         }
     }
 
-    public Display createVirtualDisplay(Surface surface, int width, int height, int density)
+    public VirtualDisplay createVirtualDisplay(Surface surface, int width, int height, int density)
             throws NoSuchMethodException, ClassNotFoundException, SecurityException, IllegalAccessException,
             IllegalArgumentException, InstantiationException, InvocationTargetException, NoSuchFieldException {
         FakePackageNameContext wrapper = new FakePackageNameContext();
@@ -107,7 +108,7 @@ public final class DisplayManagerRef {
                     flags, null, null, null);
             Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
             Display display = (Display) getDisplay.invoke(virtualDisplay);
-            return display;
+            return (VirtualDisplay) virtualDisplay;
         } catch (NoSuchMethodException e) {
         }
 
@@ -133,7 +134,7 @@ public final class DisplayManagerRef {
             Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null);
             Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
             Display display = (Display) getDisplay.invoke(virtualDisplay);
-            return display;
+            return (VirtualDisplay) virtualDisplay;
         } catch (NoSuchMethodException e) {
         }
         ReflectUtil.listAllObject(manager);
@@ -149,7 +150,7 @@ public final class DisplayManagerRef {
             Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null, wrapper);
             Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
             Display display = (Display) getDisplay.invoke(virtualDisplay);
-            return display;
+            return (VirtualDisplay) virtualDisplay;
         } catch (NoSuchMethodException e) {
         }
 
@@ -164,7 +165,7 @@ public final class DisplayManagerRef {
             Object virtualDisplay = createVirtualDisplay.invoke(manager, wrapper, null, config, null, null);
             Method getDisplay = Class.forName("android.hardware.display.VirtualDisplay").getMethod("getDisplay");
             Display display = (Display) getDisplay.invoke(virtualDisplay);
-            return display;
+            return (VirtualDisplay) virtualDisplay;
         } catch (NoSuchMethodException e) {
         }
         return null;

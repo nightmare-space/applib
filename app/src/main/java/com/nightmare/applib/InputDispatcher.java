@@ -47,7 +47,7 @@ public class InputDispatcher {
     }
 
     public synchronized boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
-        L.d("injectTouch start invoked");
+        L.d("injectTouch start invoked pointerId=" + pointerId + " action=" + action + " position=" + position + " pressure=" + pressure + " actionButton=" + actionButton + " buttons=" + buttons + "");
         long now = SystemClock.uptimeMillis();
 
         Point point = position.getPoint();
@@ -58,7 +58,7 @@ public class InputDispatcher {
 
         int pointerIndex = pointersState.getPointerIndex(pointerId);
         if (pointerIndex == -1) {
-            L.d("Too many pointers for touch event");
+            L.d("Too many pointers for touch event pointerId=" + pointerId);
             return false;
         }
         Pointer pointer = pointersState.get(pointerIndex);
@@ -82,6 +82,7 @@ public class InputDispatcher {
         }
 
         int pointerCount = pointersState.update(pointerProperties, pointerCoords);
+        L.d("pointerCount -> " + pointerCount);
         if (pointerCount == 1) {
             if (action == MotionEvent.ACTION_DOWN) {
                 lastTouchDown = now;

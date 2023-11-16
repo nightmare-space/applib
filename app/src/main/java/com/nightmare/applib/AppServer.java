@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
 import android.hardware.input.InputManager;
 import android.os.Build;
 import android.os.SystemClock;
@@ -25,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ import com.nightmare.applib.wrappers.ServiceManager;
 
 /**
  * 基于HTTP服务提供能力
+ *
  * @noinspection deprecation
  */
 public class AppServer extends NanoHTTPD {
@@ -106,6 +109,8 @@ public class AppServer extends NanoHTTPD {
         return params.get(0);
     }
 
+    Map<Integer, VirtualDisplay> cache = new HashMap<>();
+
     @Override
     public Response serve(IHTTPSession session) {
         try {
@@ -171,13 +176,26 @@ public class AppServer extends NanoHTTPD {
                 String width = session.getParameters().get("width").get(0);
                 String height = session.getParameters().get("height").get(0);
                 String density = session.getParameters().get("density").get(0);
-                Display display = ServiceManager.getDisplayManager().createVirtualDisplay(
+                VirtualDisplay display = ServiceManager.getDisplayManager().createVirtualDisplay(
                         surfaceView.getHolder().getSurface(),
                         Integer.parseInt(width),
                         Integer.parseInt(height),
                         Integer.parseInt(density)
                 );
-                return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplayId() + "");
+                cache.put(display.getDisplay().getDisplayId(), display);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplay().getDisplayId() + "");
+            }
+            // 创建虚拟显示器
+            if (session.getUri().startsWith("/" +"resize_vd")) {
+                String id = session.getParameters().get("id").get(0);
+                String width = session.getParameters().get("width").get(0);
+                String height = session.getParameters().get("height").get(0);
+                String density = session.getParameters().get("density").get(0);
+                VirtualDisplay display = cache.get(Integer.parseInt(id));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    display.resize(Integer.parseInt(width), Integer.parseInt(height), Integer.parseInt(density));
+                }
+                return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplay().getDisplayId() + "");
             }
             if (session.getUri().startsWith("/" + AppChannelProtocol.openAppByPackage)) {
                 // 要保证参数存在，不然服务可能会崩
@@ -247,8 +265,12 @@ public class AppServer extends NanoHTTPD {
                 int buttonsInt = Integer.parseInt(buttons);
                 Position position = new Position(xInt, yInt, widthInt, heightInt);
                 inputDispatcher.setDisplayId(displayIdInt);
-                inputDispatcher.injectTouch(actionInt, pointerIdInt, position, 0f, actionButtonInt, buttonsInt);
-                return newFixedLengthResponse(Response.Status.OK, "application/text", "ok");
+                float pressure = 0f;
+                if (actionInt == MotionEvent.ACTION_DOWN || actionInt == MotionEvent.ACTION_MOVE) {
+                    pressure = 1f;
+                }
+                boolean success = inputDispatcher.injectTouch(actionInt, pointerIdInt, position, pressure, actionButtonInt, buttonsInt);
+                return newFixedLengthResponse(Response.Status.OK, "application/text", "success:" + success);
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");
         } catch (Exception e) {
