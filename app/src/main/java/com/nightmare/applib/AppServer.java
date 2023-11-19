@@ -9,8 +9,12 @@ import android.graphics.Bitmap;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.hardware.input.InputManager;
+import android.net.LocalServerSocket;
+import android.net.LocalSocket;
 import android.os.Build;
 import android.os.SystemClock;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.InputDevice;
 import android.view.InputEvent;
@@ -25,7 +29,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +64,8 @@ public class AppServer extends NanoHTTPD {
         L.d("Welcome!!!");
         AppServer server = ServerUtil.safeGetServer();
         Workarounds.prepareMainLooper();
+        L.d("Sula input socket server starting.");
+        server.startInputDispatcher();
         // 这个时候构造的是一个没有Context的Channel
         server.appChannel = new AppChannel();
         L.d("success start port -> " + server.getListeningPort());
@@ -66,6 +77,63 @@ public class AppServer extends NanoHTTPD {
         while (true) {
             Thread.sleep(1000);
         }
+    }
+
+    void startInputDispatcher() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    L.d("Sula input Thread run");
+                    ServerSocket serverSocket = new ServerSocket(1234);
+                    L.d("Sula input socket server started");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    while (true) {
+                        Socket socket = serverSocket.accept();
+                        L.d("Sula input has connected");
+                        InputStream in = socket.getInputStream();
+                        OutputStream out = socket.getOutputStream();
+                        while (true) {
+                            // 持续读出数据
+                            byte[] data = new byte[36];
+                            int bytesRead = in.read(data);
+                            if (bytesRead == -1) {
+                                break;
+                            }
+                            L.d("Sula input Received : " + Arrays.toString(data));
+                            ByteBuffer buffer = ByteBuffer.wrap(data);
+                            int displayIdInt = buffer.getInt();
+                            int actionInt = buffer.getInt();
+                            long pointerIdInt = buffer.getInt();
+                            int xInt = buffer.getInt();
+                            int yInt = buffer.getInt();
+                            int widthInt = buffer.getInt();
+                            int heightInt = buffer.getInt();
+                            int actionButtonInt = buffer.getInt();
+                            int buttonsInt = buffer.getInt();
+                            L.d("Sula input Received : " + displayIdInt + " " + actionInt + " " + pointerIdInt + " " + xInt + " " + yInt + " " + widthInt + " " + heightInt + " " + actionButtonInt + " " + buttonsInt);
+                            Position position = new Position(xInt, yInt, widthInt, heightInt);
+                            inputDispatcher.setDisplayId(displayIdInt);
+                            float pressure = 0f;
+                            if (actionInt == MotionEvent.ACTION_DOWN || actionInt == MotionEvent.ACTION_MOVE) {
+                                pressure = 1f;
+                            }
+                            boolean success = inputDispatcher.injectTouch(actionInt, pointerIdInt, position, pressure, actionButtonInt, buttonsInt);
+
+                        }
+                    }
+
+
+                } catch (IOException e) {
+
+                    L.d("startInputDispatcher error" + e);
+                }
+            }
+        }).start();
     }
 
 
@@ -186,7 +254,7 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplay().getDisplayId() + "");
             }
             // 创建虚拟显示器
-            if (session.getUri().startsWith("/" +"resize_vd")) {
+            if (session.getUri().startsWith("/" + "resize_vd")) {
                 String id = session.getParameters().get("id").get(0);
                 String width = session.getParameters().get("width").get(0);
                 String height = session.getParameters().get("height").get(0);
@@ -317,7 +385,8 @@ public class AppServer extends NanoHTTPD {
     }
 
 
-    public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags, int userId) throws Exception {
+    public List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags,
+                                                               int userId) throws Exception {
         Object iam = getIAM();
         Object tasksParcelled = iam.getClass().getMethod("getRecentTasks", Integer.TYPE,
                 Integer.TYPE, Integer.TYPE).invoke(iam, 25, 0, 0);
