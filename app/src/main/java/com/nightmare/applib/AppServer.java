@@ -85,7 +85,7 @@ public class AppServer extends NanoHTTPD {
             public void run() {
                 try {
                     L.d("Sula input Thread run");
-                    ServerSocket serverSocket = new ServerSocket(1234);
+                    ServerSocket serverSocket = new ServerSocket(12345);
                     L.d("Sula input socket server started");
                     try {
                         Thread.sleep(1000);
