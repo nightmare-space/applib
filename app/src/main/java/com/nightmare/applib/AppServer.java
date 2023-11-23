@@ -183,10 +183,15 @@ public class AppServer extends NanoHTTPD {
                         Integer.parseInt(density)
                 );
                 cache.put(display.getDisplay().getDisplayId(), display);
+                DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+                Display[] displays = displayManager.getDisplays();
+                for (Display display2 : displays) {
+                    L.d(">>>display -> " + display2.getName());
+                }
                 return newFixedLengthResponse(Response.Status.OK, "application/json", display.getDisplay().getDisplayId() + "");
             }
             // 创建虚拟显示器
-            if (session.getUri().startsWith("/" +"resize_vd")) {
+            if (session.getUri().startsWith("/" + "resize_vd")) {
                 String id = session.getParameters().get("id").get(0);
                 String width = session.getParameters().get("width").get(0);
                 String height = session.getParameters().get("height").get(0);
