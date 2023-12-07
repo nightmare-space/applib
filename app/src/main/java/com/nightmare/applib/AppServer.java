@@ -62,7 +62,7 @@ public class AppServer extends NanoHTTPD {
 
     public static void main(String[] args) throws Exception {
         L.d("Welcome!!!");
-        AppServer server = ServerUtil.safeGetServer();
+        AppServer server = ServerUtil.safeGetServerForADB();
         Workarounds.prepareMainLooper();
         L.d("Sula input socket server starting.");
         server.startInputDispatcher();
@@ -119,9 +119,9 @@ public class AppServer extends NanoHTTPD {
                             Position position = new Position(xInt, yInt, widthInt, heightInt);
                             inputDispatcher.setDisplayId(displayIdInt);
                             float pressure = 0f;
-                            if (actionInt == MotionEvent.ACTION_DOWN || actionInt == MotionEvent.ACTION_MOVE) {
-                                pressure = 1f;
-                            }
+//                            if (actionInt == MotionEvent.ACTION_DOWN || actionInt == MotionEvent.ACTION_MOVE) {
+//                                pressure = 1f;
+//                            }
                             boolean success = inputDispatcher.injectTouch(actionInt, pointerIdInt, position, pressure, actionButtonInt, buttonsInt);
 
                         }
