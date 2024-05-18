@@ -20,7 +20,10 @@ BUILD_DIR="$LOCAL_DIR/${BUILD_DIR:-build}"
 CLASSES_DIR="$BUILD_DIR/classes"
 SERVER_DIR=$(dirname "$0")
 SERVER_BINARY=app_server
-
+printf "%-10s %-10s\n" "Variable" "Value"
+printf "%-10s %-10s\n" "--------" "-----"
+printf "%-10s %-10s\n" "PLATFORM" "$PLATFORM"
+printf "%-10s %-10s\n" "ANDROID_HOME" "$ANDROID_HOME"
 echo PLATFORM:$PLATFORM
 echo ANDROID_HOME:$ANDROID_HOME
 echo BUILD_DIR:-build:${BUILD_DIR:-build}

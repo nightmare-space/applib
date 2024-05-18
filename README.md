@@ -59,3 +59,8 @@ adb shell 'lsof | awk -v uid=shell "$3 == uid" | grep 14000 | awk "{print $2}"" 
 lsof | awk -v uid=shell '$3 == uid' | grep 14000 | awk '{print $2}' | xargs kill -9
 lsof | awk -v uid=shell '$3 == uid' | grep 14001 | awk '{print $2}' | xargs kill -9
 lsof | awk -v uid=shell '$3 == uid' | grep 14002 | awk '{print $2}' | xargs kill -9
+
+
+
+## TODO
+applib把当前设备信息打印出来

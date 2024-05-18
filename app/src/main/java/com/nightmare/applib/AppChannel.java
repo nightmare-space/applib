@@ -29,6 +29,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -96,8 +97,8 @@ public class AppChannel {
                     // 重定向输出，因为fillAppInfo会有一堆报错
                     System.setErr(new PrintStream(fileOutputStream, false));
                     System.setOut(new PrintStream(fileOutputStream, false));
-                    context = Workarounds.fillAppInfo();
-                    ContextWrapperWrapper wrapper = new ContextWrapperWrapper(context);
+                    ContextWrapperWrapper wrapper = new ContextWrapperWrapper(Workarounds.fillAppInfo());
+                    context = wrapper;
                     // 恢复输出
                     System.setOut(console);
                     System.setErr(console);
@@ -122,10 +123,7 @@ public class AppChannel {
                         }
                     }, null);
 //                    Display display = wm.getDefaultDisplay();
-                    DisplayManager displayManager = (DisplayManager) wrapper.getSystemService(Context.DISPLAY_SERVICE);
-
 //                    ReflectUtil.listAllObject(displayManager);
-                    Display[] displays = displayManager.getDisplays();
 //                    ReflectUtil.listAllObject(displays[0]);
 //                    for (Display display : displays) {
 //                        Display.Mode[] modes = display.getSupportedModes();
@@ -148,56 +146,6 @@ public class AppChannel {
 //                        }
 //                    }
 //                  display.setUserPreferredDisplayMode
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                        Bitmap bitmap = getBitmap("com.nightmare.adbtools");
-//                        PointerIcon icon = PointerIcon.create(bitmap, 0, 0);
-//                        L.d("icon -> " + icon);
-//                        boolean isSuccess = ServiceManager.getInputManager().setCustomPointerIcon(icon);
-//                        Button view = new Button(wrapper);
-//                        view.requestFocus();
-//                        view.requestPointerCapture();
-//                        Method method4 = ServiceManager.getInputManager().getManager().getClass().getMethod("setPointerIconType", int.class);
-////                        Settings.System.putInt(context.getContentResolver(), "pointer_speed", -7);
-//                        Object object = method4.invoke(ServiceManager.getInputManager().getManager(), 2000);
-//                        L.d("object -> " + object);
-//                        Field field = ServiceManager.getInputManager().getManager().getClass().getDeclaredField("mIm");
-//                        field.setAccessible(true);
-//                        ReflectUtil.listAllObject(field.get(ServiceManager.getInputManager().getManager()));
-//                        ReflectUtil.listAllObject(ServiceManager.getInputManager().getManager());
-//                        ReflectUtil.listAllObject(Class.forName("com.android.server.input.InputManagerService"));
-
-//                        L.d(method4.invoke(ServiceManager.getInputManager().getManager()));
-//                        Constructor constructor = Class.forName("com.android.server.input.NativeInputManagerService").getDeclaredConstructor(Context.class);
-//                        Object ob = constructor.newInstance(wrapper);
-//                        method4.invoke(ServiceManager.getInputManager().getManager(), wrapper);
-//                        L.d("isSuccess -> " + isSuccess);
-                    }
-//                     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-//                     layoutParams.format = PixelFormat.RGBA_8888;
-//                     layoutParams.width = 0;
-//                     layoutParams.height = 0;
-// //        layoutParams.gravity = Gravity.TOP & Gravity.LEFT;
-// //        window.setGravity(Gravity.CENTER);
-//                     layoutParams.x = 0;
-//                     layoutParams.y = 0;
-//                     layoutParams.type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
-//                     layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-//                             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN//将window放置在整个屏幕之内,无视其他的装饰(比如状态栏)
-//                             | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS//允许window扩展值屏幕之外
-//                             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-//                             | WindowManager.LayoutParams.FLAG_FULLSCREEN//当这个window显示的时候,隐藏所有的装饰物(比如状态栏)这个flag允许window使用整个屏幕区域
-//                             | WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER//标记在其它窗口的LayoutParams.flags中的存在情况而不断地被调整
-//                     ;
-//                     WindowManager windowManager = (WindowManager) wrapper.getSystemService(Context.WINDOW_SERVICE);
-//                     TextView imageView = new TextView(wrapper);
-//                     final int callingUid = Binder.getCallingUid();
-//                     Log.d("callingUid: " + callingUid);
-//                     Log.d("Package name: " + wrapper.getPackageName());
-// //                    Bitmap bitmap = getLoacalBitmap("/sdcard/test.jpg"); //从本地取图片(在cdcard中获取)  //
-// //                    imageView.setImageBitmap(bitmap); //设置Bitmap
-//                     windowManager.addView(imageView, layoutParams);
-                    testFunc(context);
                     L.d("获取到的Context:" + context.toString());
                     Looper.loop();
                 } catch (Exception e) {
@@ -522,6 +470,7 @@ public class AppChannel {
             ActivityOptions options = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 options = ActivityOptions.makeBasic().setLaunchDisplayId(Integer.parseInt(displayId));
+
                 ReflectUtil.listAllObject(options);
 //                options.setLaunchWindowingMode();
 
@@ -529,6 +478,9 @@ public class AppChannel {
             ComponentName cName = new ComponentName(packageName, activity);
             intent.setComponent(cName);
 //            context.startActivity(intent);
+            @SuppressLint({"NewApi", "LocalSuppress"})
+            Bundle bundle = options.toBundle();
+            bundle.putInt("android.activity.activityType", 2);
             context.startActivity(intent, options.toBundle());
         } catch (Exception e) {
             e.printStackTrace();

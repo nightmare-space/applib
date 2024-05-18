@@ -27,18 +27,18 @@ Task deserializeApp(Map<String, dynamic> json) => Task.fromJson(json);
 class Task {
   Task({
     required this.persistentId,
-    required this.displayId,
     required this.topPackage,
-    required this.topAcivity,
+    required this.topActivity,
     required this.label,
     required this.id,
+    this.displayId,
   });
 
   final int id;
   final int persistentId;
-  final int displayId;
+  final int? displayId;
   final String topPackage;
-  final String topAcivity;
+  final String topActivity;
   final String label;
 
   factory Task.fromJson(Map<String, dynamic> json) => _$TaskFromJson(json);

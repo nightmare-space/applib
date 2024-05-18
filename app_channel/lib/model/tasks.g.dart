@@ -17,12 +17,12 @@ Map<String, dynamic> _$TasksToJson(Tasks instance) => <String, dynamic>{
     };
 
 Task _$TaskFromJson(Map<String, dynamic> json) => Task(
-      persistentId: json['persistentId'] as int,
-      displayId: json['displayId'] as int,
+      persistentId: (json['persistentId'] as num).toInt(),
       topPackage: json['topPackage'] as String,
-      topAcivity: json['topAcivity'] as String,
+      topActivity: json['topActivity'] as String,
       label: json['label'] as String,
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
+      displayId: (json['displayId'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$TaskToJson(Task instance) => <String, dynamic>{
@@ -30,6 +30,6 @@ Map<String, dynamic> _$TaskToJson(Task instance) => <String, dynamic>{
       'persistentId': instance.persistentId,
       'displayId': instance.displayId,
       'topPackage': instance.topPackage,
-      'topAcivity': instance.topAcivity,
+      'topActivity': instance.topActivity,
       'label': instance.label,
     };

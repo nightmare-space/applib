@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_channel/api/api.dart';
 import 'package:app_channel/foundation/app.dart';
 import 'package:app_channel/interface/app_channel.dart';
+import 'package:app_channel/model/model.dart';
 import 'package:app_channel/model/tasks.dart';
 import 'package:dio/dio.dart';
 import 'package:global_repository/global_repository.dart';
@@ -14,7 +16,27 @@ class RemoteAppChannel implements AppChannel {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
       port ??= 0;
     }
-    api = Api(Dio(), baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
+    Dio dio = Dio();
+    // dio.interceptors.add(
+    //   InterceptorsWrapper(
+    //     onRequest: (options, handler) {
+    //       print(options.extra);
+    //       print('');
+    //       Log.v('>>>>>>>>HTTP LOG');
+    //       Log.v('>>>>>>>>URI: ${options.uri}');
+    //       // Log.v('>>>>>>>>Method: ${options.method}');
+    //       // Log.v('>>>>>>>>Headers: ${options.headers}');
+    //       JsonEncoder encoder = const JsonEncoder.withIndent('  ');
+    //       String prettyprint = encoder.convert(options.data);
+    //       Log.v('>>>>>>>>Body: $prettyprint');
+    //       Log.v('<<<<<<<<');
+    //       print('');
+    //       handler.next(options);
+    //     },
+    //   ),
+    // );
+    Log.i('RemoteAppChannel api init port:$port');
+    api = Api(dio, baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
   }
   @override
   int? port;
@@ -125,10 +147,8 @@ class RemoteAppChannel implements AppChannel {
 
   /// 获得DisplayID List
   @override
-  Future<List<String>> getDisplays() async {
-    String result = await api.displays();
-    Log.i(result);
-    return result.trim().split('\n');
+  Future<Displays> getDisplays() async {
+    return await api.displays();
   }
 
   @override
@@ -182,17 +202,18 @@ class RemoteAppChannel implements AppChannel {
   }
 
   @override
-  Future<int> createVirtualDisplay(int width, int height, int density) async {
+  Future<Display?> createVirtualDisplay(int width, int height, int density, bool? useDeviceConfig) async {
     try {
-      String response = await api.createVirtualDisplay(
+      Display display = await api.createVirtualDisplay(
         width: width.toString(),
         height: height.toString(),
         density: density.toString(),
+        useDeviceConfig: useDeviceConfig,
       );
-      return int.parse(response);
+      return display;
     } on DioError catch (e) {
       Log.e('createVirtualDisplay Error -> ${e.message} ${e.error} ${e.response}');
-      return 0;
+      return null;
     }
   }
 }

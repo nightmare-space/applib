@@ -193,7 +193,7 @@ class _Api implements Api {
   }
 
   @override
-  Future<String> displays({options}) async {
+  Future<Displays> displays({options}) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
@@ -203,13 +203,13 @@ class _Api implements Api {
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
     newOptions.headers.addAll(_headers);
-    final _result = await _dio.fetch<String>(newOptions.copyWith(
+    final _result = await _dio.fetch<Map<String, dynamic>>(newOptions.copyWith(
       method: 'GET',
       baseUrl: baseUrl ?? _dio.options.baseUrl,
       queryParameters: queryParameters,
       path: '/displays',
     )..data = _data);
-    final value = _result.data!;
+    final value = await compute(deserializeDisplays, _result.data!);
     return value;
   }
 
@@ -235,17 +235,19 @@ class _Api implements Api {
   }
 
   @override
-  Future<String> createVirtualDisplay({
+  Future<Display> createVirtualDisplay({
     options,
     required width,
     required height,
     required density,
+    useDeviceConfig,
   }) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'width': width,
       r'height': height,
       r'density': density,
+      r'useDeviceConfig': useDeviceConfig,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
@@ -254,13 +256,13 @@ class _Api implements Api {
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
     newOptions.headers.addAll(_headers);
-    final _result = await _dio.fetch<String>(newOptions.copyWith(
+    final _result = await _dio.fetch<Map<String, dynamic>>(newOptions.copyWith(
       method: 'POST',
       baseUrl: baseUrl ?? _dio.options.baseUrl,
       queryParameters: queryParameters,
       path: '/createVirtualDisplay',
     )..data = _data);
-    final value = _result.data!;
+    final value = await compute(deserializeDisplay, _result.data!);
     return value;
   }
 
