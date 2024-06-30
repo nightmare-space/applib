@@ -10,7 +10,6 @@ public class AppChannelProtocol {
     public static final String getAppActivity = "/appactivity";
     public static final String getAppPermissions = "/apppermission";
     public static final String getAppDetail = "/appdetail";
-    public static final String getAppMainActivity = "/appmainactivity";
     public static final String openAppByPackage = "/openapp";
     public static final String createVirtualDisplay = "createVirtualDisplay";
     public static final String checkToken = "check";

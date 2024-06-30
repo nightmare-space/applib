@@ -5,6 +5,7 @@ import android.os.Build;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -48,7 +49,11 @@ public class ReflectUtil {
             System.out.print("\n");
             print("FIELD========");
             for (Field f : fields) {
+                boolean isStatic = Modifier.isStatic(f.getModifiers());
                 System.out.print((char) 0x1b + "[36m");
+                if(isStatic){
+                    System.out.print("static ");
+                }
                 System.out.print(f.getType());
                 System.out.print((char) 0x1b);
 //                System.out.println("[0;32m NAME:" + (char) 0x1b + "[31m" + f.getName() + (char) 0x1b + "[0m");
@@ -58,8 +63,12 @@ public class ReflectUtil {
             System.out.print("\n");
             print("METHOD========");
             for (Method m : methods) {
+                boolean isStatic = Modifier.isStatic(m.getModifiers());
                 String returnType = m.getReturnType().toString();
                 returnType = returnType.replace("class ", "");
+                if(isStatic){
+                    System.out.print("static ");
+                }
                 System.out.print((char) 0x1b + "[36m" + returnType + " ");
                 System.out.print((char) 0x1b);
                 System.out.print("[33m" + m.getName());

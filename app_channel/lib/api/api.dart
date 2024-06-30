@@ -1,12 +1,20 @@
 // ignore_for_file: non_constant_identifier_names
+import 'dart:convert';
+
 import 'package:app_channel/foundation/protocol.dart';
 import 'package:app_channel/model/model.dart';
-import 'package:dio/dio.dart' hide Headers;
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:retrofit/retrofit.dart';
+import 'package:global_repository/global_repository.dart';
+import 'package:retrofit/retrofit.dart' hide Headers;
 part 'api.g.dart';
 
-@RestApi(baseUrl: "", parser: Parser.FlutterCompute)
+String deserializedynamic(dynamic data) {
+  JsonEncoder encoder = const JsonEncoder.withIndent('  ');
+  return encoder.convert(data);
+}
+
+@RestApi(baseUrl: "", parser: Parser.JsonSerializable)
 abstract class Api {
   factory Api(Dio dio, {String baseUrl}) = _Api;
 
@@ -26,7 +34,7 @@ abstract class Api {
 
   /// 通过包名获取 MainActivity
   @GET('/${Protocol.getAppMainActivity}')
-  Future<String> getAppMainActivity({
+  Future<Map<String, String>> getAppMainActivity({
     @DioOptions() RequestOptions? options,
     @Query("package") String? package,
   });
@@ -84,4 +92,11 @@ abstract class Api {
   });
 }
 
-Api restClient = Api(Dio());
+Api restClient = Api(Dio(BaseOptions(
+  baseUrl: '',
+  contentType: Headers.jsonContentType,
+  validateStatus: (int? status) {
+    return status != null;
+    // return status != null && status >= 200 && status < 300;
+  },
+)));

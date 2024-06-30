@@ -1,29 +1,43 @@
 package com.nightmare.applib;
 
+import static android.media.MediaFormat.KEY_MAX_FPS_TO_ENCODER;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_AVC;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
 import android.os.Build;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceView;
+import android.view.Window;
 import android.view.WindowManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -60,9 +74,9 @@ public class AppServer extends NanoHTTPD {
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
         AppServer server = ServerUtil.safeGetServerForADB();
-        Workarounds.prepareMainLooper();
         L.d("Sula input socket server starting.");
         assert server != null;
+        Workarounds.apply(true, true);
         server.startInputDispatcher();
         // 获取安卓版本
         String sdk = Build.VERSION.SDK;
@@ -86,6 +100,36 @@ public class AppServer extends NanoHTTPD {
         while (true) {
             Thread.sleep(1000);
         }
+    }
+
+    public static final int IFRAME_INTERVAL = 0;
+    // MediaFormat需要的，比特率
+    public static final int BIT_RATE = 800_0000;
+    // MediaFormat需要的
+    public static final int REPEAT_FRAME_DELAY_US = 100_000;
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    private static MediaFormat createFormat(String videoMimeType) {
+        MediaFormat format = new MediaFormat();
+        format.setString(MediaFormat.KEY_MIME, videoMimeType);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
+        // must be present to configure the encoder, but does not impact the actual frame rate, which is variable
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, 60);
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            format.setInteger(MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_LIMITED);
+        }
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
+        // display the very first frame, and recover from bad quality when no new frames
+        format.setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, REPEAT_FRAME_DELAY_US); // µs
+//        if (maxFps > 0) {
+//            // The key existed privately before Android 10:
+//            // <https://android.googlesource.com/platform/frameworks/base/+/625f0aad9f7a259b6881006ad8710adce57d1384%5E%21/>
+//            // <https://github.com/Genymobile/scrcpy/issues/488#issuecomment-567321437>
+//            format.setFloat(KEY_MAX_FPS_TO_ENCODER, maxFps);
+//        }
+
+        return format;
     }
 
     void startInputDispatcher() {
@@ -129,7 +173,7 @@ public class AppServer extends NanoHTTPD {
                     byte[] data = new byte[36];
                     int bytesRead = 0;
 
-                    L.d("in.read start");
+//                    L.d("in.read start");
                     try {
                         bytesRead = in.read(data);
                     } catch (IOException e) {
@@ -138,7 +182,7 @@ public class AppServer extends NanoHTTPD {
                     if (bytesRead == -1) {
                         break;
                     }
-                    L.d("Sula input Received : " + Arrays.toString(data));
+//                    L.d("Sula input Received : " + Arrays.toString(data));
                     ByteBuffer buffer = ByteBuffer.wrap(data);
                     int displayIdInt = buffer.getInt();
                     int actionInt = buffer.getInt();
@@ -167,7 +211,7 @@ public class AppServer extends NanoHTTPD {
     }
 
     /**
-     * 与直接启动dex不同，从Activity中启动不用反射context上下问
+     * 与直接启动dex不同，从Activity中启动不用反射context上下文
      *
      * @param context
      * @throws IOException
@@ -213,23 +257,83 @@ public class AppServer extends NanoHTTPD {
     static final String createVirtualDisplay = "/createVirtualDisplay";
     static final String closeVirtualDisplay = "/closeVirtualDisplay";
     static final String getAllAppInfo = "/allappinfo";
-
     static final String openApp = "/openapp";
+    public static final String getAppMainActivity = "/appmainactivity";
+
+    public static byte[] readAllBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[1024];
+        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        buffer.flush();
+        return buffer.toByteArray();
+    }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @Override
     public Response serve(IHTTPSession session) {
+        L.d("uri -> " + session.getUri());
         try {
+            String url = session.getUri();
             // 获取最近任务
-            if (session.getUri().startsWith("/tasks")) {
+            if (url.startsWith("/tasks")) {
                 return newFixedLengthResponse(
                         Response.Status.OK,
                         "application/json",
                         TaskUtil.getRecentTasksJson(appChannel).toString()
                 );
             }
+            if (url.startsWith("/cmd")) {
+                Map<String, String> body = new HashMap<>();
+                session.parseBody(body);
+                L.d("body -> " + body.get("postData"));
+                Process process = null;
+                try {
+                    process = Runtime.getRuntime().exec(body.get("postData"));
+
+                    // 处理命令的输出
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                    PrintWriter writer = new PrintWriter(process.getOutputStream());
+
+                    // 如果需要向命令写入输入
+                    writer.println("your_input_here"); // 替换为你的输入
+                    writer.flush();
+
+                    // 读取命令的标准输出
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("Output: " + line);
+                    }
+
+                    // 读取命令的错误输出
+                    while ((line = errorReader.readLine()) != null) {
+                        System.err.println("Error: " + line);
+                    }
+
+                    // 等待命令执行完毕
+                    int exitCode = process.waitFor();
+                    System.out.println("Exit Code: " + exitCode);
+
+                    // 关闭流
+                    reader.close();
+                    errorReader.close();
+                    writer.close();
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (process != null) {
+                        process.destroy();
+                    }
+                }
+
+
+                return newFixedLengthResponse(Response.Status.OK, "application/json", "success");
+            }
             // 获取图标
-            if (session.getUri().startsWith("/icon")) {
+            if (url.startsWith("/icon")) {
                 // Log.d(session.getParameters().toString());
                 Map<String, List<String>> params = session.getParameters();
                 if (!params.isEmpty()) {
@@ -239,13 +343,13 @@ public class AppServer extends NanoHTTPD {
                     return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes),
                             bytes.length);
                 }
-                byte[] bytes = appChannel.getBitmapBytes(session.getUri().substring("/icon/".length()));
+                byte[] bytes = appChannel.getBitmapBytes(url.substring("/icon/".length()));
                 // print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取所有的应用信息
             // 包含被隐藏的，被冻结的
-            if (session.getUri().startsWith(getAllAppInfo)) {
+            if (url.startsWith(getAllAppInfo)) {
                 boolean isSystemApp = false;
                 List<String> line = session.getParameters().get("is_system_app");
                 if (line != null && !line.isEmpty()) {
@@ -255,37 +359,38 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取指定App列表的信息
-            if (session.getUri().startsWith(AppChannelProtocol.getAppInfos)) {
+            if (url.startsWith(AppChannelProtocol.getAppInfos)) {
                 List<String> packages = session.getParameters().get("apps");
                 byte[] bytes = appChannel.getAppInfos(packages).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取单个App的详细信息
-            if (session.getUri().startsWith(AppChannelProtocol.getAppDetail)) {
+            if (url.startsWith(AppChannelProtocol.getAppDetail)) {
                 String packageName = session.getParms().get("package");
                 byte[] bytes = appChannel.getAppDetail(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取缩略图
-            if (session.getUri().startsWith(AppChannelProtocol.getTaskThumbnail)) {
+            if (url.startsWith(AppChannelProtocol.getTaskThumbnail)) {
                 String id = session.getParms().get("id");
                 byte[] bytes = TaskUtil.getTaskThumbnail(Integer.parseInt(id));
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 通过包名获取Main Activity
-            if (session.getUri().startsWith(AppChannelProtocol.getAppMainActivity)) {
+            if (url.startsWith(getAppMainActivity)) {
                 String packageName = session.getParms().get("package");
-                byte[] bytes = appChannel.getAppMainActivity(packageName).getBytes();
-                return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes),
-                        bytes.length);
+                String mainActivity = appChannel.getAppMainActivity(packageName);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("mainActivity", mainActivity);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", jsonObject.toString());
             }
-            if (session.getUri().startsWith("/createVirtualDisplayV2")) {
+            if (url.startsWith("/createVirtualDisplayV2")) {
                 DisplayManagerV2 displayManagerV2 = DisplayManagerV2.create();
                 SurfaceView surfaceView = new SurfaceView(appChannel.context);
                 displayManagerV2.createVirtualDisplay("test", 1080, 1920, 240, surfaceView.getHolder().getSurface());
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "");
             }
-            if (session.getUri().startsWith(displayGetRoute)) {
+            if (url.startsWith(displayGetRoute)) {
                 @SuppressLint({"NewApi", "LocalSuppress"})
                 DisplayManagerV2 displayManagerV2 = DisplayManagerV2.create();
                 int[] displays = displayManagerV2.getDisplayIds();
@@ -300,13 +405,13 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", jsonObjectResult.toString());
             }
             // 创建虚拟显示器
-            if (session.getUri().startsWith(createVirtualDisplay)) {
-                SurfaceView surfaceView = new SurfaceView(appChannel.context);
-                boolean useDeviceConfig = session.getParms().containsKey("useDeviceConfig");
+            if (url.startsWith(createVirtualDisplay)) {
+                boolean useDeviceConfig = session.getParms().get("useDeviceConfig").equals("true");
                 WindowManager windowManager = (WindowManager) appChannel.context.getSystemService(Context.WINDOW_SERVICE);
                 DisplayMetrics displayMetrics = new DisplayMetrics();
-                windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+                windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
                 String width, height, density;
+                L.d("useDeviceConfig -> " + useDeviceConfig);
                 if (useDeviceConfig) {
                     width = displayMetrics.widthPixels + "";
                     height = displayMetrics.heightPixels + "";
@@ -316,8 +421,17 @@ public class AppServer extends NanoHTTPD {
                     height = session.getParms().get("height");
                     density = session.getParms().get("density");
                 }
+                L.d("width -> " + width + " height -> " + height + " density -> " + density);
+                MediaFormat format = createFormat(MIMETYPE_VIDEO_AVC);
+                format.setInteger(MediaFormat.KEY_WIDTH, Integer.parseInt(width));
+                format.setInteger(MediaFormat.KEY_HEIGHT, Integer.parseInt(height));
+                MediaCodec codec = MediaCodec.createEncoderByType(MIMETYPE_VIDEO_AVC);
+                codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+//                SurfaceView surfaceView = new SurfaceView(appChannel.context);
+//                Surface surface = surfaceView.getHolder().getSurface();
+                Surface surface = codec.createInputSurface();
                 VirtualDisplay display = ServiceManager.getDisplayManager().createVirtualDisplay(
-                        surfaceView.getHolder().getSurface(),
+                        surface,
                         Integer.parseInt(width),
                         Integer.parseInt(height),
                         Integer.parseInt(density)
@@ -331,8 +445,33 @@ public class AppServer extends NanoHTTPD {
                         json.toString()
                 );
             }
-            // 创建虚拟显示器
-            if (session.getUri().startsWith(resizeVDRoute)) {
+            if (url.startsWith("/change_display")) {
+//                DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+//                Display[] displays = displayManager.getDisplays();
+//                Display currentDisplay = displays[0];
+//                Display.Mode[] modes = new Display.Mode[0];
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                    modes = currentDisplay.getSupportedModes();
+//                }
+////                currentDisplay.
+//                Log.d("SecondaryActivityWithFloatWindow", "modes -> " + Arrays.toString(modes));
+//                Display.Mode mode = modes[1]; // 选择第一个支持的模式
+//                for (Display.Mode m : modes) {
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                        if (m.getModeId() == 88) { // 选择刷新率为60Hz的模式
+//                            mode = m;
+//                            final Window window = getWindow();
+//                            final WindowManager.LayoutParams params = window.getAttributes();
+//                            Log.d("SecondaryActivityWithFloatWindow", "modes -> " + mode);
+//                            params.preferredDisplayModeId = mode.getModeId();
+//                            window.setAttributes(params);
+//                            break;
+//                        }
+//                    }
+//                }
+            }
+            // 改变虚拟显示器尺寸
+            if (url.startsWith(resizeVDRoute)) {
                 String id = session.getParms().get("id");
                 String width = session.getParms().get("width");
                 String height = session.getParms().get("height");
@@ -345,16 +484,15 @@ public class AppServer extends NanoHTTPD {
                         display.getDisplay().getDisplayId() + "");
             }
 
-            if (session.getUri().startsWith(openApp)) {
+            if (url.startsWith(openApp)) {
                 // 要保证参数存在，不然服务可能会崩
-                // 待测试
                 String packageName = session.getParms().get("package");
                 String activity = session.getParms().get("activity");
                 String id = session.getParms().get("displayId");
                 appChannel.openApp(packageName, activity, id);
-                return newFixedLengthResponse(Response.Status.OK, "application/json", "success");
+                return newFixedLengthResponse(Response.Status.OK, "text/plain", "success");
             }
-            if (session.getUri().startsWith("/" + "stopActivity")) {
+            if (url.startsWith("/" + "stopActivity")) {
                 String packageName = session.getParms().get("package");
                 String cmd = "am force-stop " + packageName;
                 L.d("stopActivity activity cmd : " + cmd);
@@ -367,21 +505,21 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "success");
             }
             // 获取一个App的所有Activity
-            if (session.getUri().startsWith("/" + AppChannelProtocol.getAppActivity)) {
+            if (url.startsWith("/" + AppChannelProtocol.getAppActivity)) {
                 String packageName = session.getParameters().get("package").get(0);
                 byte[] bytes = appChannel.getAppActivitys(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes),
                         bytes.length);
             }
             // 获取App的权限信息
-            if (session.getUri().startsWith("/" + AppChannelProtocol.getAppPermissions)) {
+            if (url.startsWith("/" + AppChannelProtocol.getAppPermissions)) {
                 List<String> line = session.getParameters().get("package");
                 String packageName = line.get(0);
                 byte[] bytes = appChannel.getAppPermissions(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes),
                         bytes.length);
             }
-            if (session.getUri().startsWith("/" + "injectInputEvent")) {
+            if (url.startsWith("/" + "injectInputEvent")) {
                 String action = session.getParms().get("action");
                 String pointerId = session.getParms().get("pointerId");
                 String deviceWidth = session.getParms().get("width");
@@ -411,7 +549,8 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/text", "success:" + success);
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             //noinspection CallToPrintStackTrace
             e.printStackTrace();
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());

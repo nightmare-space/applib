@@ -1,8 +1,10 @@
 package com.nightmare.applib;
 
 import static android.content.Context.WINDOW_SERVICE;
+import static android.media.MediaFormat.MIMETYPE_VIDEO_AVC;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityOptions;
 import android.app.Application;
 import android.app.Instrumentation;
@@ -28,13 +30,20 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
+import android.media.MediaCodec;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
+import android.view.Surface;
+import android.view.SurfaceControl;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+
+import android.media.MediaCodec;
 
 import com.nightmare.applib.utils.ReflectUtil;
 import com.nightmare.applib.utils.Workarounds;
@@ -64,6 +73,7 @@ import com.nightmare.applib.utils.L;
  * Created by Nightmare on 2021/7/29.
  */
 
+
 public class AppChannel {
     private static final String TAG = "app_channel";
     IPackageManager pm;
@@ -84,6 +94,11 @@ public class AppChannel {
         configuration = new Configuration();
         configuration.setToDefaults();
         pm = ServiceManager.getPackageManager();
+//        try {
+//            ReflectUtil.listAllObject(Class.forName("android.view.SurfaceControl"));
+//        } catch (ClassNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
         // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
         new Thread(new Runnable() {
             @Override
@@ -95,33 +110,38 @@ public class AppChannel {
                     FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
                     PrintStream console = System.out;
                     // 重定向输出，因为fillAppInfo会有一堆报错
-                    System.setErr(new PrintStream(fileOutputStream, false));
-                    System.setOut(new PrintStream(fileOutputStream, false));
-                    ContextWrapperWrapper wrapper = new ContextWrapperWrapper(Workarounds.fillAppInfo());
-                    context = wrapper;
+//                    System.setErr(new PrintStream(fileOutputStream, false));
+//                    System.setOut(new PrintStream(fileOutputStream, false));
+                    FakeContext fakeContext = FakeContext.get();
+                    context = fakeContext;
+                    L.d("fakeContext ->" + fakeContext.toString());
                     // 恢复输出
-                    System.setOut(console);
-                    System.setErr(console);
-                    L.d("icon get start");
-                    DisplayManager dm = (DisplayManager) wrapper.getSystemService(Context.DISPLAY_SERVICE);
+//                    System.setOut(console);
+//                    System.setErr(console);
+//                    L.d("icon get start");
+                    DisplayManager dm = (DisplayManager) fakeContext.getSystemService(Context.DISPLAY_SERVICE);
 //                    void setGlobalUserPreferredDisplayMode(android.view.Display$Mode arg0,)
-                    dm.registerDisplayListener(new DisplayManager.DisplayListener() {
-                        @Override
-                        public void onDisplayAdded(int displayId) {
-                            L.d("onDisplayAdded invoked displayId:" + displayId);
-                        }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        dm.registerDisplayListener(new DisplayManager.DisplayListener() {
+                            @Override
+                            public void onDisplayAdded(int displayId) {
+                                L.d("onDisplayAdded invoked displayId:" + displayId);
+                            }
 
-                        @Override
-                        public void onDisplayRemoved(int displayId) {
-                            L.d("onDisplayRemoved invoked displayId:" + displayId);
+                            @Override
+                            public void onDisplayRemoved(int displayId) {
+                                L.d("onDisplayRemoved invoked displayId:" + displayId);
 
-                        }
+                            }
 
-                        @Override
-                        public void onDisplayChanged(int displayId) {
-                            L.d("onDisplayChanged invoked displayId:" + displayId);
-                        }
-                    }, null);
+                            @Override
+                            public void onDisplayChanged(int displayId) {
+                                L.d("onDisplayChanged invoked displayId:" + displayId);
+                                Display display = dm.getDisplay(displayId);
+                                L.d("onDisplayChanged getRefreshRate:" + display.getRefreshRate());
+                            }
+                        }, null);
+                    }
 //                    Display display = wm.getDefaultDisplay();
 //                    ReflectUtil.listAllObject(displayManager);
 //                    ReflectUtil.listAllObject(displays[0]);
@@ -181,42 +201,6 @@ public class AppChannel {
 
     }
 
-    class FakePackageNameContext extends ContextWrapper {
-        public FakePackageNameContext() {
-            super(null);
-        }
-
-        @Override
-        public String getPackageName() {
-            // `Workarounds.getContext().getPackageName()` always returns `android`,
-            // but `createVirtualDisplay` will validate the package name againest current
-            // uid.
-            // For ADB shell, the uid is 2000 (shell) and the only avaiable package name is
-            // `com.android.shell`
-            return "com.android.shell";
-        }
-
-        @Override
-        public Display getDisplay() {
-            return null;
-        }
-    }
-
-    class ContextWrapperWrapper extends ContextWrapper {
-        public ContextWrapperWrapper(Context base) {
-            super(base);
-        }
-
-        @Override
-        public String getPackageName() {
-            // `Workarounds.getContext().getPackageName()` always returns `android`,
-            // but `createVirtualDisplay` will validate the package name againest current
-            // uid.
-            // For ADB shell, the uid is 2000 (shell) and the only avaiable package name is
-            // `com.android.shell`
-            return "com.android.shell";
-        }
-    }
 
     public static Bitmap getLoacalBitmap(String url) {
         try {
@@ -239,49 +223,6 @@ public class AppChannel {
         hasRealContext = true;
     }
 
-
-    public static Context getContextWithoutActivity() throws Exception {
-        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
-        Constructor<?> activityThreadConstructor = activityThreadClass.getDeclaredConstructor();
-        activityThreadConstructor.setAccessible(true);
-        Object activityThread = activityThreadConstructor.newInstance();
-
-        // ActivityThread.sCurrentActivityThread = activityThread;
-        Field sCurrentActivityThreadField = activityThreadClass.getDeclaredField("sCurrentActivityThread");
-        sCurrentActivityThreadField.setAccessible(true);
-        sCurrentActivityThreadField.set(null, activityThread);
-
-        // ActivityThread.AppBindData appBindData = new ActivityThread.AppBindData();
-        Class<?> appBindDataClass = Class.forName("android.app.ActivityThread$AppBindData");
-        Constructor<?> appBindDataConstructor = appBindDataClass.getDeclaredConstructor();
-        appBindDataConstructor.setAccessible(true);
-        Object appBindData = appBindDataConstructor.newInstance();
-
-        ApplicationInfo applicationInfo = new ApplicationInfo();
-        applicationInfo.packageName = "com.android.shell";
-
-        // appBindData.appInfo = applicationInfo;
-        Field appInfoField = appBindDataClass.getDeclaredField("appInfo");
-        appInfoField.setAccessible(true);
-        appInfoField.set(appBindData, applicationInfo);
-
-        // activityThread.mBoundApplication = appBindData;
-        Field mBoundApplicationField = activityThreadClass.getDeclaredField("mBoundApplication");
-        mBoundApplicationField.setAccessible(true);
-        mBoundApplicationField.set(activityThread, appBindData);
-
-        // Context ctx = activityThread.getSystemContext();
-        Method getSystemContextMethod = activityThreadClass.getDeclaredMethod("getSystemContext");
-
-        Context ctx = (Context) getSystemContextMethod.invoke(activityThread);
-        Application app = Instrumentation.newApplication(Application.class, ctx);
-
-        // activityThread.mInitialApplication = app;
-        Field mInitialApplicationField = activityThreadClass.getDeclaredField("mInitialApplication");
-        mInitialApplicationField.setAccessible(true);
-        mInitialApplicationField.set(activityThread, app);
-        return ctx;
-    }
 
     public String getAppInfos(List<String> packages) {
         StringBuilder builder = new StringBuilder();

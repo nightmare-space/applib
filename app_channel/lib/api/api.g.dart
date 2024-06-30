@@ -20,14 +20,14 @@ class _Api implements Api {
 
   @override
   Future<String> getAllAppInfo({
-    options,
-    is_system_app,
+    RequestOptions? options,
+    bool? is_system_app,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'is_system_app': is_system_app};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -44,14 +44,14 @@ class _Api implements Api {
 
   @override
   Future<String> getAppDetail({
-    options,
-    package,
+    RequestOptions? options,
+    String? package,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'package': package};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -67,39 +67,39 @@ class _Api implements Api {
   }
 
   @override
-  Future<String> getAppMainActivity({
-    options,
-    package,
+  Future<Map<String, String>> getAppMainActivity({
+    RequestOptions? options,
+    String? package,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'package': package};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
     newOptions.headers.addAll(_headers);
-    final _result = await _dio.fetch<String>(newOptions.copyWith(
+    final _result = await _dio.fetch<Map<String, dynamic>>(newOptions.copyWith(
       method: 'GET',
       baseUrl: baseUrl ?? _dio.options.baseUrl,
       queryParameters: queryParameters,
       path: '/appmainactivity',
     )..data = _data);
-    final value = _result.data!;
+    final value = _result.data!.cast<String, String>();
     return value;
   }
 
   @override
   Future<String> getAppActivity({
-    options,
-    package,
+    RequestOptions? options,
+    String? package,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'package': package};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -116,14 +116,14 @@ class _Api implements Api {
 
   @override
   Future<String> getAppPermissions({
-    options,
-    package,
+    RequestOptions? options,
+    String? package,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'package': package};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -140,12 +140,12 @@ class _Api implements Api {
 
   @override
   Future<String> openAppByPackage({
-    options,
-    package,
-    activity,
-    displayId,
+    RequestOptions? options,
+    String? package,
+    String? activity,
+    String? displayId,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'package': package,
       r'activity': activity,
@@ -153,7 +153,7 @@ class _Api implements Api {
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -170,14 +170,14 @@ class _Api implements Api {
 
   @override
   Future<String> getAppInfos({
-    options,
-    required apps,
+    RequestOptions? options,
+    required List<String> apps,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'apps': apps};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -193,12 +193,12 @@ class _Api implements Api {
   }
 
   @override
-  Future<Displays> displays({options}) async {
-    const _extra = <String, dynamic>{};
+  Future<Displays> displays({RequestOptions? options}) async {
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -209,17 +209,17 @@ class _Api implements Api {
       queryParameters: queryParameters,
       path: '/displays',
     )..data = _data);
-    final value = await compute(deserializeDisplays, _result.data!);
+    final value = Displays.fromJson(_result.data!);
     return value;
   }
 
   @override
-  Future<Tasks> getTasks({options}) async {
-    const _extra = <String, dynamic>{};
+  Future<Tasks> getTasks({RequestOptions? options}) async {
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -230,19 +230,19 @@ class _Api implements Api {
       queryParameters: queryParameters,
       path: '/tasks',
     )..data = _data);
-    final value = await compute(deserializeTasks, _result.data!);
+    final value = Tasks.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<Display> createVirtualDisplay({
-    options,
-    required width,
-    required height,
-    required density,
-    useDeviceConfig,
+    RequestOptions? options,
+    required String width,
+    required String height,
+    required String density,
+    bool? useDeviceConfig,
   }) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'width': width,
       r'height': height,
@@ -251,7 +251,7 @@ class _Api implements Api {
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
     final newOptions = newRequestOptions(options);
     newOptions.extra.addAll(_extra);
     newOptions.headers.addAll(_dio.options.headers);
@@ -262,7 +262,7 @@ class _Api implements Api {
       queryParameters: queryParameters,
       path: '/createVirtualDisplay',
     )..data = _data);
-    final value = await compute(deserializeDisplay, _result.data!);
+    final value = Display.fromJson(_result.data!);
     return value;
   }
 
@@ -302,5 +302,22 @@ class _Api implements Api {
       }
     }
     return requestOptions;
+  }
+
+  String _combineBaseUrls(
+    String dioBaseUrl,
+    String? baseUrl,
+  ) {
+    if (baseUrl == null || baseUrl.trim().isEmpty) {
+      return dioBaseUrl;
+    }
+
+    final url = Uri.parse(baseUrl);
+
+    if (url.isAbsolute) {
+      return url.toString();
+    }
+
+    return Uri.parse(dioBaseUrl).resolveUri(url).toString();
   }
 }

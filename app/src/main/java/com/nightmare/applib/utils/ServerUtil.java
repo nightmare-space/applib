@@ -40,7 +40,7 @@ public class ServerUtil {
         for (int i = SHELL_RANGE_START; i < SHELL_RANGE_END; i++) {
             AppServer server = new AppServer("0.0.0.0", i);
             try {
-                server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+                server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
                 return server;
             } catch (IOException e) {
                 L.d("端口" + i + "被占用");

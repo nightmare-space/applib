@@ -3,6 +3,7 @@ package com.nightmare.applib.wrappers;
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ReflectUtil;
 
+import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.view.Display;
 import android.view.Surface;
@@ -71,7 +72,7 @@ public final class DisplayManagerRef {
             IllegalArgumentException, InstantiationException, InvocationTargetException, NoSuchFieldException {
         FakePackageNameContext wrapper = new FakePackageNameContext();
         L.d("Package name: " + wrapper.getPackageName());
-
+//        DisplayManager
         String name = "scrcpy-virtual";
         int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1 << 0;
         int VIRTUAL_DISPLAY_FLAG_PRESENTATION = 1 << 1;
@@ -84,10 +85,9 @@ public final class DisplayManagerRef {
         int VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL = 1 << 8;
         int VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS = 1 << 9;
         int VIRTUAL_DISPLAY_FLAG_TRUSTED = 1 << 10;
-        int flags = VIRTUAL_DISPLAY_FLAG_PRESENTATION
-                | VIRTUAL_DISPLAY_FLAG_CAN_SHOW_WITH_INSECURE_KEYGUARD
-                | VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH
-                | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS;
+        int flags = VIRTUAL_DISPLAY_FLAG_PUBLIC |VIRTUAL_DISPLAY_FLAG_PRESENTATION| VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY
+                | VIRTUAL_DISPLAY_FLAG_ROTATES_WITH_CONTENT
+                | VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH;
 
         try {
             // Android 10

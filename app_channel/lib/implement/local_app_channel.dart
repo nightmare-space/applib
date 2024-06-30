@@ -16,25 +16,40 @@ class RemoteAppChannel implements AppChannel {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
       port ??= 0;
     }
-    Dio dio = Dio();
-    // dio.interceptors.add(
-    //   InterceptorsWrapper(
-    //     onRequest: (options, handler) {
-    //       print(options.extra);
-    //       print('');
-    //       Log.v('>>>>>>>>HTTP LOG');
-    //       Log.v('>>>>>>>>URI: ${options.uri}');
-    //       // Log.v('>>>>>>>>Method: ${options.method}');
-    //       // Log.v('>>>>>>>>Headers: ${options.headers}');
-    //       JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-    //       String prettyprint = encoder.convert(options.data);
-    //       Log.v('>>>>>>>>Body: $prettyprint');
-    //       Log.v('<<<<<<<<');
-    //       print('');
-    //       handler.next(options);
-    //     },
-    //   ),
-    // );
+    BaseOptions options = BaseOptions(
+      receiveDataWhenStatusError: true,
+      contentType: Headers.jsonContentType,
+      headers: {
+        'Accept': '*/*',
+      },
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      validateStatus: (status) {
+        return status != null;
+        // return status != null && status >= 200 && status < 300;
+      },
+      followRedirects: true,
+    );
+    Dio dio = Dio(options);
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          print(options.extra);
+          print('');
+          Log.v('>>>>>>>>HTTP LOG');
+          Log.v('>>>>>>>>URI: ${options.uri}');
+          Log.v('>>>>>>>>Method: ${options.method}');
+          Log.v('>>>>>>>>Headers: ${options.headers}');
+          JsonEncoder encoder = const JsonEncoder.withIndent('  ');
+          String prettyprint = encoder.convert(options.data);
+          Log.v('>>>>>>>>Body: $prettyprint');
+          Log.v('<<<<<<<<');
+          print('');
+          // log response
+          handler.next(options);
+        },
+      ),
+    );
     Log.i('RemoteAppChannel api init port:$port');
     api = Api(dio, baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
   }
@@ -60,10 +75,10 @@ class RemoteAppChannel implements AppChannel {
   Future<List<AppInfo>> getAllAppInfo(bool isSystemApp) async {
     Stopwatch watch = Stopwatch();
     watch.start();
-    Log.i(port);
+    // Log.i(port);
     final result = await api.getAllAppInfo(is_system_app: isSystemApp);
     final List<String> infos = (result).split('\n');
-    Log.e('watch -> ${watch.elapsed}');
+    // Log.e('watch -> ${watch.elapsed}');
     final List<AppInfo> entitys = <AppInfo>[];
 
     /// 为了减少数据包大小，自定义了一个简单的协议，没用 json
@@ -95,9 +110,9 @@ class RemoteAppChannel implements AppChannel {
 
   @override
   Future<String> getAppMainActivity(String packageName) async {
-    String result = await api.getAppMainActivity(package: packageName);
+    Map<String, dynamic> result = await api.getAppMainActivity(package: packageName);
     Log.e('getAppMainActivity $result');
-    return result;
+    return result['mainActivity'];
   }
 
   @override
@@ -118,7 +133,18 @@ class RemoteAppChannel implements AppChannel {
 
   @override
   Future<void> openApp(String package, String activity, String id) async {
-    await api.openAppByPackage(package: package, activity: activity, displayId: id);
+    Log.i('package -> $package activity -> $activity id -> $id');
+    Api newApi = Api(Dio(), baseUrl: 'http://127.0.0.1:${port ?? getPort()}');
+    await newApi.openAppByPackage(
+      package: package,
+      activity: activity,
+      displayId: id,
+      options: RequestOptions(
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      ),
+    );
   }
 
   @override

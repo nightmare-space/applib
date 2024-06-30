@@ -59,7 +59,7 @@ public final class InputManagerSimulate {
         try {
             Method method = getSetDisplayIdMethod();
             method.invoke(inputEvent, displayId);
-            L.d("setDisplayId displayId: " + displayId + " inputEvent: " + inputEvent);
+//            L.d("setDisplayId displayId: " + displayId + " inputEvent: " + inputEvent);
             return true;
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             L.d("Cannot associate a display id to the input event" + e);
