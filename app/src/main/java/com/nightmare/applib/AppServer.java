@@ -359,19 +359,19 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取指定App列表的信息
-            if (url.startsWith(AppChannelProtocol.getAppInfos)) {
+            if (url.startsWith("/appinfos")) {
                 List<String> packages = session.getParameters().get("apps");
                 byte[] bytes = appChannel.getAppInfos(packages).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取单个App的详细信息
-            if (url.startsWith(AppChannelProtocol.getAppDetail)) {
+            if (url.startsWith("/appdetail")) {
                 String packageName = session.getParms().get("package");
                 byte[] bytes = appChannel.getAppDetail(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }
             // 获取缩略图
-            if (url.startsWith(AppChannelProtocol.getTaskThumbnail)) {
+            if (url.startsWith("/taskthumbnail")) {
                 String id = session.getParms().get("id");
                 byte[] bytes = TaskUtil.getTaskThumbnail(Integer.parseInt(id));
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
@@ -505,16 +505,15 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/json", "success");
             }
             // 获取一个App的所有Activity
-            if (url.startsWith("/" + AppChannelProtocol.getAppActivity)) {
+            if (url.startsWith("/appactivity")) {
                 String packageName = session.getParameters().get("package").get(0);
                 byte[] bytes = appChannel.getAppActivitys(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes),
                         bytes.length);
             }
             // 获取App的权限信息
-            if (url.startsWith("/" + AppChannelProtocol.getAppPermissions)) {
-                List<String> line = session.getParameters().get("package");
-                String packageName = line.get(0);
+            if (url.startsWith("/apppermission")) {
+                String packageName = session.getParms().get("package");
                 byte[] bytes = appChannel.getAppPermissions(packageName).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes),
                         bytes.length);
@@ -549,8 +548,7 @@ public class AppServer extends NanoHTTPD {
                 return newFixedLengthResponse(Response.Status.OK, "application/text", "success:" + success);
             }
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "not found");
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
             //noinspection CallToPrintStackTrace
             e.printStackTrace();
             return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());

@@ -1,10 +1,7 @@
 apply plugin: 'com.android.library'
-
-
-apply plugin: 'com.github.dcendents.android-maven'
 group = 'com.github.nightmare-space'
 android {
-    compileSdk 33
+    compileSdk 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
