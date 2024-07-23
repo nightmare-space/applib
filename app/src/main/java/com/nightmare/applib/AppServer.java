@@ -1,24 +1,19 @@
 package com.nightmare.applib;
 
-import static android.media.MediaFormat.KEY_MAX_FPS_TO_ENCODER;
 import static android.media.MediaFormat.MIMETYPE_VIDEO_AVC;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceView;
-import android.view.Window;
 import android.view.WindowManager;
 
 import org.json.JSONArray;
@@ -37,7 +32,6 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -235,7 +229,7 @@ public class AppServer extends NanoHTTPD {
         try {
             String filePath = path + "/server_port";
             out = new FileOutputStream(filePath);
-            L.d("port file -> " + filePath);
+            L.d("port file path-> " + filePath);
             out.write((port + "").getBytes());
             out.close();
         } catch (FileNotFoundException e) {
@@ -334,11 +328,10 @@ public class AppServer extends NanoHTTPD {
             }
             // 获取图标
             if (url.startsWith("/icon")) {
-                // Log.d(session.getParameters().toString());
                 Map<String, List<String>> params = session.getParameters();
-                if (!params.isEmpty()) {
-                    List<String> line = session.getParameters().get("path");
-                    String path = line.get(0);
+                String path = session.getParms().get("path");
+                L.d("path -> " + path);
+                if (path != null) {
                     byte[] bytes = appChannel.getApkBitmapBytes(path);
                     return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes),
                             bytes.length);
@@ -347,14 +340,18 @@ public class AppServer extends NanoHTTPD {
                 // print(bytes);
                 return newFixedLengthResponse(Response.Status.OK, "image/jpg", new ByteArrayInputStream(bytes), bytes.length);
             }
+            if (url.startsWith("/allappinfo_v2")) {
+                String line = session.getParms().get("is_system_app");
+                boolean isSystemApp = Boolean.parseBoolean(line);
+                String apps = appChannel.getAllAppInfoV2(isSystemApp);
+                return newFixedLengthResponse(Response.Status.OK, "application/json", apps);
+            }
             // 获取所有的应用信息
             // 包含被隐藏的，被冻结的
-            if (url.startsWith(getAllAppInfo)) {
+            if (url.startsWith("/allappinfo")) {
                 boolean isSystemApp = false;
-                List<String> line = session.getParameters().get("is_system_app");
-                if (line != null && !line.isEmpty()) {
-                    isSystemApp = Boolean.parseBoolean(line.get(0));
-                }
+                String line = session.getParms().get("is_system_app");
+                isSystemApp = Boolean.parseBoolean(line);
                 byte[] bytes = appChannel.getAllAppInfo(isSystemApp).getBytes();
                 return newFixedLengthResponse(Response.Status.OK, "application/json", new ByteArrayInputStream(bytes), bytes.length);
             }

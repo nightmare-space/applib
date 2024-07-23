@@ -7,17 +7,16 @@ Applib 有两种启动模式
 启动代码如下:
 
 ```java
-    @Override
-    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "apputils");
-//        int port = AppChannel.startServer(flutterPluginBinding.getApplicationContext());
-        try {
-            AppServer.startServerFromActivity(flutterPluginBinding.getApplicationContext());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        channel.setMethodCallHandler(this);
+@Override
+public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "apputils");
+    try {
+        AppServer.startServerFromActivity(flutterPluginBinding.getApplicationContext());
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    channel.setMethodCallHandler(this);
+}
 ```
 
 还有一个是从 adb 的 shell 中启动
@@ -54,15 +53,15 @@ Flutter 侧 直接用 Image.network 加载图标
 
 ```dart
 Image.network(
-          'http://127.0.0.1:${widget.channel?.port ?? channel.port}/icon/${widget.packageName}',
-          gaplessPlayback: true,
-          errorBuilder: (_, __, ___) {
-            return Image.asset(
-              '${Config.flutterPackage}assets/placeholder.png',
-              gaplessPlayback: true,
-            );
-          },
-        ),
+  'http://127.0.0.1:${widget.channel?.port ?? channel.port}/icon/${widget.packageName}',
+  gaplessPlayback: true,
+  errorBuilder: (_, __, ___) {
+    return Image.asset(
+      '${Config.flutterPackage}assets/placeholder.png',
+      gaplessPlayback: true,
+    );
+  },
+),
 ```
 
 整个设计的好处是，无论是哪种启动方式，对Flutter来说，不一样的只有端口号
@@ -71,3 +70,6 @@ Image.network(
 
 猜测是没有获取到应用包名，导致后续获取不到图标的
 
+
+## app_channel
+这是一个对应 applib 这个 server 的 flutter 包，集成后就直接以

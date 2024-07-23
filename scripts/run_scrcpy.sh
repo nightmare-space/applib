@@ -1,2 +1,0 @@
-adb push 'scripts/scrcpy-server' /data/local/tmp/scrcpy-server.jar
-adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 1.25 log_level=verbose bit_rate=8000000 max_fps=0 lock_video_orientation=0 tunnel_forward=true control=false display_id=0 show_touches=false stay_awake=false raw_video_stream=true

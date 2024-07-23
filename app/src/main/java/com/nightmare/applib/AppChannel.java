@@ -68,6 +68,10 @@ import java.util.List;
 
 import com.nightmare.applib.utils.L;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 /**
  * Created by Nightmare on 2021/7/29.
@@ -224,6 +228,18 @@ public class AppChannel {
     }
 
 
+    //    JSONObject jsonObject = new JSONObject();
+//    DisplayMetrics metrics = new DisplayMetrics();
+//        display.getMetrics(metrics);
+//        jsonObject.put("id", display.getDisplayId());
+//        jsonObject.put("metrics", metrics.toString());
+//        jsonObject.put("name", display.getName());
+//        jsonObject.put("width", display.getWidth());
+//        jsonObject.put("height", display.getHeight());
+//        jsonObject.put("rotation", display.getRotation());
+//        jsonObject.put("refreshRate", display.getRefreshRate());
+//        jsonObject.put("density", metrics.densityDpi);
+//        jsonObject.put("dump", display.toString());
     public String getAppInfos(List<String> packages) {
         StringBuilder builder = new StringBuilder();
         for (String packageName : packages) {
@@ -296,6 +312,9 @@ public class AppChannel {
         return getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
     }
 
+    /**
+     * @noinspection CallToPrintStackTrace
+     */
     public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
         if (context != null) {
             PackageManager pm = context.getPackageManager();
@@ -309,6 +328,60 @@ public class AppChannel {
         } else {
             return pm.getPackageInfo(packageName, flag);
         }
+    }
+
+    public String getAllAppInfoV2(boolean isSystemApp) throws InvocationTargetException, IllegalAccessException, JSONException {
+        List<String> packages = getAppPackages();
+        if (packages == null) {
+            return "";
+        }
+        JSONObject jsonObjectResult = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+        for (String packageName : packages) {
+            JSONObject appInfoJson = new JSONObject();
+            PackageInfo packageInfo = getPackageInfo(packageName);
+            if (packageInfo == null) {
+                continue;
+            }
+            int resultTag = packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM;
+            if (isSystemApp) {
+                // 是否只列表系统应用,=0为用户应用，跳过
+                if (resultTag == 0) {
+                    continue;
+                }
+            } else {
+                if (resultTag > 0) {
+                    continue;
+                }
+            }
+            ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+            appInfoJson.put("package", applicationInfo.packageName);
+            appInfoJson.put("label", getLabel(applicationInfo));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                appInfoJson.put("minSdk", packageInfo.applicationInfo.minSdkVersion);
+            } else {
+                appInfoJson.put("minSdk", 0);
+            }
+            appInfoJson.put("targetSdk", applicationInfo.targetSdkVersion);
+            appInfoJson.put("versionName", packageInfo.versionName);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                appInfoJson.put("versionCode", packageInfo.getLongVersionCode());
+            } else {
+                appInfoJson.put("versionCode", packageInfo.versionCode);
+            }
+            appInfoJson.put("enabled", applicationInfo.enabled);
+            try {
+                PackageInfo withoutHidePackage = getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                appInfoJson.put("hide", false);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                appInfoJson.put("hide", true);
+            }
+            appInfoJson.put("uid", applicationInfo.uid);
+            appInfoJson.put("sourceDir", applicationInfo.sourceDir);
+            jsonArray.put(appInfoJson);
+        }
+        jsonObjectResult.put("datas", jsonArray);
+        return jsonObjectResult.toString();
     }
 
     // 这儿有crash
