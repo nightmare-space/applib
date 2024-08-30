@@ -87,7 +87,7 @@ public class AppChannel {
     static final int RANGE_END = 6040;
     DisplayMetrics displayMetrics;
     Configuration configuration;
-    Context context;
+    public Context context;
     boolean hasRealContext = false;
 
     // 没有context的时候的构造函数，用于dex中创建这个对象
@@ -146,7 +146,35 @@ public class AppChannel {
                             }
                         }, null);
                     }
-//                    Display display = wm.getDefaultDisplay();
+                    Display[] displays = dm.getDisplays();
+                    for (Display display : displays) {
+                        L.d("display -> " + display);
+                        L.d("display -> " + display.getDisplayId());
+                        L.d("display -> " + display.getRefreshRate());
+                    }
+//                    WindowManager windowManager = (WindowManager) fakeContext.getSystemService(WINDOW_SERVICE);
+//                    Display currentDisplay = windowManager.getDefaultDisplay();
+//                    L.d("currentDisplay -> " + currentDisplay);
+//                    Display.Mode[] modes = new Display.Mode[0];
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                        modes = currentDisplay.getSupportedModes();
+//                    }
+//                    Log.d(TAG, "modes -> " + Arrays.toString(modes));
+//                    Display.Mode mode = modes[1]; // 选择第一个支持的模式
+//                    for (Display.Mode m : modes) {
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                            if (m.getModeId() == 14) {
+//                                mode = m;
+//                                final Window window = windowManager.;
+//                                final WindowManager.LayoutParams params = window.getAttributes();
+//                                Log.d(TAG, "change modes -> " + mode);
+//                                params.preferredDisplayModeId = mode.getModeId();
+//                                window.setAttributes(params);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    Display.Mode lastMode = currentDisplay.getMode();
 //                    ReflectUtil.listAllObject(displayManager);
 //                    ReflectUtil.listAllObject(displays[0]);
 //                    for (Display display : displays) {
@@ -623,19 +651,18 @@ public class AppChannel {
     }
 
     public String getAppDetail(String data) {
-        StringBuilder builder = new StringBuilder();
+        JSONObject jsonObject = new JSONObject();
         try {
             PackageInfo packageInfo = getPackageInfo(data);
-            builder.append(packageInfo.firstInstallTime).append("\r");
-            builder.append(packageInfo.lastUpdateTime).append("\r");
-            builder.append(packageInfo.applicationInfo.dataDir).append("\r");
-            builder.append(packageInfo.applicationInfo.nativeLibraryDir);
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            jsonObject.put("firstInstallTime", packageInfo.firstInstallTime);
+            jsonObject.put("lastUpdateTime", packageInfo.lastUpdateTime);
+            jsonObject.put("dataDir", packageInfo.applicationInfo.dataDir);
+            jsonObject.put("nativeLibraryDir", packageInfo.applicationInfo.nativeLibraryDir);
+
+        } catch (JSONException | InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
-        return builder.toString();
+        return jsonObject.toString();
     }
 
 

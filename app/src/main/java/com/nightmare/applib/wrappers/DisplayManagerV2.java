@@ -89,12 +89,9 @@ public final class DisplayManagerV2 {
 
     public DisplayInfo getDisplayInfo(int displayId) {
         try {
+//            ReflectUtil.listAllObject(manager);
+            // setUserPreferredDisplayMode 测试是否可以更改帧率
             Object displayInfo = manager.getClass().getMethod("getDisplayInfo", int.class).invoke(manager, displayId);
-//            ReflectUtil.listAllObject(displayInfo);
-//            if (displayInfo == null) {
-//                // fallback when displayInfo is null
-//                return getDisplayInfoFromDumpsysDisplay(displayId);
-//            }
             assert displayInfo != null;
             Class<?> cls = displayInfo.getClass();
             // width and height already take the rotation into account

@@ -64,3 +64,21 @@ lsof | awk -v uid=shell '$3 == uid' | grep 14002 | awk '{print $2}' | xargs kill
 
 ## TODO
 applib把当前设备信息打印出来
+
+
+
+## 这是一个为 Uncon、Speed Share、ADB KIT 提供服务的 dex server
+
+通过将 java 直接编译成 class，再使用 dx 工具转换成 dex
+
+这个服务端启动后，其他的客户端通过 HTTP 协议与后端进行通信
+
+就像平常请求网络接口一样
+
+这个服务端有两种启动模式
+
+
+一种就是 app_process 直接 run 
+
+另一种是 App 运行的时候启动
+

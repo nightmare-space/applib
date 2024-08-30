@@ -1,5 +1,4 @@
 package com.nightmare.applib.utils;
-
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RecentTaskInfo;
@@ -7,18 +6,17 @@ import android.app.TaskInfo;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.os.Build;
-
 import com.nightmare.applib.AppChannel;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 
 public class TaskUtil {
+
+    // TODO 安卓14不支持
     static public byte[] getTaskThumbnail(int id) throws Exception {
         long start = System.currentTimeMillis();
         @SuppressLint("PrivateApi")
@@ -27,6 +25,7 @@ public class TaskUtil {
         Method services = cls.getDeclaredMethod("getService");
         Object iam = services.invoke(null);
         assert iam != null;
+        ReflectUtil.listAllObject(iam);
         Method snapshotMethod = iam.getClass().getDeclaredMethod(
                 "getTaskSnapshot", int.class,
                 boolean.class
@@ -91,9 +90,7 @@ public class TaskUtil {
             // System.out.println("serving: " + taskInfo.toString());
             jsonObject.put("id", taskInfo.id);
             // above Android 3.1
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
-                jsonObject.put("persistentId", taskInfo.persistentId);
-            }
+            jsonObject.put("persistentId", taskInfo.persistentId);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     // 30是安卓11

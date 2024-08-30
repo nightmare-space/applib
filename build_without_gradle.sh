@@ -45,15 +45,19 @@ echo "Compiling java sources..."
     -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
     com/nightmare/applib/*.java \
     com/nightmare/applib/wrappers/*.java \
-    com/nightmare/applib/utils/*.java
+    com/nightmare/applib/utils/*.java \
+    com/nightmare/applib/handler/*.java \
+    com/nightmare/applib/interfaces/*.java
 cp -r $LOCAL_DIR/fi $CLASSES_DIR/
 echo "Dexing..."
 cd "$CLASSES_DIR"
 "$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \
     --output "$BUILD_DIR/classes.dex" \
+    com/nightmare/applib/*.class \
     com/nightmare/applib/wrappers/*.class \
     com/nightmare/applib/utils/*.class \
-    com/nightmare/applib/*.class \
+    com/nightmare/applib/handler/*.class \
+    com/nightmare/applib/interfaces/*.class \
     fi/iki/elonen/*.class \
     fi/iki/elonen/util/*.class
 

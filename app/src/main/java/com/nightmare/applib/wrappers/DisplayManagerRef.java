@@ -137,7 +137,7 @@ public final class DisplayManagerRef {
             return (VirtualDisplay) virtualDisplay;
         } catch (NoSuchMethodException e) {
         }
-        ReflectUtil.listAllObject(manager);
+//        ReflectUtil.listAllObject(manager);
         try {
             // Android 13
             Method createVirtualDisplay = manager.getClass().getMethod("createVirtualDisplay",

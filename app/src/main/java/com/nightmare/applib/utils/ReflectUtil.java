@@ -29,6 +29,7 @@ public class ReflectUtil {
 
     public static void listAllObject(Class clazz) {
         map.put("class java.lang.String", "String");
+        map.put("java.util.List","List");
         try {
             print("Class " + clazz.getName());
             // 反射属性字段
@@ -64,15 +65,20 @@ public class ReflectUtil {
             print("METHOD========");
             for (Method m : methods) {
                 boolean isStatic = Modifier.isStatic(m.getModifiers());
-                String returnType = m.getReturnType().toString();
-                returnType = returnType.replace("class ", "");
+                String returnType = null;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    returnType = m.getReturnType().getTypeName();
+                }
+                if(map.containsKey(returnType)){
+                    returnType = map.get(returnType);
+                }
+//                returnType = returnType.replace("class ", "");
                 if(isStatic){
                     System.out.print("static ");
                 }
                 System.out.print((char) 0x1b + "[36m" + returnType + " ");
                 System.out.print((char) 0x1b);
                 System.out.print("[33m" + m.getName());
-                List<Parameter> parameters = new ArrayList<>();
                 System.out.print("(" + (char) 0x1b + "[32m");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     for (int i = 0; i < m.getParameterCount(); i++) {
