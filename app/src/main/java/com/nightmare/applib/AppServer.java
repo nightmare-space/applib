@@ -38,6 +38,7 @@ public class AppServer extends NanoHTTPD {
         super(address, port);
     }
 
+
     static public AppChannel appChannel;
     List<IHTTPHandler> handlers = new ArrayList<>();
 
@@ -99,6 +100,7 @@ public class AppServer extends NanoHTTPD {
      * @throws IOException: IOException
      */
     public static int startServerFromActivity(Context context) throws IOException {
+        L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
         AppServer server = ServerUtil.safeGetServerForActivity();
         // TODO 在确认下这个断言在 release 下是怎么的
         assert server != null;
