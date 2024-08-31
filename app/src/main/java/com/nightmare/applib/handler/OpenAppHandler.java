@@ -11,7 +11,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class OpenAppHandler implements IHTTPHandler {
     @Override
     public String route() {
-        return "/open_app";
+        return "/start_activity";
     }
 
     @Override

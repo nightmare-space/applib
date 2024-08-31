@@ -12,11 +12,12 @@ import fi.iki.elonen.NanoHTTPD;
 public class StopActivityHandler implements IHTTPHandler {
     @Override
     public String route() {
-        return "activity_stop";
+        return "/stop_activity";
     }
 
     @Override
-    public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) { String packageName = session.getParms().get("package");
+    public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
+        String packageName = session.getParms().get("package");
         String cmd = "am force-stop " + packageName;
         L.d("stopActivity activity cmd : " + cmd);
         // adb -s $serial shell am start -n $packageName/$activity

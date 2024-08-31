@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import fi.iki.elonen.NanoHTTPD;
 
 // 通过包名获取Main Activity
-public class Appmainactivity implements IHTTPHandler {
+public class AppMainactivity implements IHTTPHandler {
     @Override
     public String route() {
         return "/appmainactivity";

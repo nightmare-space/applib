@@ -11,6 +11,7 @@ import android.view.Display;
 
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.DisplayUtil;
+import com.nightmare.applib.utils.L;
 import com.nightmare.applib.wrappers.DisplayManagerV2;
 
 import org.json.JSONArray;
@@ -31,7 +32,11 @@ public class DisplaysHandler implements IHTTPHandler {
         DisplayManagerV2 displayManagerV2 = DisplayManagerV2.create();
         DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
         Display[] displayss = displayManager.getDisplays();
+        L.d("DisplaysHandler Invoke");
         // 打印所有的显示器
+        for (Display display : displayss) {
+            L.d("display -> " + display);
+        }
 
         JSONObject jsonObjectResult = new JSONObject();
         JSONArray jsonArray = new JSONArray();

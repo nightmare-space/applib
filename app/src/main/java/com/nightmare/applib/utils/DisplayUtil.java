@@ -16,13 +16,13 @@ public class DisplayUtil {
     static public JSONObject getDisplayInfo(Display display) throws JSONException {
         JSONObject jsonObject = new JSONObject();
         DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
+        display.getRealMetrics(metrics);
         jsonObject.put("id", display.getDisplayId());
         jsonObject.put("metrics", metrics.toString());
         jsonObject.put("name", display.getName());
         // TODO 目前获取到的不准
-        jsonObject.put("width", display.getWidth());
-        jsonObject.put("height", display.getHeight());
+        jsonObject.put("width", metrics.widthPixels);
+        jsonObject.put("height", metrics.heightPixels);
         jsonObject.put("rotation", display.getRotation());
         jsonObject.put("refreshRate", display.getRefreshRate());
         jsonObject.put("density", metrics.densityDpi);

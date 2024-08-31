@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -115,10 +114,9 @@ public class AppServer extends NanoHTTPD {
     void registerRoutes() {
         addHandler(new AppActivityHandler());
         addHandler(new AppDetailHandler());
-        addHandler(new AppInfoHandler());
         addHandler(new AppInfosHandler());
 //        addHandler(new AppInfosHandlerV1());
-        addHandler(new Appmainactivity());
+        addHandler(new AppMainactivity());
         addHandler(new AppPermissionHandler());
         addHandler(new ChangeDisplayHandler());
         addHandler(new CMDHandler());

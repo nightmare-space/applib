@@ -14,7 +14,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class CreateVirtualDisplayV2 implements IHTTPHandler {
     @Override
     public String route() {
-        return "/displays";
+        return "/CreateVirtualDisplayV2";
     }
 
     @Override

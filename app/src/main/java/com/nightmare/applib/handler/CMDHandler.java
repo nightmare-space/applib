@@ -2,13 +2,16 @@ package com.nightmare.applib.handler;
 
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.L;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+
 import fi.iki.elonen.NanoHTTPD;
+
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 public class CMDHandler implements IHTTPHandler {
@@ -18,7 +21,8 @@ public class CMDHandler implements IHTTPHandler {
     }
 
     @Override
-    public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) { Map<String, String> body = new HashMap<>();
+    public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
+        Map<String, String> body = new HashMap<>();
         try {
             session.parseBody(body);
         } catch (IOException | NanoHTTPD.ResponseException e) {
@@ -26,6 +30,7 @@ public class CMDHandler implements IHTTPHandler {
         }
         L.d("body -> " + body.get("postData"));
         Process process = null;
+        StringBuffer stringBuffer = new StringBuffer();
         try {
             process = Runtime.getRuntime().exec(body.get("postData"));
 
@@ -34,24 +39,21 @@ public class CMDHandler implements IHTTPHandler {
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
             PrintWriter writer = new PrintWriter(process.getOutputStream());
 
-            // 如果需要向命令写入输入
-            writer.println("your_input_here"); // 替换为你的输入
-            writer.flush();
-
             // 读取命令的标准输出
+            String result = "";
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println("Output: " + line);
+                stringBuffer.append(line).append("\n");
             }
 
             // 读取命令的错误输出
             while ((line = errorReader.readLine()) != null) {
-                System.err.println("Error: " + line);
+                stringBuffer.append(line).append("\n");
             }
 
             // 等待命令执行完毕
             int exitCode = process.waitFor();
-            System.out.println("Exit Code: " + exitCode);
+            L.d("Exit Code: " + exitCode);
 
             // 关闭流
             reader.close();
@@ -66,6 +68,6 @@ public class CMDHandler implements IHTTPHandler {
         }
 
 
-        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", "success");
+        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "text/plain", stringBuffer.toString());
     }
 }

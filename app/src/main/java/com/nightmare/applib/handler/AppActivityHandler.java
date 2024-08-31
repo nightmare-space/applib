@@ -2,11 +2,8 @@ package com.nightmare.applib.handler;
 
 import static com.nightmare.applib.AppServer.appChannel;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-
 import com.nightmare.applib.interfaces.IHTTPHandler;
-
 import java.io.ByteArrayInputStream;
-
 import fi.iki.elonen.NanoHTTPD;
 
 // 获取一个App的所有Activity

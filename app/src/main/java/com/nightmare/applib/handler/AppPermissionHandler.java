@@ -13,7 +13,7 @@ import fi.iki.elonen.NanoHTTPD;
 public class AppPermissionHandler implements IHTTPHandler {
     @Override
     public String route() {
-        return "/apppermission";
+        return "/app_permission";
     }
 
     @Override
