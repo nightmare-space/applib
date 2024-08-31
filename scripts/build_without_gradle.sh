@@ -11,6 +11,7 @@
 JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
 set -e
 LOCAL_DIR=$(cd `dirname $0`; pwd)
+PROJ_DIR=$LOCAL_DIR/../
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-34}
@@ -37,18 +38,18 @@ echo "$CLASSES_DIR/com/nightmare/applib"
 # rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
 
 mkdir -p "$CLASSES_DIR/com/nightmare/applib"
-cd $LOCAL_DIR/app/src/main/java
+cd $PROJ_DIR/app/src/main/java
 echo "Compiling java sources..."
 
 /usr/bin/javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
-    -Djava.ext.dirs=$LOCAL_DIR \
+    -Djava.ext.dirs=$PROJ_DIR \
     -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
     com/nightmare/applib/*.java \
     com/nightmare/applib/wrappers/*.java \
     com/nightmare/applib/utils/*.java \
     com/nightmare/applib/handler/*.java \
     com/nightmare/applib/interfaces/*.java
-cp -r $LOCAL_DIR/fi $CLASSES_DIR/
+cp -r $PROJ_DIR/fi $CLASSES_DIR/
 echo "Dexing..."
 cd "$CLASSES_DIR"
 "$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \

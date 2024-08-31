@@ -2,7 +2,10 @@ LOCAL_DIR=$(
     cd $(dirname $0)
     pwd
 )
-$LOCAL_DIR/../build_without_gradle.sh
+PROJ_DIR=$LOCAL_DIR/../
+cd $PROJ_DIR
+$LOCAL_DIR/build_without_gradle.sh
+cd $LOCAL_DIR
 lsof_result=$(adb shell 'lsof')
 # echo "$lsof_result"
 # 安卓低版本没有awk
@@ -15,7 +18,7 @@ else
 fi
 # adb shell 'lsof | awk -v uid=shell "\$3 == uid" | grep 15000 | awk "{print \$2}" | xargs kill '
 # # 取MD5的前8位
-SERVER_PATH=$LOCAL_DIR/../build/app_server
+SERVER_PATH=$LOCAL_DIR/build/app_server
 MD5=$(md5sum $SERVER_PATH | cut -d ' ' -f1 | cut -c 1-8)
 
 cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-space/GitHub/super_launcher/assets/sula_app_server
@@ -24,8 +27,8 @@ cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-core/adb_kit/assets
 echo MD5:$MD5
 devices=`adb devices | grep -v List | grep device | wc -l`
 echo devices:$devices
-adb push 'build/app_server' /sdcard/app_server$MD5
-adb push 'executor' /data/local/tmp/executor
+adb push "build/app_server" /sdcard/app_server$MD5
+adb push "$PROJ_DIR/resource/executor" /data/local/tmp/executor
 echo '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer open"'
 $LOCAL_DIR/adb_forward.sh
 adb shell '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer open"'
