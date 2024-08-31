@@ -5,6 +5,7 @@ import static com.nightmare.applib.handler.InjectInputEvent.inputDispatcher;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
@@ -188,14 +189,15 @@ public class AppServer extends NanoHTTPD {
      * @param context: Context
      * @throws IOException: IOException
      */
-    public static void startServerFromActivity(Context context) throws IOException {
+    public static int startServerFromActivity(Context context) throws IOException {
         AppServer server = ServerUtil.safeGetServer();
         // TODO 在确认下这个断言在 release 下是怎么的
         assert server != null;
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
-        server.appChannel = new AppChannel(context);
-        System.out.println("success start:" + server.getListeningPort());
+        appChannel = new AppChannel(context);
+        Log.d("Applib", "success start:" + server.getListeningPort());
         System.out.flush();
+        return server.getListeningPort();
     }
 
     /**
