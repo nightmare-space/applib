@@ -46,10 +46,17 @@ public class AppServer extends NanoHTTPD {
     }
 
 
-    @SuppressLint("SdCardPath")
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
+        startServerForShell();
+    }
+
+    /**
+     * usually cmd is 'adb shell app_process *'
+     */
+    @SuppressLint("SdCardPath")
+    public static void startServerForShell() {
         AppServer server = ServerUtil.safeGetServerForADB();
         L.d("Sula input socket server starting.");
         assert server != null;
@@ -76,9 +83,31 @@ public class AppServer extends NanoHTTPD {
         // System.in.read();
         //noinspection InfiniteLoopStatement
         while (true) {
-            //noinspection BusyWait
-            Thread.sleep(1000);
+            try {
+                //noinspection BusyWait
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
+    }
+
+    /**
+     * 与直接启动dex不同，从Activity中启动不用反射context上下文
+     *
+     * @param context: Context
+     * @throws IOException: IOException
+     */
+    public static int startServerFromActivity(Context context) throws IOException {
+        AppServer server = ServerUtil.safeGetServerForActivity();
+        // TODO 在确认下这个断言在 release 下是怎么的
+        assert server != null;
+        server.registerRoutes();
+        writePort(context.getFilesDir().getPath(), server.getListeningPort());
+        appChannel = new AppChannel(context);
+        Log.d("Applib", "success start:" + server.getListeningPort());
+        System.out.flush();
+        return server.getListeningPort();
     }
 
     void registerRoutes() {
@@ -183,22 +212,6 @@ public class AppServer extends NanoHTTPD {
         }).start();
     }
 
-    /**
-     * 与直接启动dex不同，从Activity中启动不用反射context上下文
-     *
-     * @param context: Context
-     * @throws IOException: IOException
-     */
-    public static int startServerFromActivity(Context context) throws IOException {
-        AppServer server = ServerUtil.safeGetServer();
-        // TODO 在确认下这个断言在 release 下是怎么的
-        assert server != null;
-        writePort(context.getFilesDir().getPath(), server.getListeningPort());
-        appChannel = new AppChannel(context);
-        Log.d("Applib", "success start:" + server.getListeningPort());
-        System.out.flush();
-        return server.getListeningPort();
-    }
 
     /**
      * 写入端口号，方便不同进程同App，获得这个端口号
@@ -220,12 +233,6 @@ public class AppServer extends NanoHTTPD {
             e.printStackTrace();
         }
     }
-
-    public Object getParams(IHTTPSession session) {
-        Map<String, List<String>> params = session.getParameters();
-        return params.get(0);
-    }
-
 
     public static byte[] readAllBytes(InputStream inputStream) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
