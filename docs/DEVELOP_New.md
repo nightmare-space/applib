@@ -1,8 +1,14 @@
-## 模式
+## 整体架构图
+![](applib.excalidraw.png)
+基于 HTTP 服务设计的好处是，无论客户端代码运行在哪种设备，对它来说，不一样的只有端口号
+
+甚至可以给予这种模式开发出一个全平台的 LibChecker，在 PC 端也能快速查看 Android 的设备信息
+
+## 两种启动模式
 Applib 有两种启动模式
 第一种是速享等软件需要选择本机应用进行发送的时候，也会用到读取本机应用列表的功能
 
-这部分是速享等软件集成了 app_channel 插件即可自动拥有获取应用列表的能力
+这部分是速享等软件集成了 app_channel 插件即可自动拥有获取应用列表的能力，无需手动启动服务
 
 启动代码如下:
 
@@ -43,9 +49,9 @@ adb forward tcp:15000 tcp:15000
 
 所以，接下来用 postman 调用15000端口的api即可
 
-curl --location 'http://127.0.0.1:15000/tasks'
+`curl --location 'http://127.0.0.1:15000/tasks'`
 
-curl --location --request POST 'http://127.0.0.1:15000/createVirtualDisplay?width=1200&height=2412&density=480'
+`curl --location --request POST 'http://127.0.0.1:15000/createVirtualDisplay?width=1200&height=2412&density=480'`
 
 这部分需要简单阅读一下 AppServer.java ,其中图标的获取也是通过接口，
 
@@ -53,7 +59,7 @@ Flutter 侧 直接用 Image.network 加载图标
 
 ```dart
 Image.network(
-  'http://127.0.0.1:${widget.channel?.port ?? channel.port}/icon/${widget.packageName}',
+  'http://127.0.0.1:${channel.port}/icon/${packageName}',
   gaplessPlayback: true,
   errorBuilder: (_, __, ___) {
     return Image.asset(
@@ -69,7 +75,3 @@ Image.network(
 所以需要调试图标丢失问题，需要先看下应用列表能不能正常获取
 
 猜测是没有获取到应用包名，导致后续获取不到图标的
-
-
-## app_channel
-这是一个对应 applib 这个 server 的 flutter 包，集成后就直接以
