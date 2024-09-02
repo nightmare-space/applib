@@ -34,26 +34,23 @@ public class IconHandler implements IHTTPHandler {
             }
         } else {
             try {
-                String packageName = url.substring("/icon/".length());
-                int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
-                String result;
-                if (dotIndex != -1) {
-                    result = packageName.substring(0, dotIndex); // 获取 '.' 前的部分
-                } else {
-                    result = packageName; // 如果没有 '.'，返回原字符串
+                String packageName = session.getParms().get("package");
+                if (packageName.contains(".png")) {
+                    int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
+                    String result;
+                    if (dotIndex != -1) {
+                        result = packageName.substring(0, dotIndex); // 获取 '.' 前的部分
+                    } else {
+                        result = packageName; // 如果没有 '.'，返回原字符串
+                    }
+                    packageName = result;
                 }
-                packageName = result;
                 L.d("package -> " + packageName);
                 bytes = appChannel.getBitmapBytes(packageName);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
-        NanoHTTPD.Response response = newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "image/png", new ByteArrayInputStream(bytes), bytes.length);
-//        response.addHeader("Access-Control-Allow-Origin", "*");
-//        response.addHeader("Access-Control-Allow-Methods", "*");
-//        response.addHeader("Access-Control-Allow-Headers","*");
-//        response.addHeader("Accept-Ranges","bytes");
-        return response;
+        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "image/png", new ByteArrayInputStream(bytes), bytes.length);
     }
 }

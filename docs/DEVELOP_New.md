@@ -75,3 +75,8 @@ Image.network(
 所以需要调试图标丢失问题，需要先看下应用列表能不能正常获取
 
 猜测是没有获取到应用包名，导致后续获取不到图标的
+
+
+
+## 相关资料
+[app_process使用](https://ljd1996.github.io/2019/11/11/app-process%E4%BD%BF%E7%94%A8/)
