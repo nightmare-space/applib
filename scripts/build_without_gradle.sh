@@ -8,6 +8,10 @@
 # Then execute:
 #
 #     BUILD_DIR=my_build_dir ./build_without_gradle.sh
+function color_echo()
+{
+    echo -e "\033[1;32m$1\033[0m"
+}
 JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
 set -e
 LOCAL_DIR=$(cd `dirname $0`; pwd)
@@ -16,41 +20,76 @@ unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-34}
 BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.3}
+BUILD_TOOLS_DIR="$ANDROID_HOME/build-tools/$BUILD_TOOLS"
 # BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
 BUILD_DIR="$LOCAL_DIR/${BUILD_DIR:-build}"
+GEN_DIR="$BUILD_DIR/gen"
 CLASSES_DIR="$BUILD_DIR/classes"
 SERVER_DIR=$(dirname "$0")
 SERVER_BINARY=app_server
-printf "%-10s %-10s\n" "Variable" "Value"
-printf "%-10s %-10s\n" "--------" "-----"
-printf "%-10s %-10s\n" "PLATFORM" "$PLATFORM"
-printf "%-10s %-10s\n" "ANDROID_HOME" "$ANDROID_HOME"
-echo PLATFORM:$PLATFORM
-echo ANDROID_HOME:$ANDROID_HOME
-echo BUILD_DIR:-build:${BUILD_DIR:-build}
-echo BUILD_DIR:$BUILD_DIR
-echo CLASSES_DIR:$CLASSES_DIR
-echo LOCAL_DIR:$LOCAL_DIR
-echo "Platform: android-$PLATFORM"
-echo "Build-tools: $BUILD_TOOLS"
-echo "Build dir: $BUILD_DIR"
-echo "$CLASSES_DIR/com/nightmare/applib"
+ANDROID_JAR="$ANDROID_HOME/platforms/android-$PLATFORM/android.jar"
+LAMBDA_JAR="$BUILD_TOOLS_DIR/core-lambda-stubs.jar"
+printf "%-20s %-20s\n" "Variable" "Value"
+printf "%-20s %-20s\n" "--------" "-----"
+printf "%-20s %-20s\n" "PLATFORM" "$PLATFORM"
+printf "%-20s %-20s\n" "PROJ_DIR" "$PROJ_DIR"
+printf "%-20s %-20s\n" "ANDROID_HOME" "$ANDROID_HOME"
+printf "%-20s %-20s\n" "BUILD_DIR" "${BUILD_DIR}"
+printf "%-20s %-20s\n" "CLASSES_DIR" "$CLASSES_DIR"
+printf "%-20s %-20s\n" "LOCAL_DIR" "$LOCAL_DIR"
+printf "%-20s %-20s\n" "Platform:" "android-$PLATFORM"
+printf "%-20s %-20s\n" "Build-tools:" "$BUILD_TOOLS"
+printf "%-20s %-20s\n" "BUILD_TOOLS_DIR" "$BUILD_TOOLS_DIR"
+printf "%-20s %-20s\n" "GEN_DIR" "$GEN_DIR"
+
+
+color_echo "$CLASSES_DIR/com/nightmare/applib"
 # rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
 
 mkdir -p "$CLASSES_DIR/com/nightmare/applib"
-cd $PROJ_DIR/app/src/main/java
-echo "Compiling java sources..."
 
-/usr/bin/javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
-    -Djava.ext.dirs=$PROJ_DIR \
-    -cp "$CLASSES_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
+color_echo "Generating java from aidl..."
+cd "$PROJ_DIR/app/src/main/aidl"
+# "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/IAdbService.aidl
+# "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/ISurfaceService.aidl
+
+
+cd $PROJ_DIR/app/src/main/java
+
+SRC=( \
     com/nightmare/applib/*.java \
     com/nightmare/applib/wrappers/*.java \
     com/nightmare/applib/utils/*.java \
     com/nightmare/applib/handler/*.java \
-    com/nightmare/applib/interfaces/*.java
+    com/nightmare/applib/interfaces/*.java \
+)
+
+CLASSES=()
+for src in "${SRC[@]}"
+do
+    CLASSES+=("${src%.java}.class")
+done
+
+color_echo "Compiling java sources..."
+
+/usr/bin/javac -bootclasspath "$ANDROID_JAR" \
+    -Djava.ext.dirs=$PROJ_DIR \
+    -cp "$LAMBDA_JAR:$GEN_DIR" \
+    -d "$CLASSES_DIR" \
+    -source 1.8 -target 1.8 \
+    ${SRC[@]}
+
+# /usr/bin/javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
+#     -Djava.ext.dirs=$PROJ_DIR \
+#     -cp "$CLASSES_DIR:$GEN_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
+#     com/nightmare/applib/*.java \
+#     com/nightmare/applib/wrappers/*.java \
+#     com/nightmare/applib/utils/*.java \
+#     com/nightmare/applib/services/*.java \
+#     com/nightmare/applib/handler/*.java \
+#     com/nightmare/applib/interfaces/*.java
 cp -r $PROJ_DIR/fi $CLASSES_DIR/
-echo "Dexing..."
+color_echo "Dexing..."
 cd "$CLASSES_DIR"
 "$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \
     --output "$BUILD_DIR/classes.dex" \
@@ -65,10 +104,10 @@ cd "$CLASSES_DIR"
 echo "Archiving..."
 cd "$BUILD_DIR"
 jar cvf "$SERVER_BINARY" classes.dex
-rm -rf classes.dex classes
+rm -rf classes.dex classes gen
 
 echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
-# cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/uncon/assets/'
-# cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/adb_tool/assets'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/uncon/assets/'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/adb_tool/assets'
