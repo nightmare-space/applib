@@ -1,29 +1,24 @@
 package com.nightmare.applib.wrappers;
 
-
-import com.nightmare.applib.*;
-import com.nightmare.applib.utils.L;
-import com.nightmare.applib.utils.ReflectUtil;
-
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.hardware.display.VirtualDisplay;
-import android.os.Build;
 import android.view.Display;
 import android.view.Surface;
+
+import com.nightmare.applib.utils.L;
+import com.nightmare.applib.utils.ReflectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@TargetApi(Build.VERSION_CODES.KITKAT)
 @SuppressLint("PrivateApi,DiscouragedPrivateApi")
 public final class DisplayManagerV2 {
     private final Object manager; // instance of hidden class android.hardware.display.DisplayManagerGlobal
     private Method createVirtualDisplayMethod;
 
-    static public DisplayManagerV2 create() {
+    public static DisplayManagerV2 create() {
         try {
             Class<?> clazz = Class.forName("android.hardware.display.DisplayManagerGlobal");
             Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
@@ -87,25 +82,25 @@ public final class DisplayManagerV2 {
         return flags;
     }
 
-    public DisplayInfo getDisplayInfo(int displayId) {
-        try {
-//            ReflectUtil.listAllObject(manager);
-            // setUserPreferredDisplayMode 测试是否可以更改帧率
-            Object displayInfo = manager.getClass().getMethod("getDisplayInfo", int.class).invoke(manager, displayId);
-            assert displayInfo != null;
-            Class<?> cls = displayInfo.getClass();
-            // width and height already take the rotation into account
-            int width = cls.getDeclaredField("logicalWidth").getInt(displayInfo);
-            int height = cls.getDeclaredField("logicalHeight").getInt(displayInfo);
-            int rotation = cls.getDeclaredField("rotation").getInt(displayInfo);
-            int layerStack = cls.getDeclaredField("layerStack").getInt(displayInfo);
-            int flags = cls.getDeclaredField("flags").getInt(displayInfo);
-            String name = (String) cls.getDeclaredField("name").get(displayInfo);
-            return new DisplayInfo(displayId, new Size(width, height), rotation, layerStack, flags, name, displayInfo.toString());
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError(e);
-        }
-    }
+//    public DisplayInfo getDisplayInfo(int displayId) {
+//        try {
+//            Object displayInfo = manager.getClass().getMethod("getDisplayInfo", int.class).invoke(manager, displayId);
+//            if (displayInfo == null) {
+//                // fallback when displayInfo is null
+//                return getDisplayInfoFromDumpsysDisplay(displayId);
+//            }
+//            Class<?> cls = displayInfo.getClass();
+//            // width and height already take the rotation into account
+//            int width = cls.getDeclaredField("logicalWidth").getInt(displayInfo);
+//            int height = cls.getDeclaredField("logicalHeight").getInt(displayInfo);
+//            int rotation = cls.getDeclaredField("rotation").getInt(displayInfo);
+//            int layerStack = cls.getDeclaredField("layerStack").getInt(displayInfo);
+//            int flags = cls.getDeclaredField("flags").getInt(displayInfo);
+////            return new DisplayInfo(displayId, new Size(width, height), rotation, layerStack, flags);
+//        } catch (ReflectiveOperationException e) {
+//            throw new AssertionError(e);
+//        }
+//    }
 
     public int[] getDisplayIds() {
         try {
