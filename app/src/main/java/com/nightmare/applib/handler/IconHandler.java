@@ -35,6 +35,7 @@ public class IconHandler implements IHTTPHandler {
         } else {
             try {
                 String packageName = session.getParms().get("package");
+                assert packageName != null;
                 if (packageName.contains(".png")) {
                     int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
                     String result;

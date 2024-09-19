@@ -118,40 +118,38 @@ public class AppChannel {
 //                    System.setOut(new PrintStream(fileOutputStream, false));
                     FakeContext fakeContext = FakeContext.get();
                     context = fakeContext;
-                    L.d("fakeContext ->" + fakeContext.toString());
+                    L.d("Context -> " + fakeContext.toString());
                     // 恢复输出
 //                    System.setOut(console);
 //                    System.setErr(console);
 //                    L.d("icon get start");
                     DisplayManager dm = (DisplayManager) fakeContext.getSystemService(Context.DISPLAY_SERVICE);
 //                    void setGlobalUserPreferredDisplayMode(android.view.Display$Mode arg0,)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        dm.registerDisplayListener(new DisplayManager.DisplayListener() {
-                            @Override
-                            public void onDisplayAdded(int displayId) {
-                                L.d("onDisplayAdded invoked displayId:" + displayId);
-                            }
+                    dm.registerDisplayListener(new DisplayManager.DisplayListener() {
+                        @Override
+                        public void onDisplayAdded(int displayId) {
+                            L.d("onDisplayAdded invoked displayId:" + displayId);
+                        }
 
-                            @Override
-                            public void onDisplayRemoved(int displayId) {
-                                L.d("onDisplayRemoved invoked displayId:" + displayId);
+                        @Override
+                        public void onDisplayRemoved(int displayId) {
+                            L.d("onDisplayRemoved invoked displayId:" + displayId);
 
-                            }
+                        }
 
-                            @Override
-                            public void onDisplayChanged(int displayId) {
-                                L.d("onDisplayChanged invoked displayId:" + displayId);
-                                Display display = dm.getDisplay(displayId);
-                                L.d("onDisplayChanged getRefreshRate:" + display.getRefreshRate());
-                            }
-                        }, null);
-                    }
-                    Display[] displays = dm.getDisplays();
-                    for (Display display : displays) {
-                        L.d("display -> " + display);
-                        L.d("display -> " + display.getDisplayId());
-                        L.d("display -> " + display.getRefreshRate());
-                    }
+                        @Override
+                        public void onDisplayChanged(int displayId) {
+                            L.d("onDisplayChanged invoked displayId:" + displayId);
+                            Display display = dm.getDisplay(displayId);
+                            L.d("onDisplayChanged getRefreshRate:" + display.getRefreshRate());
+                        }
+                    }, null);
+                    //                    Display[] displays = dm.getDisplays();
+//                    for (Display display : displays) {
+//                        L.d("display -> " + display);
+//                        L.d("display -> " + display.getDisplayId());
+//                        L.d("display -> " + display.getRefreshRate());
+//                    }
 //                    WindowManager windowManager = (WindowManager) fakeContext.getSystemService(WINDOW_SERVICE);
 //                    Display currentDisplay = windowManager.getDefaultDisplay();
 //                    L.d("currentDisplay -> " + currentDisplay);
@@ -198,7 +196,6 @@ public class AppChannel {
 //                        }
 //                    }
 //                  display.setUserPreferredDisplayMode
-                    L.d("获取到的Context:" + context.toString());
                     Looper.loop();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -344,6 +341,7 @@ public class AppChannel {
      * @noinspection CallToPrintStackTrace
      */
     public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
+        // TODO 这里 Context 是不是永远不为空
         if (context != null) {
             PackageManager pm = context.getPackageManager();
             PackageInfo info = null;

@@ -6,6 +6,9 @@ import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import com.nightmare.applib.interfaces.IHTTPHandler;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import fi.iki.elonen.NanoHTTPD;
 
 public class OpenAppHandler implements IHTTPHandler {
@@ -21,6 +24,12 @@ public class OpenAppHandler implements IHTTPHandler {
         String activity = session.getParms().get("activity");
         String id = session.getParms().get("displayId");
         appChannel.openApp(packageName, activity, id);
-        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "text/plain", "success");
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("status", "success");
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", jsonObject.toString());
     }
 }

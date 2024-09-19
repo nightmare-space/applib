@@ -20,7 +20,6 @@ public class DisplayUtil {
         jsonObject.put("id", display.getDisplayId());
         jsonObject.put("metrics", metrics.toString());
         jsonObject.put("name", display.getName());
-        // TODO 目前获取到的不准
         jsonObject.put("width", metrics.widthPixels);
         jsonObject.put("height", metrics.heightPixels);
         jsonObject.put("rotation", display.getRotation());

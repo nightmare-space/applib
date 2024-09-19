@@ -4,6 +4,8 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.view.InputDevice;
 import android.view.InputEvent;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import com.nightmare.applib.utils.L;
@@ -46,6 +48,17 @@ public class InputDispatcher {
         displayId = id;
     }
 
+    public boolean injectKeyEvent(int action, int keyCode, int repeat, int metaState, int injectMode) {
+        return injectKeyEvent(action, keyCode, repeat, metaState, displayId, injectMode);
+    }
+
+    public static boolean injectKeyEvent(int action, int keyCode, int repeat, int metaState, int displayId, int injectMode) {
+        long now = SystemClock.uptimeMillis();
+        KeyEvent event = new KeyEvent(now, now, action, keyCode, repeat, metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0,
+                InputDevice.SOURCE_KEYBOARD);
+        return injectEvent(event, displayId, injectMode);
+    }
+
     public synchronized boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
 //        L.d("injectTouch start invoked pointerId=" + pointerId + " action=" + action + " position=" + position + " pressure=" + pressure + " actionButton=" + actionButton + " buttons=" + buttons + "");
         long now = SystemClock.uptimeMillis();
@@ -67,7 +80,7 @@ public class InputDispatcher {
 
         int source;
         if (pointerId == POINTER_ID_MOUSE || pointerId == POINTER_ID_VIRTUAL_MOUSE) {
-            L.d("mouse event (pointerId=" + pointerId + ")");
+//            L.d("mouse event (pointerId=" + pointerId + ")");
             // real mouse event (forced by the client when --forward-on-click)
             pointerProperties[pointerIndex].toolType = MotionEvent.TOOL_TYPE_MOUSE;
             source = InputDevice.SOURCE_MOUSE;
@@ -110,6 +123,7 @@ public class InputDispatcher {
                     // First button pressed: ACTION_DOWN
                     MotionEvent downEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_DOWN, pointerCount, pointerProperties,
                             pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
+                    L.d("injectEvent(downEvent, INJECT_MODE_ASYNC) will invoke");
                     if (!injectEvent(downEvent, INJECT_MODE_ASYNC)) {
 //                        L.d("injectTouch actionButton = buttons action = MotionEvent.ACTION_DOWN downEvent->" + downEvent);
                         return false;
@@ -119,10 +133,12 @@ public class InputDispatcher {
                 // Any button pressed: ACTION_BUTTON_PRESS
                 MotionEvent pressEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_PRESS, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
+                L.d("setActionButton(pressEvent, actionButton) will invoke");
                 if (!InputManagerSimulate.setActionButton(pressEvent, actionButton)) {
 //                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_DOWN");
                     return false;
                 }
+                L.d("injectEvent(pressEvent, INJECT_MODE_ASYNC) will invoke");
                 if (!injectEvent(pressEvent, INJECT_MODE_ASYNC)) {
 //                    L.d("injectTouch injectEvent(pressEvent, INJECT_MODE_ASYNC pressEvent->" + pressEvent);
                     return false;
@@ -135,10 +151,12 @@ public class InputDispatcher {
                 // Any button released: ACTION_BUTTON_RELEASE
                 MotionEvent releaseEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_RELEASE, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
+                L.d("setActionButton(releaseEvent, actionButton) will invoke");
                 if (!InputManagerSimulate.setActionButton(releaseEvent, actionButton)) {
 //                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_UP");
                     return false;
                 }
+                L.d("injectEvent(releaseEvent, INJECT_MODE_ASYNC) will invoke");
                 if (!injectEvent(releaseEvent, INJECT_MODE_ASYNC)) {
 //                    L.d("injectEvent(releaseEvent, INJECT_MODE_ASYNC) releaseEvent->" + releaseEvent);
                     return false;

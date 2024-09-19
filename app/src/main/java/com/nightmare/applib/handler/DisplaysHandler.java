@@ -9,6 +9,7 @@ import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.view.Display;
 
+import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.DisplayUtil;
 import com.nightmare.applib.utils.L;
@@ -17,6 +18,8 @@ import com.nightmare.applib.wrappers.DisplayManagerV2;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.lang.reflect.InvocationTargetException;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -28,16 +31,17 @@ public class DisplaysHandler implements IHTTPHandler {
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
-        @SuppressLint({"NewApi", "LocalSuppress"})
-        DisplayManagerV2 displayManagerV2 = DisplayManagerV2.create();
-        DisplayManager displayManager = (DisplayManager) appChannel.context.getSystemService(Context.DISPLAY_SERVICE);
+        // Android 11/12/13/14/15 (test on 2024.09.17) is ok
+        DisplayManager displayManager = null;
+        try {
+            //noinspection JavaReflectionMemberAccess
+            displayManager = DisplayManager.class.getDeclaredConstructor(Context.class).newInstance(FakeContext.get());
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException |
+                 NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
         Display[] displayss = displayManager.getDisplays();
         L.d("DisplaysHandler Invoke");
-        // 打印所有的显示器
-        for (Display display : displayss) {
-            L.d("display -> " + display);
-        }
-
         JSONObject jsonObjectResult = new JSONObject();
         JSONArray jsonArray = new JSONArray();
         for (Display display : displayss) {

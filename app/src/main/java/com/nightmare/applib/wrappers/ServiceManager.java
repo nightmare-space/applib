@@ -1,8 +1,15 @@
 package com.nightmare.applib.wrappers;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.hardware.input.InputManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.os.IInterface;
+
+import com.nightmare.applib.FakeContext;
+import com.nightmare.applib.utils.L;
+import com.nightmare.applib.utils.ReflectUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -59,6 +66,7 @@ public final class ServiceManager {
                 Class<?> clazz = Class.forName("android.hardware.display.DisplayManagerGlobal");
                 Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
                 Object dmg = getInstanceMethod.invoke(null);
+                ReflectUtil.listAllObject(dmg);
                 displayManagerRef = new DisplayManagerRef(dmg);
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                      InvocationTargetException e) {
@@ -96,6 +104,26 @@ public final class ServiceManager {
                 Class<?> inputManagerClass = getInputManagerClass();
                 Method getInstanceMethod = inputManagerClass.getDeclaredMethod("getInstance");
                 Object im = getInstanceMethod.invoke(null);
+//                ReflectUtil.listAllObject(im);
+//                // 反射调用 void requestPointerCapture(interface android.os.IBinder arg0,boolean arg1)
+//                Method requestPointerCaptureMethod = inputManagerClass.getDeclaredMethod("requestPointerCapture", IBinder.class, boolean.class);
+//                requestPointerCaptureMethod.invoke(im, new Binder(), true);
+////                ReflectUtil.listAllObject(im);
+//                // 反射调用 void setPointerIconType(int arg0)
+//                Method setPointerIconTypeMethod = inputManagerClass.getDeclaredMethod("setPointerIconType", int.class);
+//                setPointerIconTypeMethod.invoke(im, 0);
+//                // 反射调用 getMousePointerSpeed()
+//
+//                InputManager imm = (InputManager) FakeContext.get().getSystemService(Context.INPUT_SERVICE);
+//                ReflectUtil.listAllObject(imm);
+//                Method getMousePointerSpeedMethod = imm.getClass().getDeclaredMethod("getMousePointerSpeed");
+//                getMousePointerSpeedMethod.setAccessible(true);
+//                int speed =(int) getMousePointerSpeedMethod.invoke(imm);
+//                L.d("speed: " + speed);
+
+                // 反射调用 void pilferPointers(interface android.os.IBinder arg0)
+//                Method pilferPointersMethod = inputManagerClass.getDeclaredMethod("pilferPointers", IBinder.class);
+//                pilferPointersMethod.invoke(im, new Binder());
                 inputManager = new InputManagerSimulate(im);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 throw new AssertionError(e);
