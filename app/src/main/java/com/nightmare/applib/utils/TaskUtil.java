@@ -12,6 +12,8 @@ import android.os.Build;
 import android.os.IInterface;
 
 import com.nightmare.applib.AppChannel;
+import com.nightmare.applib.handler.AppInfosHandler;
+import com.nightmare.applib.handler.IconHandler;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -192,8 +194,8 @@ public class TaskUtil {
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getPackageName());
                 jsonObject.put("topActivity", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getClassName());
                 if (taskInfo.topActivity != null) {
-                    PackageInfo packageInfo = appChannel.getPackageInfo(taskInfo.topActivity.getPackageName());
-                    jsonObject.put("label", appChannel.getLabel(packageInfo.applicationInfo));
+                    PackageInfo packageInfo = IconHandler.getPackageInfo(taskInfo.topActivity.getPackageName());
+                    jsonObject.put("label", AppInfosHandler.getLabel(packageInfo.applicationInfo));
                 } else {
                     jsonObject.put("label", "");
                 }
