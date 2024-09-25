@@ -2,107 +2,106 @@ package com.nightmare.applib.wrappers;
 
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.content.pm.PermissionInfo;
 import android.content.pm.ResolveInfo;
 import android.os.IInterface;
 
-import java.lang.reflect.InvocationTargetException;
+import com.nightmare.applib.utils.L;
+
 import java.lang.reflect.Method;
 import java.util.List;
-
-import android.content.pm.PackageInfo;
-import android.content.pm.PermissionInfo;
-import android.os.IInterface;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Objects;
 
 public class IPackageManager {
     public final IInterface manager;
     private Method getPackageInfoMethod;
-    private Method getInstalledPackagesMethod;
-    private Method getPermissionInfo;
+    private Method queryIntentActivitiesMethod;
+    private Method getAllPackagesMethod;
+    private Method getPermissionInfoMethod;
 
     public IPackageManager(IInterface manager) {
         this.manager = manager;
     }
 
     private Method getGetPackageInfoMethod() throws NoSuchMethodException {
-        // TODO 改了需要确定是否影响Android12
         if (getPackageInfoMethod == null) {
             Class<?> cls = manager.getClass();
-            getPackageInfoMethod = cls.getDeclaredMethod("getPackageInfo", String.class, int.class);
-            getPackageInfoMethod.setAccessible(true);
+            try {
+                getPackageInfoMethod = cls.getDeclaredMethod("getPackageInfo", String.class, long.class, int.class);
+            } catch (Exception ignored) {
+                getPackageInfoMethod = cls.getDeclaredMethod("getPackageInfo", String.class, int.class, int.class);
+            }
         }
         return getPackageInfoMethod;
     }
 
-    private Method getGetInstalledPackagesMethod() throws NoSuchMethodException {
-        if (getInstalledPackagesMethod == null) {
+    private Method getQueryIntentActivitiesMethod() throws NoSuchMethodException {
+        if (queryIntentActivitiesMethod == null) {
             Class<?> cls = manager.getClass();
-            getInstalledPackagesMethod = cls.getMethod("getAllPackages");
+            try {
+                queryIntentActivitiesMethod = cls.getMethod("queryIntentActivities", Intent.class, String.class, long.class, int.class);
+            } catch (Exception ignored) {
+                queryIntentActivitiesMethod = cls.getMethod("queryIntentActivities", Intent.class, String.class, int.class, int.class);
+            }
         }
-        return getInstalledPackagesMethod;
+        return queryIntentActivitiesMethod;
+    }
+
+    private Method getGetAllPackagesMethod() throws NoSuchMethodException {
+        if (getAllPackagesMethod == null) {
+            Class<?> cls = manager.getClass();
+            getAllPackagesMethod = cls.getMethod("getAllPackages");
+        }
+        return getAllPackagesMethod;
     }
 
     private Method getGetPermissionInfo() throws NoSuchMethodException {
-        if (getInstalledPackagesMethod == null) {
+        if (getPermissionInfoMethod == null) {
             Class<?> cls = manager.getClass();
-            getInstalledPackagesMethod = cls.getMethod("getPermissionInfo");
+            getPermissionInfoMethod = cls.getMethod("getPermissionInfo", String.class, int.class);
         }
-        return getInstalledPackagesMethod;
+        return getPermissionInfoMethod;
     }
 
-    public PackageInfo getPackageInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
+    public PackageInfo getPackageInfo(String packageName, int flag, int userId) {
         try {
-            return (PackageInfo) getGetPackageInfoMethod().invoke(this.manager, new Object[]{packageName, flag});
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            return (PackageInfo) Objects.requireNonNull(getGetPackageInfoMethod()).invoke(manager, packageName, flag, userId);
+        } catch (Exception e) {
+            L.e(e);
         }
         return null;
     }
 
-    public PermissionInfo getPermissionInfo(String packageName, int flag) throws InvocationTargetException, IllegalAccessException {
+    @SuppressWarnings("unchecked")
+    public List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId) {
         try {
-            return (PermissionInfo) getGetPermissionInfo().invoke(this.manager, new Object[]{packageName, flag});
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            Object object = Objects.requireNonNull(getQueryIntentActivitiesMethod()).invoke(manager, intent, resolvedType, flags, userId);
+            try {
+                return (List<ResolveInfo>) object;
+            } catch (ClassCastException ignored) {
+                return (List<ResolveInfo>) object.getClass().getMethod("getList").invoke(object);
+            }
+        } catch (Exception e) {
+            L.e(e);
         }
         return null;
     }
 
-
-    private Method getQueryIntentActivities() throws NoSuchMethodException {
-        if (getInstalledPackagesMethod == null) {
-            Class<?> cls = manager.getClass();
-            getInstalledPackagesMethod = cls.getMethod("queryIntentActivities");
-        }
-        return getInstalledPackagesMethod;
-    }
-
-    public List<ResolveInfo> queryIntentActivities(Intent intent,
-                                                   String resolvedType, int flags, int userId) {
+    @SuppressWarnings("unchecked")
+    public List<String> getAllPackages() {
         try {
-            return (List<ResolveInfo>) getQueryIntentActivities().invoke(this.manager, new Object[]{intent, resolvedType, flags, userId});
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            return (List<String>) Objects.requireNonNull(getGetAllPackagesMethod()).invoke(manager);
+        } catch (Exception e) {
+            L.e(e);
         }
         return null;
     }
 
-    public List<String> getInstalledPackages(int flag) {
+    public PermissionInfo getPermissionInfo(String packageName, int flag) {
         try {
-            return (List<String>) getGetInstalledPackagesMethod().invoke(this.manager, new Object[]{});
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            return (PermissionInfo) Objects.requireNonNull(getGetPermissionInfo()).invoke(this.manager, packageName, flag);
+        } catch (Exception e) {
+            L.e(e);
         }
         return null;
     }
