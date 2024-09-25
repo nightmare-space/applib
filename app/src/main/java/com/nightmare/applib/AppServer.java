@@ -5,6 +5,7 @@ import static com.nightmare.applib.handler.InjectInputEvent.inputDispatcher;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
+import android.net.LocalServerSocket;
 import android.os.Build;
 import android.util.Log;
 import android.view.Display;
@@ -53,13 +54,13 @@ public class AppServer extends NanoHTTPD {
         handlers.add(handler);
     }
 
-
     public static void main(String[] args) {
         if (Objects.equals(args[0], "sula")) {
             // TODO: 这个多在几个安卓模拟器上测试一下
             L.serverLogPath = "/storage/emulated/0/Android/data/com.nightmare.sula" + "/app_server_log";
             portDirectory = "/storage/emulated/0/Android/data/com.nightmare.sula";
             L.d("Dex Server For Sula");
+            SulaServer.start();
         }
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
@@ -89,17 +90,14 @@ public class AppServer extends NanoHTTPD {
         // 构建显示信息
         String deviceInfo = "Info: " + manufacturer + "(" + model + ")";
         L.d(deviceInfo);
-        // 这个时候构造的是一个没有 Context 的 Channel
         appChannel = new AppChannel();
         L.d("success start port -> " + server.getListeningPort() + ".");
         writePort(portDirectory, server.getListeningPort());
-        ServiceManager.getInputManager();
-
         // 让进程等待
         // 不能用 System.in.read(), System.in.read()需要宿主进程由标准终端调用
         // Process.run 等方法就会出现异常，
         // System.in.read();
-        //noinspection InfiniteLoopStatement
+        // noinspection InfiniteLoopStatement
         while (true) {
             try {
                 //noinspection BusyWait
@@ -133,7 +131,7 @@ public class AppServer extends NanoHTTPD {
 //        } catch (NoSuchMethodException e) {
 //            throw new RuntimeException(e);
 //        }
-        if(true){
+        if (true) {
             return;
         }
         Class<?> clazz = null;
@@ -223,9 +221,7 @@ public class AppServer extends NanoHTTPD {
         addHandler(new AppPermissionHandler());
         addHandler(new ChangeDisplayHandler());
         addHandler(new CMDHandler());
-        addHandler(new CreateVirtualDisplay());
-        addHandler(new CreateVirtualDisplay());
-        addHandler(new DisplaysHandler());
+        addHandler(new DisplayHandler());
         addHandler(new IconHandler());
         addHandler(new InjectInputEvent());
         addHandler(new OpenAppHandler());
@@ -237,40 +233,34 @@ public class AppServer extends NanoHTTPD {
 
 
     void startInputDispatcher() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        new Thread(() -> {
+            try {
+                L.d("Sula input Thread run");
+                ServerSocket serverSocket = new ServerSocket(12345);
+                L.d("Sula input socket server started");
                 try {
-                    L.d("Sula input Thread run");
-                    ServerSocket serverSocket = new ServerSocket(12345);
-                    L.d("Sula input socket server started");
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    while (true) {
-                        try {
-                            L.d("Sula input Wait Client Connect");
-                            Socket socket = serverSocket.accept();
-                            L.d("Sula input has connected");
-                            InputStream in = socket.getInputStream();
-//                            OutputStream out = socket.getOutputStream();
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    L.d("Sula input Handle socket in new Thread");
-                                    handleSocket(in);
-                                }
-                            }).start();
-                        } catch (IOException e) {
-                            L.d("startInputDispatcher error" + e);
-                        }
-                    }
-
-                } catch (IOException e) {
-                    L.d("startInputDispatcher error" + e);
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
+                while (true) {
+                    try {
+                        L.d("Sula input Wait Client Connect");
+                        Socket socket = serverSocket.accept();
+                        L.d("Sula input has connected");
+                        InputStream in = socket.getInputStream();
+//                            OutputStream out = socket.getOutputStream();
+                        new Thread(() -> {
+                            L.d("Sula input Handle socket in new Thread");
+                            handleSocket(in);
+                        }).start();
+                    } catch (IOException e) {
+                        L.d("startInputDispatcher error" + e);
+                    }
+                }
+
+            } catch (IOException e) {
+                L.d("startInputDispatcher error" + e);
             }
         }).start();
     }
@@ -415,6 +405,9 @@ public class AppServer extends NanoHTTPD {
     public Response serve(IHTTPSession session) {
         try {
             String url = session.getUri();
+            if (url.startsWith("/check")) {
+                return newFixedLengthResponse(Response.Status.OK, "text/plain", "ok");
+            }
             // 获取最近任务
             for (IHTTPHandler handler : handlers) {
                 if (url.startsWith(handler.route())) {

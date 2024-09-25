@@ -89,50 +89,26 @@ public class AppChannel {
 //        } catch (ClassNotFoundException e) {
 //            throw new RuntimeException(e);
 //        }
-        // 下面这个尽量别换成lambda,一个lambda编译后的产物会多一个class
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    L.d("Runnable run");
-                    // Looper.prepare() Looper.loop() 不能移除
-                    Looper.prepare();
-                    FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
-                    PrintStream console = System.out;
-                    // 重定向输出，因为fillAppInfo会有一堆报错
+        new Thread(() -> {
+            try {
+                L.d("Runnable run");
+                // Looper.prepare() Looper.loop() 不能移除
+                Looper.prepare();
+                FileOutputStream fileOutputStream = new FileOutputStream(new File("/data/local/tmp/dex_cache"), false);
+                PrintStream console = System.out;
+                // 重定向输出，因为fillAppInfo会有一堆报错
 //                    System.setErr(new PrintStream(fileOutputStream, false));
 //                    System.setOut(new PrintStream(fileOutputStream, false));
-                    FakeContext fakeContext = FakeContext.get();
-                    context = fakeContext;
-                    L.d("Context -> " + fakeContext.toString());
-                    // 恢复输出
+                FakeContext fakeContext = FakeContext.get();
+                context = fakeContext;
+                L.d("Context -> " + fakeContext.toString());
+                // 恢复输出
 //                    System.setOut(console);
 //                    System.setErr(console);
 //                    L.d("icon get start");
-                    DisplayManager dm = (DisplayManager) fakeContext.getSystemService(Context.DISPLAY_SERVICE);
-                    dm.registerDisplayListener(new DisplayManager.DisplayListener() {
-                        @Override
-                        public void onDisplayAdded(int displayId) {
-                            L.d("onDisplayAdded invoked displayId:" + displayId);
-                        }
-
-                        @Override
-                        public void onDisplayRemoved(int displayId) {
-                            L.d("onDisplayRemoved invoked displayId:" + displayId);
-
-                        }
-
-                        @Override
-                        public void onDisplayChanged(int displayId) {
-                            L.d("onDisplayChanged invoked displayId:" + displayId);
-                            Display display = dm.getDisplay(displayId);
-                            L.d("onDisplayChanged getRefreshRate:" + display.getRefreshRate());
-                        }
-                    }, null);
-                    Looper.loop();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                Looper.loop();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }).start();
     }

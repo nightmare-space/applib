@@ -1,5 +1,3 @@
 {
-    "files.associations": {
-        "stdlib.h": "c"
-    }
+    "cmake.ignoreCMakeListsMissing": true
 }

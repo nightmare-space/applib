@@ -29,9 +29,8 @@ devices=`adb devices | grep -v List | grep device | wc -l`
 echo devices:$devices
 adb push "build/app_server" /sdcard/app_server$MD5
 adb push "$PROJ_DIR/resource/executor" /data/local/tmp/executor
-echo '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer ."'
 $LOCAL_DIR/adb_forward.sh
-adb shell '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer ."'
+adb shell '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer sula"'
 
 
 

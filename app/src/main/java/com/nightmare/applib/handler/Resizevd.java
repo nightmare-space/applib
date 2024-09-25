@@ -22,7 +22,7 @@ public class Resizevd implements IHTTPHandler {
         String width = session.getParms().get("width");
         String height = session.getParms().get("height");
         String density = session.getParms().get("density");
-        VirtualDisplay display = CreateVirtualDisplay.cache.get(Integer.parseInt(id));
+        VirtualDisplay display = DisplayHandler.cache.get(Integer.parseInt(id));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             display.resize(Integer.parseInt(width), Integer.parseInt(height), Integer.parseInt(density));
         }

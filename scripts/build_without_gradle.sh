@@ -15,7 +15,7 @@ function color_echo()
 JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
 set -e
 LOCAL_DIR=$(cd `dirname $0`; pwd)
-PROJ_DIR=$LOCAL_DIR/../
+PROJ_DIR=$LOCAL_DIR/..
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-34}
@@ -72,38 +72,51 @@ done
 
 color_echo "Compiling java sources..."
 
+JAR_PATH=$PROJ_DIR/app/libs
+
+(cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
+
+cp -r $PROJ_DIR/app/libs/org $CLASSES_DIR/
+
+# CLASSES+=("org/newsclub/net/unix/*.class")
+
 /usr/bin/javac -bootclasspath "$ANDROID_JAR" \
-    -Djava.ext.dirs=$PROJ_DIR \
+    -Djava.ext.dirs=$JAR_PATH \
     -cp "$LAMBDA_JAR:$GEN_DIR" \
     -d "$CLASSES_DIR" \
     -source 1.8 -target 1.8 \
     ${SRC[@]}
 
-# /usr/bin/javac -bootclasspath "$ANDROID_HOME/platforms/android-$PLATFORM/android.jar" \
-#     -Djava.ext.dirs=$PROJ_DIR \
-#     -cp "$CLASSES_DIR:$GEN_DIR" -d "$CLASSES_DIR" -source 1.8 -target 1.8 \
-#     com/nightmare/applib/*.java \
-#     com/nightmare/applib/wrappers/*.java \
-#     com/nightmare/applib/utils/*.java \
-#     com/nightmare/applib/services/*.java \
-#     com/nightmare/applib/handler/*.java \
-#     com/nightmare/applib/interfaces/*.java
 cp -r $PROJ_DIR/fi $CLASSES_DIR/
 color_echo "Dexing..."
 cd "$CLASSES_DIR"
-"$ANDROID_HOME/build-tools/$BUILD_TOOLS/dx" --dex \
-    --output "$BUILD_DIR/classes.dex" \
-    com/nightmare/applib/*.class \
-    com/nightmare/applib/wrappers/*.class \
-    com/nightmare/applib/utils/*.class \
-    com/nightmare/applib/handler/*.class \
-    com/nightmare/applib/interfaces/*.class \
-    fi/iki/elonen/*.class \
-    fi/iki/elonen/util/*.class
 
-echo "Archiving..."
-cd "$BUILD_DIR"
-jar cvf "$SERVER_BINARY" classes.dex
+if [[ $PLATFORM -lt 31 ]]
+then
+    # use dx
+    color_echo "Dexing with dx..."
+    "$BUILD_TOOLS_DIR/dx" --dex --output "$BUILD_DIR/classes.dex" \
+        ${CLASSES[@]} \
+        fi/iki/elonen/*.class \
+        fi/iki/elonen/util/*.class
+
+    echo "Archiving..."
+    cd "$BUILD_DIR"
+    jar cvf "$SERVER_BINARY" classes.dex
+    rm -rf classes.dex
+else
+    color_echo "Dexing with d8..."
+    # use d8
+    "$BUILD_TOOLS_DIR/d8" --classpath "$ANDROID_JAR" \
+        --output "$BUILD_DIR/classes.zip" \
+        ${CLASSES[@]} \
+        fi/iki/elonen/*.class \
+        fi/iki/elonen/util/*.class
+
+    cd "$BUILD_DIR"
+    mv classes.zip "$SERVER_BINARY"
+fi
+
 rm -rf classes.dex classes gen
 
 echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
