@@ -74,7 +74,7 @@ color_echo "Compiling java sources..."
 
 JAR_PATH=$PROJ_DIR/app/libs
 
-(cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
+# (cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
 
 cp -r $PROJ_DIR/app/libs/org $CLASSES_DIR/
 
