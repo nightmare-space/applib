@@ -5,7 +5,6 @@ import static com.nightmare.applib.handler.InjectInputEvent.inputDispatcher;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
-import android.net.LocalServerSocket;
 import android.os.Build;
 import android.util.Log;
 import android.view.Display;
@@ -33,7 +32,6 @@ import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ReflectUtil;
 import com.nightmare.applib.utils.ServerUtil;
 import com.nightmare.applib.utils.Workarounds;
-import com.nightmare.applib.wrappers.ServiceManager;
 
 /**
  * 基于HTTP服务提供能力
@@ -59,8 +57,7 @@ public class AppServer extends NanoHTTPD {
             // TODO: 这个多在几个安卓模拟器上测试一下
             L.serverLogPath = "/storage/emulated/0/Android/data/com.nightmare.sula" + "/app_server_log";
             portDirectory = "/storage/emulated/0/Android/data/com.nightmare.sula";
-            L.d("Dex Server For Sula");
-            SulaServer.start();
+            L.d("Dex Server for Sula");
         }
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
@@ -77,9 +74,12 @@ public class AppServer extends NanoHTTPD {
         AppServer server = ServerUtil.safeGetServerForADB();
         L.d("Sula input socket server starting.(version: " + server.version + ")");
         Workarounds.apply(true, true);
+
+
+//        SulaServer.start();
         server.startInputDispatcher();
         server.registerRoutes();
-        server.bindServer();
+//        server.tryChangeDisplayConfig();
         // 获取安卓版本
         String sdk = Build.VERSION.SDK;
         String release = Build.VERSION.RELEASE;
@@ -110,84 +110,58 @@ public class AppServer extends NanoHTTPD {
     }
 
 
-    void bindServer() {
+    /** @noinspection DataFlowIssue*/
+    @SuppressLint("PrivateApi")
+    void tryChangeDisplayConfig() {
         L.d("bindServer invoke");
-//        try {
-//            DisplayManager displayManager = DisplayManager.class.getDeclaredConstructor(Context.class).newInstance(FakeContext.get());
-//            Display display = displayManager.getDisplay(8);
-//            DisplayMetrics displayMetrics = new DisplayMetrics();
-//            // 反射调用 getUserPreferredDisplayMode()
-//            @SuppressLint("BlockedPrivateApi") java.lang.reflect.Method getUserPreferredDisplayModeMethod = display.getClass().getDeclaredMethod("getUserPreferredDisplayMode");
-//            getUserPreferredDisplayModeMethod.setAccessible(true);
-//            Display.Mode mode = (Display.Mode) getUserPreferredDisplayModeMethod.invoke(display);
-//            L.d("mode -> " + mode);
-//            ReflectUtil.listAllObject(display);
-//        } catch (IllegalAccessException e) {
-//            throw new RuntimeException(e);
-//        } catch (InstantiationException e) {
-//            throw new RuntimeException(e);
-//        } catch (InvocationTargetException e) {
-//            throw new RuntimeException(e);
-//        } catch (NoSuchMethodException e) {
-//            throw new RuntimeException(e);
-//        }
-        if (true) {
-            return;
-        }
         Class<?> clazz = null;
-
         try {
             clazz = Class.forName("android.hardware.display.DisplayManagerGlobal");
-            java.lang.reflect.Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
+            @SuppressLint("DiscouragedPrivateApi") java.lang.reflect.Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             Object dmg = getInstanceMethod.invoke(null);
-            ReflectUtil.listAllObject(dmg);
-            // 反射调用 setRefreshRateSwitchingType(int)
-            @SuppressLint("BlockedPrivateApi") java.lang.reflect.Method setRefreshRateSwitchingTypeMethod = clazz.getDeclaredMethod("setRefreshRateSwitchingType", int.class);
-            setRefreshRateSwitchingTypeMethod.setAccessible(true);
-            setRefreshRateSwitchingTypeMethod.invoke(dmg, 2);
+            ReflectUtil.invokeMethod(dmg, "setRefreshRateSwitchingType", 2);
+            //getRefreshRateSwitchingType
+            int type = (int) ReflectUtil.invokeMethod(dmg, "getRefreshRateSwitchingType");
+            L.d("RefreshRateSwitchingType -> " + type);
+            //noinspection JavaReflectionMemberAccess
             DisplayManager displayManager = DisplayManager.class.getDeclaredConstructor(Context.class).newInstance(FakeContext.get());
-            ReflectUtil.listAllObject(displayManager);
-//            displayManager.getDisplays();
+            int matchContentFrameRateUserPreference = (int) ReflectUtil.invokeMethod(displayManager, "getMatchContentFrameRateUserPreference");
+            L.d("matchContentFrameRateUserPreference -> " + matchContentFrameRateUserPreference);
+            // getSystemPreferredDisplayMode
+            Object systemMode = ReflectUtil.invokeMethod(dmg, "getSystemPreferredDisplayMode", 0);
+            L.d("SystemPreferredDisplayMode -> " + systemMode);
+            // same with adb shell cmd display get-user-preferred-display-mode 0
+            Object userMode = ReflectUtil.invokeMethod(dmg, "getUserPreferredDisplayMode", 0);
+            L.d("UserPreferredDisplayMode -> " + userMode);
+            // getGlobalUserPreferredDisplayMode
+            Object globalUserMode = ReflectUtil.invokeMethod(displayManager, "getGlobalUserPreferredDisplayMode");
+            L.d("GlobalUserPreferredDisplayMode -> " + globalUserMode);
+            ReflectUtil.invokeMethod(dmg, "setShouldAlwaysRespectAppRequestedMode", true);
+            boolean should = (boolean) ReflectUtil.invokeMethod(dmg, "shouldAlwaysRespectAppRequestedMode");
+            L.d("shouldAlwaysRespectAppRequestedMode -> " + should);
             for (Display display : displayManager.getDisplays()) {
-                if (display.getDisplayId() == 221) {
+                if (display.getDisplayId() != 0) {
                     L.d("display -> " + display);
+                    L.d("");
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                         Display.Mode[] supportedModes = display.getSupportedModes();
-                        // 反射调用 getSystemPreferredDisplayMode(int)
-                        java.lang.reflect.Method getSystemPreferredDisplayModeMethod = clazz.getDeclaredMethod("getSystemPreferredDisplayMode", int.class);
-                        getSystemPreferredDisplayModeMethod.setAccessible(true);
-                        Display.Mode modeSystem = (Display.Mode) getSystemPreferredDisplayModeMethod.invoke(dmg, 221);
-                        L.d("modeSystem -> " + modeSystem);
-                        // 反射调用 getRefreshRateSwitchingType
-                        @SuppressLint("BlockedPrivateApi") java.lang.reflect.Method getRefreshRateSwitchingTypeMethod = clazz.getDeclaredMethod("getRefreshRateSwitchingType");
-                        getRefreshRateSwitchingTypeMethod.setAccessible(true);
-                        int refreshRateSwitchingType = (int) getRefreshRateSwitchingTypeMethod.invoke(dmg);
-                        L.d("refreshRateSwitchingType -> " + refreshRateSwitchingType);
-
                         for (Display.Mode mode : supportedModes) {
-                            if (mode.getModeId() == 297) {
-                                L.d("mode -> " + mode);
-                                @SuppressLint("BlockedPrivateApi") java.lang.reflect.Method setShouldAlwaysRespectAppRequestedModeMethod = clazz.getDeclaredMethod("setShouldAlwaysRespectAppRequestedMode", boolean.class);
-                                setShouldAlwaysRespectAppRequestedModeMethod.setAccessible(true);
-                                java.lang.reflect.Method setUserPreferredDisplayModeMethod = clazz.getDeclaredMethod("setUserPreferredDisplayMode", int.class, mode.getClass());
-                                setUserPreferredDisplayModeMethod.setAccessible(true);
-                                setUserPreferredDisplayModeMethod.invoke(dmg, 221, mode);
-                                // 反射调用 setShouldAlwaysRespectAppRequestedMode(boolean)
+                            L.d("mode -> " + mode);
+                            L.d("");
+                            if (mode.getRefreshRate() > 60) {
+                                L.d("set mode -> " + mode);
+                                ReflectUtil.invokeMethod(dmg, "setUserPreferredDisplayMode", display.getDisplayId(), mode);
+                                ReflectUtil.invokeMethod(displayManager, "setGlobalUserPreferredDisplayMode", mode);
                             }
                         }
                     }
                 }
             }
+            ReflectUtil.listAllObject(dmg);
+            ReflectUtil.listAllObject(displayManager);
 
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
+                 IllegalAccessException | InstantiationException e) {
             throw new RuntimeException(e);
         }
     }

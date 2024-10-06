@@ -70,13 +70,15 @@ do
     CLASSES+=("${src%.java}.class")
 done
 
+CLASSES+=("com/nightmare/applib/MyParcelable\$1.class")
+
 color_echo "Compiling java sources..."
 
 JAR_PATH=$PROJ_DIR/app/libs
 
 # (cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
 
-cp -r $PROJ_DIR/app/libs/org $CLASSES_DIR/
+# cp -r $PROJ_DIR/app/libs/org $CLASSES_DIR/
 
 # CLASSES+=("org/newsclub/net/unix/*.class")
 

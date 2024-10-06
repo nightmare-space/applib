@@ -23,13 +23,36 @@ public class ReflectUtil {
 
     static HashMap<String, String> map = new HashMap<>();
 
+
+    public static Object invokeMethod(Object object, String methodName, Object... args) {
+        try {
+            Class[] classes = new Class[args.length];
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof Integer) {
+                    classes[i] = int.class;
+                } else if (args[i] instanceof Boolean) {
+                    classes[i] = boolean.class;
+                } else {
+                    classes[i] = args[i].getClass();
+                }
+            }
+            Method method = object.getClass().getDeclaredMethod(methodName, classes);
+            method.setAccessible(true);
+            return method.invoke(object, args);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return null;
+    }
+
     public static void listAllObject(Object object) {
         listAllObject(object.getClass());
     }
 
     public static void listAllObject(Class clazz) {
         map.put("class java.lang.String", "String");
-        map.put("java.util.List","List");
+        map.put("java.util.List", "List");
         try {
             print("Class " + clazz.getName());
             // 反射属性字段
@@ -52,7 +75,7 @@ public class ReflectUtil {
             for (Field f : fields) {
                 boolean isStatic = Modifier.isStatic(f.getModifiers());
                 System.out.print((char) 0x1b + "[36m");
-                if(isStatic){
+                if (isStatic) {
                     System.out.print("static ");
                 }
                 System.out.print(f.getType());
@@ -69,11 +92,11 @@ public class ReflectUtil {
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                     returnType = m.getReturnType().getTypeName();
                 }
-                if(map.containsKey(returnType)){
+                if (map.containsKey(returnType)) {
                     returnType = map.get(returnType);
                 }
 //                returnType = returnType.replace("class ", "");
-                if(isStatic){
+                if (isStatic) {
                     System.out.print("static ");
                 }
                 System.out.print((char) 0x1b + "[36m" + returnType + " ");

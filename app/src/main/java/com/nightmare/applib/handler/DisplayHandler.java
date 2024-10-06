@@ -7,6 +7,7 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
 import android.os.Build;
+import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Surface;
@@ -17,12 +18,18 @@ import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.DisplayUtil;
 import com.nightmare.applib.utils.L;
+import com.nightmare.applib.utils.ReflectUtil;
+import com.nightmare.applib.wrappers.DisplayControl;
+import com.nightmare.applib.wrappers.SurfaceControl;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Ref;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +85,76 @@ public class DisplayHandler implements IHTTPHandler {
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
+
             Display[] displayss = displayManager.getDisplays();
+            long[] ids = DisplayControl.getPhysicalDisplayIds();
+            for (long id : ids) {
+                L.d("Display Id -> " + id);
+                IBinder displayToken = DisplayControl.getPhysicalDisplayToken(id);
+
+                try {
+//                    ReflectUtil.listAllObject(SurfaceControl.class);
+
+                    SurfaceControl.setBootDisplayMode(displayToken, 2);
+                    Object o = SurfaceControl.getDynamicDisplayInfo(id);
+                    L.d("displayToken-> " + displayToken);
+
+//                    public DisplayMode[] supportedDisplayModes;
+//                    public int activeDisplayModeId;
+//                    public float renderFrameRate;
+//
+//                    public int[] supportedColorModes;
+//                    public int activeColorMode;
+//
+//                    public Display.HdrCapabilities hdrCapabilities;
+//
+//                    public boolean autoLowLatencyModeSupported;
+//                    public boolean gameContentTypeSupported;
+//
+//                    public int preferredBootDisplayMode;
+                    // 反射获取 o 的上述属性
+                    Field supportedDisplayModesField = o.getClass().getField("supportedDisplayModes");
+                    Field activeDisplayModeIdField = o.getClass().getField("activeDisplayModeId");
+                    Field renderFrameRateField = o.getClass().getField("renderFrameRate");
+                    Field supportedColorModesField = o.getClass().getField("supportedColorModes");
+                    Field activeColorModeField = o.getClass().getField("activeColorMode");
+                    Field hdrCapabilitiesField = o.getClass().getField("hdrCapabilities");
+                    Field autoLowLatencyModeSupportedField = o.getClass().getField("autoLowLatencyModeSupported");
+                    Field gameContentTypeSupportedField = o.getClass().getField("gameContentTypeSupported");
+                    Field preferredBootDisplayModeField = o.getClass().getField("preferredBootDisplayMode");
+                    Object supportedDisplayModes = supportedDisplayModesField.get(o);
+                    Object activeDisplayModeId = activeDisplayModeIdField.get(o);
+                    Object renderFrameRate = renderFrameRateField.get(o);
+                    Object supportedColorModes = supportedColorModesField.get(o);
+                    Object activeColorMode = activeColorModeField.get(o);
+                    Object hdrCapabilities = hdrCapabilitiesField.get(o);
+                    Object autoLowLatencyModeSupported = autoLowLatencyModeSupportedField.get(o);
+                    Object gameContentTypeSupported = gameContentTypeSupportedField.get(o);
+                    Object preferredBootDisplayMode = preferredBootDisplayModeField.get(o);
+                    for (Object object : (Object[]) supportedDisplayModes) {
+                        L.d("mode -> " + object);
+                    }
+                    L.d("activeDisplayModeId -> " + activeDisplayModeId);
+                    L.d("renderFrameRate -> " + renderFrameRate);
+                    L.d("supportedColorModes -> " + supportedColorModes);
+                    L.d("activeColorMode -> " + activeColorMode);
+                    L.d("hdrCapabilities -> " + hdrCapabilities);
+                    L.d("autoLowLatencyModeSupported -> " + autoLowLatencyModeSupported);
+                    L.d("gameContentTypeSupported -> " + gameContentTypeSupported);
+                    L.d("preferredBootDisplayMode -> " + preferredBootDisplayMode);
+
+
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                L.d("Display Token -> " + displayToken);
+
+            }
+//            for (Display display : displayss) {
+//                L.d("Display -> " + display);
+//                L.d("Display Id -> " + display.getDisplayId());
+////                ReflectUtil.listAllObject(displayManager);
+//            }
             L.d("DisplaysHandler Invoke");
             JSONObject jsonObjectResult = new JSONObject();
             JSONArray jsonArray = new JSONArray();
@@ -149,6 +225,15 @@ public class DisplayHandler implements IHTTPHandler {
                 throw new RuntimeException(e);
             }
 
+            Display display1 = (Display) ReflectUtil.invokeMethod(displayManager, "getDisplay", display.getDisplay().getDisplayId());
+            L.d("display1 -> " + display1);
+
+            IBinder displayToken = DisplayControl.getPhysicalDisplayToken(display.getDisplay().getDisplayId());
+            L.d("displayToken -> " + displayToken);
+
+            Object token = ReflectUtil.invokeMethod(display, "getToken");
+            L.d("token -> " + token);
+
             return newFixedLengthResponse(
                     NanoHTTPD.Response.Status.OK,
                     "application/json",
@@ -157,7 +242,7 @@ public class DisplayHandler implements IHTTPHandler {
         }
         String displayId = session.getParms().get("id");
         assert displayId != null;
-        if(cache.containsKey(Integer.parseInt(displayId))) {
+        if (cache.containsKey(Integer.parseInt(displayId))) {
             Objects.requireNonNull(cache.get(Integer.parseInt(displayId))).release();
         }
         return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", "success");

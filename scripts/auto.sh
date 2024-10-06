@@ -27,10 +27,11 @@ cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-core/adb_kit/assets
 echo MD5:$MD5
 devices=`adb devices | grep -v List | grep device | wc -l`
 echo devices:$devices
+adb shell 'rm -rf /sdcard/app_server*'
 adb push "build/app_server" /sdcard/app_server$MD5
 adb push "$PROJ_DIR/resource/executor" /data/local/tmp/executor
 $LOCAL_DIR/adb_forward.sh
-adb shell '/data/local/tmp/executor "app_process -Djava.class.path=/sdcard/app_server'$MD5' /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer sula"'
+adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer sula &"
 
 
 
