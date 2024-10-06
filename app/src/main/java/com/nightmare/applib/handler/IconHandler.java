@@ -1,21 +1,18 @@
 package com.nightmare.applib.handler;
 
 import static com.nightmare.applib.AppServer.appChannel;
-
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.DisplayMetrics;
 
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
@@ -24,24 +21,10 @@ import com.nightmare.applib.utils.L;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
 public class IconHandler implements IHTTPHandler {
-    public IconHandler() {
-        displayMetrics = new DisplayMetrics();
-        displayMetrics.setToDefaults();
-        configuration = new Configuration();
-        configuration.setToDefaults();
-    }
-
-    private final String TAG = "IconHandler";
-
-    DisplayMetrics displayMetrics;
-    Configuration configuration;
-
     @Override
     public String route() {
         return "/icon";
@@ -99,7 +82,6 @@ public class IconHandler implements IHTTPHandler {
     /**
      * @param packageName: App package name
      * @return Bitmap
-     * @noinspection CallToPrintStackTrace
      */
     public synchronized Bitmap getBitmap(String packageName) {
         Drawable icon = null;
@@ -110,29 +92,17 @@ public class IconHandler implements IHTTPHandler {
             L.d("applicationInfo is null");
             return null;
         }
-        AssetManager assetManager = null;
         try {
-            assetManager = AssetManager.class.newInstance();
-        } catch (IllegalAccessException | InstantiationException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert assetManager != null;
-            //noinspection JavaReflectionMemberAccess
-            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        Resources resources = new Resources(assetManager, displayMetrics, configuration);
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                icon = resources.getDrawable(applicationInfo.icon, null);
+            try {
+                icon = applicationInfo.loadIcon(FakeContext.get().getPackageManager());
+            } catch (Throwable ignored) {
+                AssetManager assetManager = AssetManager.class.newInstance();
+                assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+                Resources resources = new Resources(assetManager, null, null);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    icon = resources.getDrawable(applicationInfo.icon, null);
+                }
             }
-        } catch (Exception e) {
-            L.d("getBitmap package error:" + applicationInfo.packageName);
-            return null;
-        }
-        try {
             if (icon == null) {
                 return null;
             }
@@ -152,8 +122,8 @@ public class IconHandler implements IHTTPHandler {
                 icon.draw(canvas);
                 return bitmap;
             }
-        } catch (Exception e) {
-            L.d(TAG + " Exception:" + e);
+        } catch (Throwable t) {
+            L.d("IconHandler getBitmap Exception:" + t);
             return null;
         }
     }
