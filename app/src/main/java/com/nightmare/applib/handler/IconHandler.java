@@ -75,15 +75,18 @@ public class IconHandler implements IHTTPHandler {
         return info;
     }
 
-    static public  PackageInfo getPackageInfo(String packageName) {
+    static public PackageInfo getPackageInfo(String packageName) {
         return getPackageInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
     }
 
+    public Bitmap getBitmap(String packageName) {
+        return getBitmap(packageName, false);
+    }
     /**
      * @param packageName: App package name
      * @return Bitmap
      */
-    public synchronized Bitmap getBitmap(String packageName) {
+    public synchronized Bitmap getBitmap(String packageName,boolean useDesperateWay) {
         Drawable icon = null;
         PackageInfo packageInfo = getPackageInfo(packageName);
         L.d("package info -> " + packageInfo);

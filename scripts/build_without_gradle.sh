@@ -124,5 +124,5 @@ rm -rf classes.dex classes gen
 echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
-cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/uncon/assets/'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/uncon/assets'
 cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/adb_tool/assets'
