@@ -70,7 +70,7 @@ public class IconHandler implements IHTTPHandler {
         try {
             info = pm.getPackageInfo(packageName, flag);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            L.e(packageName + "not found");
         }
         return info;
     }
@@ -82,13 +82,19 @@ public class IconHandler implements IHTTPHandler {
     public Bitmap getBitmap(String packageName) {
         return getBitmap(packageName, false);
     }
+
     /**
      * @param packageName: App package name
      * @return Bitmap
      */
-    public synchronized Bitmap getBitmap(String packageName,boolean useDesperateWay) {
+    public synchronized Bitmap getBitmap(String packageName, boolean useDesperateWay) {
         Drawable icon = null;
         PackageInfo packageInfo = getPackageInfo(packageName);
+        if (packageInfo == null) {
+
+            L.d(packageName + " packageInfo is null");
+            return null;
+        }
         L.d("package info -> " + packageInfo);
         ApplicationInfo applicationInfo = packageInfo.applicationInfo;
         if (applicationInfo == null) {
@@ -96,15 +102,32 @@ public class IconHandler implements IHTTPHandler {
             return null;
         }
         try {
-            try {
-                icon = applicationInfo.loadIcon(FakeContext.get().getPackageManager());
-            } catch (Throwable ignored) {
-                AssetManager assetManager = AssetManager.class.newInstance();
-                assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
-                Resources resources = new Resources(assetManager, null, null);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    icon = resources.getDrawable(applicationInfo.icon, null);
-                }
+            // this way will crash on meizu 21
+            // 而且很奇怪，icon 在 crash 的时候，并不为 null，所以还不能直接通过异常处理的方式来切换方案
+            // 所以先用之前的方案
+            // java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.String.equals(java.lang.Object)' on a null object reference
+            //        at android.content.res.flymetheme.FlymeThemeHelper.makeThemeIcon(FlymeThemeHelper.java:837)
+            //        at android.content.res.flymetheme.FlymeThemeHelper.makeThemeIcon(FlymeThemeHelper.java:810)
+            //        at android.app.ApplicationPackageManager$Injector.makeThemeIcon(ApplicationPackageManager.java:4035)
+            //        at android.app.ApplicationPackageManager.getDrawable(ApplicationPackageManager.java:1817)
+            //        at android.app.ApplicationPackageManager.loadUnbadgedItemIcon(ApplicationPackageManager.java:3397)
+            //        at android.app.ApplicationPackageManager.loadItemIcon(ApplicationPackageManager.java:3376)
+            //        at android.content.pm.PackageItemInfo.loadIcon(PackageItemInfo.java:273)
+            //        at com.nightmare.applib.handler.IconHandler.getBitmap(IconHandler.java:107)
+            //        at com.nightmare.applib.handler.IconHandler.getBitmap(IconHandler.java:83)
+            //        at com.nightmare.applib.handler.IconHandler.handle(IconHandler.java:59)
+            //        at com.nightmare.applib.AppServer.serve(AppServer.java:388)
+            //        at fi.iki.elonen.NanoHTTPD$HTTPSession.execute(NanoHTTPD.java:945)
+            //        at fi.iki.elonen.NanoHTTPD$ClientHandler.run(NanoHTTPD.java:192)
+            //        at java.lang.Thread.run(Thread.java:1012)
+//            icon = applicationInfo.loadIcon(FakeContext.get().getPackageManager());
+//            L.e("applicationInfo.loadIcon failed for " + packageName + " use the second way");
+            AssetManager assetManager = AssetManager.class.newInstance();
+            //noinspection JavaReflectionMemberAccess
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
+            Resources resources = new Resources(assetManager, null, null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                icon = resources.getDrawable(applicationInfo.icon, null);
             }
             if (icon == null) {
                 return null;
@@ -126,7 +149,7 @@ public class IconHandler implements IHTTPHandler {
                 return bitmap;
             }
         } catch (Throwable t) {
-            L.d("IconHandler getBitmap Exception:" + t);
+            L.e("IconHandler getBitmap Exception:" + t);
             return null;
         }
     }
