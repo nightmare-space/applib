@@ -48,23 +48,50 @@ public class DisplayHandler implements IHTTPHandler {
         // Android 12 use the other way
         // because it will cause
         // java.lang.SecurityException: Given calling package android does not match caller's uid 2000
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
             return MediaCodec.createPersistentInputSurface();
         }
         SurfaceView surfaceView = new SurfaceView(FakeContext.get());
         return surfaceView.getHolder().getSurface();
     }
 
-    private static int getVirtualDisplayFlags() {
-        int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1;
-        int VIRTUAL_DISPLAY_FLAG_PRESENTATION = 1 << 1;
-        int VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY = 1 << 3;
-        int VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL = 1 << 8;
-        int VIRTUAL_DISPLAY_FLAG_TRUSTED = 1 << 10;
-        int VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP = 1 << 11;
-        int VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED = 1 << 12;
+    private static final int VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH = 1 << 6;
+    private static final int VIRTUAL_DISPLAY_FLAG_ROTATES_WITH_CONTENT = 1 << 7;
+    private static final int VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL = 1 << 8;
+    private static final int VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS = 1 << 9;
+    private static final int VIRTUAL_DISPLAY_FLAG_TRUSTED = 1 << 10;
+    private static final int VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP = 1 << 11;
+    private static final int VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED = 1 << 12;
+    private static final int VIRTUAL_DISPLAY_FLAG_TOUCH_FEEDBACK_DISABLED = 1 << 13;
+    private static final int VIRTUAL_DISPLAY_FLAG_OWN_FOCUS = 1 << 14;
+    private static final int VIRTUAL_DISPLAY_FLAG_DEVICE_DISPLAY_GROUP = 1 << 15;
+    private static final int VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY = 1 << 3;
+    private static final int VIRTUAL_DISPLAY_FLAG_PRESENTATION = 1 << 1;
+    private static final int VIRTUAL_DISPLAY_FLAG_PUBLIC = 1;
 
-        int flags = VIRTUAL_DISPLAY_FLAG_PUBLIC | VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL | VIRTUAL_DISPLAY_FLAG_PRESENTATION;
+    private static int getVirtualDisplayFlags() {
+        int flagsa = VIRTUAL_DISPLAY_FLAG_PUBLIC
+                | VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY
+                | VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH
+                | VIRTUAL_DISPLAY_FLAG_ROTATES_WITH_CONTENT
+                | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL
+                | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS
+                | VIRTUAL_DISPLAY_FLAG_TRUSTED
+                | VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP
+                | VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED
+                | VIRTUAL_DISPLAY_FLAG_TOUCH_FEEDBACK_DISABLED
+                | VIRTUAL_DISPLAY_FLAG_OWN_FOCUS
+                | VIRTUAL_DISPLAY_FLAG_DEVICE_DISPLAY_GROUP;
+        int flags = VIRTUAL_DISPLAY_FLAG_PUBLIC
+                | VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY
+                | VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH
+                | VIRTUAL_DISPLAY_FLAG_ROTATES_WITH_CONTENT
+                | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL
+                // 这行能让魅族直接把 Launcher 启动到这个虚拟显示器上
+                | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS
+                | VIRTUAL_DISPLAY_FLAG_TOUCH_FEEDBACK_DISABLED
+                | VIRTUAL_DISPLAY_FLAG_OWN_FOCUS
+                | VIRTUAL_DISPLAY_FLAG_DEVICE_DISPLAY_GROUP;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             flags |= VIRTUAL_DISPLAY_FLAG_TRUSTED | VIRTUAL_DISPLAY_FLAG_OWN_DISPLAY_GROUP | VIRTUAL_DISPLAY_FLAG_ALWAYS_UNLOCKED;
         }
@@ -81,6 +108,7 @@ public class DisplayHandler implements IHTTPHandler {
             try {
                 //noinspection JavaReflectionMemberAccess
                 displayManager = DisplayManager.class.getDeclaredConstructor(Context.class).newInstance(FakeContext.get());
+//                ReflectUtil.listAllObject(displayManager);
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException |
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
@@ -158,12 +186,12 @@ public class DisplayHandler implements IHTTPHandler {
 
             Display display1 = (Display) ReflectUtil.invokeMethod(displayManager, "getDisplay", display.getDisplay().getDisplayId());
             L.d("display1 -> " + display1);
-
-            IBinder displayToken = DisplayControl.getPhysicalDisplayToken(display.getDisplay().getDisplayId());
-            L.d("displayToken -> " + displayToken);
-
-            Object token = ReflectUtil.invokeMethod(display, "getToken");
-            L.d("token -> " + token);
+//
+//            IBinder displayToken = DisplayControl.getPhysicalDisplayToken(display.getDisplay().getDisplayId());
+//            L.d("displayToken -> " + displayToken);
+//
+//            Object token = ReflectUtil.invokeMethod(display, "getToken");
+//            L.d("token -> " + token);
 
             return newFixedLengthResponse(
                     NanoHTTPD.Response.Status.OK,
