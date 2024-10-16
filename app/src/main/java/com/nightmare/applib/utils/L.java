@@ -32,7 +32,7 @@ public class L {
         StringBuilder sb = new StringBuilder();
         sb.append((char) 0x1b + "[38;5;42m·");
         sb.append((char) 0x1b + "[0m ");
-        sb.append((char) 0x1b + "[38;5;38m");
+        sb.append((char) 0x1b + "[38;5;196m");
         sb.append(object.toString());
         sb.append((char) 0x1b + "[0m");
         Log.d("applib", object.toString());
