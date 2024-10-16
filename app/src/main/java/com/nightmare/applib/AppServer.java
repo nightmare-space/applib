@@ -73,9 +73,7 @@ public class AppServer extends NanoHTTPD {
     public static void startServerForShell() {
         AppServer server = ServerUtil.safeGetServerForADB();
         L.d("Sula input socket server starting.(version: " + server.version + ")");
-        Workarounds.apply(true, true);
-
-
+        Workarounds.apply();
 //        SulaServer.start();
         server.startInputDispatcher();
         server.registerRoutes();
