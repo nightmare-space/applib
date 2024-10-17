@@ -48,12 +48,6 @@ public class SulaServer {
         ReflectUtil.listAllObject(activityManager);
         IInterface iInterface = ServiceManager.getService("activity", "android.app.IActivityManager");
         ReflectUtil.listAllObject(FakeContext.get().getApplicationContext());
-
-
-        Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.nightmare.sula", "com.nightmare.sula.MainActivity"));
-        intent.putExtra("my_parcelable", new MyParcelable(123));
-        activityManager.startActivity(intent);
 //        IActivityManager iActivityManager = IActivityManager.Stub.asInterface(activityManager.getIActivityManager());
 //        Intent intent = new Intent();
 //        intent.setComponent(new ComponentName("com.nightmare.sula", "com.nightmare.sula.services.SulaService"));
