@@ -117,6 +117,7 @@ public class TaskUtil {
 
     // 获取最近任务，以json格式返回
     static public JSONObject getRecentTasksJson(AppChannel appChannel) throws Exception {
+        L.d("getRecentTasksJson handle");
         /// TODO check 这个功能在低版本 Android 下是否可用
 //        ActivityManager activityManager = (ActivityManager) appChannel.context.getSystemService(Context.ACTIVITY_SERVICE);
 //        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {

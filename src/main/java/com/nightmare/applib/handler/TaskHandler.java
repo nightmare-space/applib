@@ -18,7 +18,7 @@ public class TaskHandler implements IHTTPHandler {
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
-//        L.d("TaskHandler handle");
+        L.d("TaskHandler handle");
         try {
             return newFixedLengthResponse(
                     NanoHTTPD.Response.Status.OK,

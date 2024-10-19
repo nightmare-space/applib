@@ -50,6 +50,7 @@ public class AppServer extends NanoHTTPD {
 
     void addHandler(IHTTPHandler handler) {
         handlers.add(handler);
+        L.d("add handler -> " + handler);
     }
 
     public static void main(String[] args) {
@@ -74,6 +75,7 @@ public class AppServer extends NanoHTTPD {
         AppServer server = ServerUtil.safeGetServerForADB();
         L.d("Sula input socket server starting.(version: " + server.version + ")");
         Workarounds.apply();
+        ContextStore.getInstance().setContext(FakeContext.get());
 //        SulaServer.start();
         server.registerRoutes();
 //        server.tryChangeDisplayConfig();
@@ -174,14 +176,14 @@ public class AppServer extends NanoHTTPD {
      */
     public static int startServerFromActivity(Context context) throws IOException {
         L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
+        ContextStore.getInstance().setContext(context);
         AppServer server = ServerUtil.safeGetServerForActivity();
         // TODO 在确认下这个断言在 release 下是怎么的
         assert server != null;
         server.registerRoutes();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
         appChannel = new AppChannel(context);
-        Log.d("Applib", "success start:" + server.getListeningPort());
-        System.out.flush();
+        L.d("success start:" + server.getListeningPort());
         return server.getListeningPort();
     }
 
@@ -196,6 +198,7 @@ public class AppServer extends NanoHTTPD {
         addHandler(new CMDHandler());
         addHandler(new DisplayHandler());
         addHandler(new IconHandler());
+        addHandler(new FileHandler());
         addHandler(new InjectInputEvent());
         addHandler(new InputInjectHandler());
         addHandler(new OpenAppHandler());
@@ -247,7 +250,7 @@ public class AppServer extends NanoHTTPD {
             }
             // 获取最近任务
             for (IHTTPHandler handler : handlers) {
-                if (url.startsWith(handler.route())) {
+                if (!handler.route().isEmpty() && url.startsWith(handler.route())) {
 //                    L.d("url -> " + url);
 //                    L.d("handler -> " + handler);
                     return handler.handle(session);

@@ -49,12 +49,12 @@ color_echo "$CLASSES_DIR/com/nightmare/applib"
 mkdir -p "$CLASSES_DIR/com/nightmare/applib"
 
 color_echo "Generating java from aidl..."
-cd "$PROJ_DIR/app/src/main/aidl"
+cd "$PROJ_DIR/src/main/aidl"
 # "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/IAdbService.aidl
 # "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/ISurfaceService.aidl
 
 
-cd $PROJ_DIR/app/src/main/java
+cd $PROJ_DIR/src/main/java
 
 SRC=( \
     com/nightmare/applib/*.java \
@@ -70,11 +70,11 @@ do
     CLASSES+=("${src%.java}.class")
 done
 
-CLASSES+=("com/nightmare/applib/MyParcelable\$1.class")
+# CLASSES+=("com/nightmare/applib/MyParcelable\$1.class")
 
 color_echo "Compiling java sources..."
 
-JAR_PATH=$PROJ_DIR/app/libs
+JAR_PATH=$PROJ_DIR/libs
 
 # (cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
 

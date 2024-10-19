@@ -12,6 +12,7 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Build;
 
+import com.nightmare.applib.ContextStore;
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 
@@ -47,8 +48,9 @@ public class AppInfosHandler implements IHTTPHandler {
     }
 
     public static String getLabel(ApplicationInfo info) {
-        PackageManager pm = FakeContext.get().getPackageManager();
+        PackageManager pm = ContextStore.getInstance().getContext().getPackageManager();
         return (String) info.loadLabel(pm);
+        // TODO(lin) 下面是个啥
 //        int res = info.labelRes;
 //        if (info.nonLocalizedLabel != null) {
 //            return (String) info.nonLocalizedLabel;
@@ -115,7 +117,7 @@ public class AppInfosHandler implements IHTTPHandler {
 
 
     public List<String> getAppPackages() {
-        PackageManager pm = FakeContext.get().getPackageManager();
+        PackageManager pm = ContextStore.getInstance().getContext().getPackageManager();
         List<String> packages = new ArrayList<String>();
         @SuppressLint("QueryPermissionsNeeded")
         List<PackageInfo> infos = pm.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);

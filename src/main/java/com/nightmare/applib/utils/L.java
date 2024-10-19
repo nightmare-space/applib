@@ -12,6 +12,7 @@ public class L {
     private static PrintStream fileOut;
     @SuppressLint("SdCardPath")
     static public String serverLogPath = "/sdcard/app_server_log";
+    static String TAG = "applib";
 
     public static void d(Object object) {
         StringBuilder sb = new StringBuilder();
@@ -20,7 +21,7 @@ public class L {
         sb.append((char) 0x1b + "[38;5;38m");
         sb.append(object.toString());
         sb.append((char) 0x1b + "[0m");
-        Log.d("applib", object.toString());
+        Log.d(TAG, object.toString());
         System.out.println(sb);
         System.out.flush();
         initFileOutStream();
@@ -35,7 +36,7 @@ public class L {
         sb.append((char) 0x1b + "[38;5;196m");
         sb.append(object.toString());
         sb.append((char) 0x1b + "[0m");
-        Log.d("applib", object.toString());
+        Log.d(TAG, object.toString());
         System.out.println(sb);
         System.out.flush();
         initFileOutStream();

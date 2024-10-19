@@ -3,6 +3,7 @@ package com.nightmare.applib.handler;
 import static com.nightmare.applib.AppServer.appChannel;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -11,9 +12,11 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
+import com.nightmare.applib.ContextStore;
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.BitmapHelper;
@@ -25,10 +28,16 @@ import java.lang.reflect.InvocationTargetException;
 import fi.iki.elonen.NanoHTTPD;
 
 public class IconHandler implements IHTTPHandler {
+    public IconHandler() {
+        context = ContextStore.getInstance().getContext();
+    }
+
     @Override
     public String route() {
         return "/icon";
     }
+
+    Context context;
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
@@ -38,12 +47,13 @@ public class IconHandler implements IHTTPHandler {
         byte[] bytes = null;
         if (path != null) {
             try {
-                bytes = appChannel.getApkBitmapBytes(path);
+                bytes = getApkBitmapBytes(path);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         } else {
             String packageName = session.getParms().get("package");
+            L.d("icon get package -> " + packageName);
             assert packageName != null;
             if (packageName.contains(".png")) {
                 int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
@@ -61,11 +71,8 @@ public class IconHandler implements IHTTPHandler {
         return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "image/png", new ByteArrayInputStream(bytes), bytes.length);
     }
 
-    /**
-     * @noinspection CallToPrintStackTrace
-     */
     static public PackageInfo getPackageInfo(String packageName, int flag) {
-        PackageManager pm = FakeContext.get().getPackageManager();
+        PackageManager pm = ContextStore.getInstance().getContext().getPackageManager();
         PackageInfo info = null;
         try {
             info = pm.getPackageInfo(packageName, flag);
@@ -81,6 +88,29 @@ public class IconHandler implements IHTTPHandler {
 
     public Bitmap getBitmap(String packageName) {
         return getBitmap(packageName, false);
+    }
+
+
+    public byte[] getApkBitmapBytes(String path) throws
+            InvocationTargetException, IllegalAccessException {
+        return BitmapHelper.bitmap2Bytes(getUninstallAPKIcon(path));
+    }
+
+
+    AssetManager getAssetManagerFromPath(String path) {
+        AssetManager assetManager = null;
+        try {
+            assetManager = AssetManager.class.newInstance();
+        } catch (IllegalAccessException | InstantiationException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert assetManager != null;
+            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, path);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return assetManager;
     }
 
     /**
@@ -150,6 +180,44 @@ public class IconHandler implements IHTTPHandler {
             }
         } catch (Throwable t) {
             L.e("IconHandler getBitmap Exception:" + t);
+            return null;
+        }
+    }
+
+
+    public static Drawable getApkIcon(Context context, String apkPath) {
+        PackageManager packageManager = context.getPackageManager();
+        PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
+        if (packageInfo != null) {
+            ApplicationInfo info = packageInfo.applicationInfo;
+            info.sourceDir = apkPath;
+            info.publicSourceDir = apkPath;
+            try {
+                return info.loadIcon(packageManager);
+            } catch (Exception e) {
+
+            }
+        }
+        return null;
+    }
+
+    //
+    public Bitmap getUninstallAPKIcon(String apkPath) {
+        Drawable icon = getApkIcon(context, apkPath);
+        try {
+            if (icon == null) {
+                return null;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
+                Bitmap bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                icon.draw(canvas);
+                return bitmap;
+            } else {
+                return ((BitmapDrawable) icon).getBitmap();
+            }
+        } catch (Exception e) {
             return null;
         }
     }

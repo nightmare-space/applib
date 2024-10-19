@@ -190,88 +190,9 @@ public class AppChannel {
 
 
 
-    public byte[] getApkBitmapBytes(String path) throws
-            InvocationTargetException, IllegalAccessException {
-        return BitmapHelper.bitmap2Bytes(getUninstallAPKIcon(path));
-    }
 
 
-    AssetManager getAssetManagerFromPath(String path) {
-        AssetManager assetManager = null;
-        try {
-            assetManager = AssetManager.class.newInstance();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert assetManager != null;
-            assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, path);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        return assetManager;
-    }
 
 
-    public static Drawable getApkIcon(Context context, String apkPath) {
-        PackageManager packageManager = context.getPackageManager();
-        PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
-        if (packageInfo != null) {
-            ApplicationInfo info = packageInfo.applicationInfo;
-            info.sourceDir = apkPath;
-            info.publicSourceDir = apkPath;
-            try {
-                return info.loadIcon(packageManager);
-            } catch (Exception e) {
-
-            }
-        }
-        return null;
-    }
-
-    //
-    public Bitmap getUninstallAPKIcon(String apkPath) {
-        String PATH_PackageParser = "android.content.pm.PackageParser";
-        String PATH_AssetManager = "android.content.res.AssetManager";
-        Drawable icon = getApkIcon(context, apkPath);
-        try {
-            if (icon == null) {
-                return null;
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
-                Bitmap bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(), icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
-                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-                icon.draw(canvas);
-                return bitmap;
-            } else {
-                return ((BitmapDrawable) icon).getBitmap();
-            }
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-
-    private boolean validatePackageName(int uid, String packageName) {
-        if (packageName != null) {
-            String[] packageNames = context.getPackageManager().getPackagesForUid(uid);
-            if (packageNames != null) {
-                for (String n : packageNames) {
-                    if (n.equals(packageName)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-
-    }
 
 }
