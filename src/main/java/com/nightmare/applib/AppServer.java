@@ -1,7 +1,4 @@
 package com.nightmare.applib;
-
-import static com.nightmare.applib.handler.InjectInputEvent.inputDispatcher;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
@@ -77,7 +74,6 @@ public class AppServer extends NanoHTTPD {
         Workarounds.apply();
         ContextStore.getInstance().setContext(FakeContext.get());
 //        SulaServer.start();
-        server.registerRoutes();
 //        server.tryChangeDisplayConfig();
         // 获取安卓版本
         String sdk = Build.VERSION.SDK;
@@ -89,6 +85,7 @@ public class AppServer extends NanoHTTPD {
         // 构建显示信息
         String deviceInfo = "Info: " + manufacturer + "(" + model + ")";
         L.d(deviceInfo);
+        server.registerRoutes();
         appChannel = new AppChannel();
         L.d("success start port -> " + server.getListeningPort() + ".");
         writePort(portDirectory, server.getListeningPort());
@@ -170,7 +167,7 @@ public class AppServer extends NanoHTTPD {
 
     /**
      * 与直接启动dex不同，从Activity中启动不用反射context上下文
-     *
+     * different from start dex directly, start from Activity doesn't need to reflect context
      * @param context: Context
      * @throws IOException: IOException
      */
@@ -199,13 +196,12 @@ public class AppServer extends NanoHTTPD {
         addHandler(new DisplayHandler());
         addHandler(new IconHandler());
         addHandler(new FileHandler());
-        addHandler(new InjectInputEvent());
-        addHandler(new InputInjectHandler());
         addHandler(new OpenAppHandler());
         addHandler(new Resizevd());
         addHandler(new StopActivityHandler());
         addHandler(new TaskHandler());
         addHandler(new Taskthumbnail());
+        addHandler(new InputInjectHandler());
     }
 
 
@@ -248,11 +244,8 @@ public class AppServer extends NanoHTTPD {
             if (url.startsWith("/check")) {
                 return newFixedLengthResponse(Response.Status.OK, "text/plain", "ok");
             }
-            // 获取最近任务
             for (IHTTPHandler handler : handlers) {
                 if (!handler.route().isEmpty() && url.startsWith(handler.route())) {
-//                    L.d("url -> " + url);
-//                    L.d("handler -> " + handler);
                     return handler.handle(session);
                 }
             }
