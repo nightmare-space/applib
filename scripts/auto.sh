@@ -20,10 +20,12 @@ fi
 # # 取MD5的前8位
 SERVER_PATH=$LOCAL_DIR/build/app_server
 MD5=$(md5sum $SERVER_PATH | cut -d ' ' -f1 | cut -c 1-8)
-
-cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-space/GitHub/super_launcher/assets/sula_app_server
-cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-core/uncon/assets/app_server
-cp $SERVER_PATH /Users/nightmare/Desktop/nightmare-core/adb_kit/assets
+ADB_KIT_ASSETS="/Users/nightmare/Desktop/nightmare-core/adb_kit/assets/app_server"
+UNCON_ASSETS="/Users/nightmare/Desktop/nightmare-core/uncon/assets/app_server"
+SULA_ASSETS="/Users/nightmare/Desktop/nightmare-space/GitHub/super_launcher/assets/sula_app_server"
+cp $SERVER_PATH $ADB_KIT_ASSETS
+cp $SERVER_PATH $UNCON_ASSETS
+cp $SERVER_PATH $SULA_ASSETS
 echo MD5:$MD5
 devices=`adb devices | grep -v List | grep device | wc -l`
 echo devices:$devices
