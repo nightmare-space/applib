@@ -12,7 +12,7 @@ import com.nightmare.applib.interfaces.IHTTPHandler;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class AppPermissionHandler implements IHTTPHandler {
+public class AppPermissionHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/app_permission";

@@ -9,7 +9,7 @@ import java.io.IOException;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class StopActivityHandler implements IHTTPHandler {
+public class StopActivityHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/stop_activity";

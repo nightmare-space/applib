@@ -10,7 +10,7 @@ import fi.iki.elonen.NanoHTTPD;
 
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
-public class TaskHandler implements IHTTPHandler {
+public class TaskHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/tasks";
@@ -18,7 +18,7 @@ public class TaskHandler implements IHTTPHandler {
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
-        L.d("TaskHandler handle");
+//        L.d("TaskHandler handle");
         try {
             return newFixedLengthResponse(
                     NanoHTTPD.Response.Status.OK,

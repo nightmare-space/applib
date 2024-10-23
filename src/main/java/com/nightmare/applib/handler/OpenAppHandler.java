@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class OpenAppHandler implements IHTTPHandler {
+public class OpenAppHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/start_activity";

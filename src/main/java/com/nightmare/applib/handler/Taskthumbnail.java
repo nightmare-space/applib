@@ -10,7 +10,7 @@ import java.io.ByteArrayInputStream;
 import fi.iki.elonen.NanoHTTPD;
 
 // 获取缩略图
-public class Taskthumbnail implements IHTTPHandler {
+public class Taskthumbnail extends IHTTPHandler {
     @Override
     public String route() {
         return "/taskthumbnail";

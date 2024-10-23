@@ -20,7 +20,7 @@ import java.util.List;
 import fi.iki.elonen.NanoHTTPD;
 
 // 通过包名获取Main Activity
-public class AppMainactivity implements IHTTPHandler {
+public class AppMainactivity extends IHTTPHandler {
     @Override
     public String route() {
         return "/appmainactivity";

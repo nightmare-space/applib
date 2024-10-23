@@ -1,22 +1,18 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.handler.InjectInputEvent.inputDispatcher;
-
 import com.nightmare.applib.InputDispatcher;
 import com.nightmare.applib.Position;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.Binary;
 import com.nightmare.applib.utils.L;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-
 import fi.iki.elonen.NanoHTTPD;
 
-public class InputInjectHandler implements IHTTPHandler {
+public class InputInjectHandler extends IHTTPHandler {
     public InputInjectHandler() {
         new Thread(() -> {
             try {
@@ -49,7 +45,7 @@ public class InputInjectHandler implements IHTTPHandler {
             }
         }).start();
     }
-
+    static InputDispatcher inputDispatcher = new InputDispatcher();
     public static final int TYPE_INJECT_KEYCODE = 0;
     public static final int TYPE_INJECT_TOUCH_EVENT = 2;
     static final int INJECT_KEYCODE_PAYLOAD_LENGTH = 13;

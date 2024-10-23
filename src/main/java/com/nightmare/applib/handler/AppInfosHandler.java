@@ -26,7 +26,7 @@ import java.util.List;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class AppInfosHandler implements IHTTPHandler {
+public class AppInfosHandler extends IHTTPHandler {
 
 
     @Override

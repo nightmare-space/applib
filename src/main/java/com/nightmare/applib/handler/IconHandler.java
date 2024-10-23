@@ -27,7 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class IconHandler implements IHTTPHandler {
+public class IconHandler extends IHTTPHandler {
     public IconHandler() {
         context = ContextStore.getInstance().getContext();
     }

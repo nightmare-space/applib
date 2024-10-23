@@ -19,7 +19,7 @@ import java.util.List;
 import fi.iki.elonen.NanoHTTPD;
 
 // 获取一个App的所有Activity
-public class AppActivityHandler implements IHTTPHandler {
+public class AppActivityHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/app_activity";

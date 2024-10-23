@@ -36,7 +36,7 @@ import java.util.Objects;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class DisplayHandler implements IHTTPHandler {
+public class DisplayHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/display";

@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import fi.iki.elonen.NanoHTTPD;
 
 // 获取单个App的详细信息
-public class AppDetailHandler implements IHTTPHandler {
+public class AppDetailHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/appdetail";

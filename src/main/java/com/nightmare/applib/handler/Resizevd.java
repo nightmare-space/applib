@@ -10,7 +10,7 @@ import com.nightmare.applib.interfaces.IHTTPHandler;
 import fi.iki.elonen.NanoHTTPD;
 
 // 改变虚拟显示器尺寸
-public class Resizevd implements IHTTPHandler {
+public class Resizevd extends IHTTPHandler {
     @Override
     public String route() {
         return "virtual_display_resize";

@@ -4,7 +4,7 @@ import com.nightmare.applib.interfaces.IHTTPHandler;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class ChangeDisplayHandler implements IHTTPHandler {
+public class ChangeDisplayHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "change_display";

@@ -14,7 +14,7 @@ import fi.iki.elonen.NanoHTTPD;
 
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
-public class CMDHandler implements IHTTPHandler {
+public class CMDHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/cmd";

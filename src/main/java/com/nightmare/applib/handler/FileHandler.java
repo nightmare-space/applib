@@ -29,7 +29,7 @@ import java.io.ByteArrayOutputStream;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class FileHandler implements IHTTPHandler {
+public class FileHandler extends IHTTPHandler {
     @Override
     public String route() {
         return "/file";
@@ -53,7 +53,7 @@ public class FileHandler implements IHTTPHandler {
             case "upload":
                 return handleFileUpload(session);
             case "file":
-                return handleFileBytes(session.getParms());
+                return handleFileBytes(session.getParms(), session);
             default:
                 return newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain", "Invalid action parameter");
         }
@@ -61,6 +61,82 @@ public class FileHandler implements IHTTPHandler {
 
     private InputStream readFileBytes(File file) throws IOException {
         return new FileInputStream(file);
+    }
+
+    private NanoHTTPD.Response addCORSHeaders(NanoHTTPD.Response response) {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        return response;
+    }
+
+
+    private NanoHTTPD.Response handleFileBytes(Map<String, String> params, NanoHTTPD.IHTTPSession session) {
+        String path = params.get("path");
+        if (path == null) {
+            return newFixedLengthResponse(NanoHTTPD.Response.Status.BAD_REQUEST, "text/plain", "Missing parameters");
+        }
+        File file = new File(path);
+        if (!file.exists() || !file.isFile()) {
+            return newFixedLengthResponse(NanoHTTPD.Response.Status.NOT_FOUND, "text/plain", "File not found");
+        }
+
+        String rangeHeader = session.getHeaders().get("range");
+        L.d("rangeHeader -> " + rangeHeader);
+        L.d("session.getMethod() -> " + session.getMethod());
+        long fileLength = file.length();
+        L.d("fileLength -> " + fileLength);
+        long start = 0;
+        long end = fileLength - 1;
+
+        if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+            String[] ranges = rangeHeader.substring(6).split("-");
+            try {
+                if (ranges.length > 0) {
+                    start = Long.parseLong(ranges[0]);
+                }
+                if (ranges.length > 1) {
+                    end = Long.parseLong(ranges[1]);
+                }
+            } catch (NumberFormatException e) {
+                return newFixedLengthResponse(NanoHTTPD.Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "Invalid range");
+            }
+        }
+
+        if (start > end || start < 0 || end >= fileLength) {
+            return newFixedLengthResponse(NanoHTTPD.Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "Invalid range");
+        }
+
+        long contentLength = end - start + 1;
+        L.d("start -> " + start + " end -> " + end);
+
+        String mimeType = URLConnection.guessContentTypeFromName(file.getName());
+        if (mimeType == null) {
+            mimeType = "application/octet-stream";
+        }
+
+        if (session.getMethod() == NanoHTTPD.Method.HEAD) {
+            NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.PARTIAL_CONTENT, mimeType, null, 0);
+            response.addHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
+            response.addHeader("Accept-Ranges", "bytes");
+            return response;
+        } else {
+            try {
+                InputStream fileInputStream = new FileInputStream(file);
+                fileInputStream.skip(start);
+                NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.PARTIAL_CONTENT, mimeType, fileInputStream, contentLength);
+                response.addHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
+                response.addHeader("Accept-Ranges", "bytes");
+                L.d("Content-Range -> " + "bytes " + start + "-" + end + "/" + fileLength);
+                L.d("Content-Length -> " + contentLength);
+//                response.addHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
+                response = addCORSHeaders(response);
+                return response;
+            } catch (IOException e) {
+                L.e("FileBytes Exception: " + e);
+                return newFixedLengthResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "Error reading file");
+            }
+        }
     }
 
     private NanoHTTPD.Response handleFileBytes(Map<String, String> params) {
