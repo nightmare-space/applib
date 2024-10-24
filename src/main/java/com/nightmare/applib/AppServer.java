@@ -1,4 +1,5 @@
 package com.nightmare.applib;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
@@ -168,11 +169,13 @@ public class AppServer extends NanoHTTPD {
     /**
      * 与直接启动dex不同，从Activity中启动不用反射context上下文
      * different from start dex directly, start from Activity doesn't need to reflect context
+     *
      * @param context: Context
      * @throws IOException: IOException
      */
     public static int startServerFromActivity(Context context) throws IOException {
         L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
+        L.enableTerminalLog = false;
         ContextStore.getInstance().setContext(context);
         AppServer server = ServerUtil.safeGetServerForActivity();
         // TODO 在确认下这个断言在 release 下是怎么的

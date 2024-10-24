@@ -13,6 +13,7 @@ public class L {
     @SuppressLint("SdCardPath")
     static public String serverLogPath = "/sdcard/app_server_log";
     static String TAG = "applib";
+    static public boolean enableTerminalLog = true;
 
     public static void d(Object object) {
         StringBuilder sb = new StringBuilder();
@@ -22,8 +23,10 @@ public class L {
         sb.append(object.toString());
         sb.append((char) 0x1b + "[0m");
         Log.d(TAG, object.toString());
-        System.out.println(sb);
-        System.out.flush();
+        if(enableTerminalLog) {
+            System.out.println(sb);
+            System.out.flush();
+        }
         initFileOutStream();
         fileOut.println(sb);
     }
@@ -37,8 +40,10 @@ public class L {
         sb.append(object.toString());
         sb.append((char) 0x1b + "[0m");
         Log.d(TAG, object.toString());
-        System.out.println(sb);
-        System.out.flush();
+        if(enableTerminalLog) {
+            System.out.println(sb);
+            System.out.flush();
+        }
         initFileOutStream();
         fileOut.println(sb);
     }

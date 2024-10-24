@@ -116,15 +116,20 @@ public class FileHandler extends IHTTPHandler {
         }
 
         if (session.getMethod() == NanoHTTPD.Method.HEAD) {
-            NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.PARTIAL_CONTENT, mimeType, null, 0);
+            NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.OK, mimeType, null, 0);
             response.addHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
             response.addHeader("Accept-Ranges", "bytes");
             return response;
         } else {
+
             try {
+                NanoHTTPD.Response.Status status = NanoHTTPD.Response.Status.OK;
+                if(rangeHeader != null && rangeHeader.startsWith("bytes=")){
+                    status = NanoHTTPD.Response.Status.PARTIAL_CONTENT;
+                }
                 InputStream fileInputStream = new FileInputStream(file);
                 fileInputStream.skip(start);
-                NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.PARTIAL_CONTENT, mimeType, fileInputStream, contentLength);
+                NanoHTTPD.Response response = NanoHTTPD.newFixedLengthResponse(status, mimeType, fileInputStream, contentLength);
                 response.addHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
                 response.addHeader("Accept-Ranges", "bytes");
                 L.d("Content-Range -> " + "bytes " + start + "-" + end + "/" + fileLength);
