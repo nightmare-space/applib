@@ -9,7 +9,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import com.nightmare.applib.utils.L;
-import com.nightmare.applib.wrappers.InputManagerSimulate;
+import com.nightmare.applib.wrappers.InputManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
 public class InputDispatcher {
@@ -27,7 +27,7 @@ public class InputDispatcher {
     private static final int DEFAULT_DEVICE_ID = 0;
 
     private int displayId = 0;
-    public static final int INJECT_MODE_ASYNC = InputManagerSimulate.INJECT_INPUT_EVENT_MODE_ASYNC;
+    public static final int INJECT_MODE_ASYNC = InputManager.INJECT_INPUT_EVENT_MODE_ASYNC;
 
     private void initPointers() {
         for (int i = 0; i < PointersState.MAX_POINTERS; ++i) {
@@ -134,7 +134,7 @@ public class InputDispatcher {
                 MotionEvent pressEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_PRESS, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                 L.d("setActionButton(pressEvent, actionButton) will invoke");
-                if (!InputManagerSimulate.setActionButton(pressEvent, actionButton)) {
+                if (!InputManager.setActionButton(pressEvent, actionButton)) {
 //                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_DOWN");
                     return false;
                 }
@@ -152,7 +152,7 @@ public class InputDispatcher {
                 MotionEvent releaseEvent = MotionEvent.obtain(lastTouchDown, now, MotionEvent.ACTION_BUTTON_RELEASE, pointerCount, pointerProperties,
                         pointerCoords, 0, buttons, 1f, 1f, DEFAULT_DEVICE_ID, 0, source, 0);
                 L.d("setActionButton(releaseEvent, actionButton) will invoke");
-                if (!InputManagerSimulate.setActionButton(releaseEvent, actionButton)) {
+                if (!InputManager.setActionButton(releaseEvent, actionButton)) {
 //                    L.d("injectTouch InputManagerSimulate.setActionButton action = MotionEvent.ACTION_UP");
                     return false;
                 }
@@ -197,7 +197,7 @@ public class InputDispatcher {
             throw new AssertionError("Could not inject input event if !supportsInputEvents()");
         }
 
-        if (displayId != 0 && !InputManagerSimulate.setDisplayId(inputEvent, displayId)) {
+        if (displayId != 0 && !InputManager.setDisplayId(inputEvent, displayId)) {
             L.d("Could not set input event display id");
             return false;
         }

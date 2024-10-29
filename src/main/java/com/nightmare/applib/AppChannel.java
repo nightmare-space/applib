@@ -1,43 +1,12 @@
 package com.nightmare.applib;
 
-import static android.content.Context.WINDOW_SERVICE;
-
-import android.annotation.SuppressLint;
-import android.app.ActivityOptions;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PermissionInfo;
-import android.content.pm.ResolveInfo;
-import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
-import android.graphics.drawable.AdaptiveIconDrawable;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.hardware.display.DisplayManager;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.Looper;
 import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.WindowManager;
-import android.widget.FrameLayout;
 
-import com.nightmare.applib.handler.AppInfosHandler;
-import com.nightmare.applib.handler.IconHandler;
-import com.nightmare.applib.utils.BitmapHelper;
-import com.nightmare.applib.utils.ReflectUtil;
-import com.nightmare.applib.wrappers.DisplayManagerRef;
 import com.nightmare.applib.wrappers.IPackageManager;
 import com.nightmare.applib.wrappers.ServiceManager;
 
@@ -45,18 +14,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import com.nightmare.applib.utils.L;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 /**
@@ -67,7 +27,6 @@ import org.json.JSONObject;
 public class AppChannel {
     private static final String TAG = "app_channel";
     IPackageManager pm;
-    DisplayManagerRef displayManagerRef;
     static final String SOCKET_NAME = "app_manager";
     static final int RANGE_START = 6000;
     static final int RANGE_END = 6040;

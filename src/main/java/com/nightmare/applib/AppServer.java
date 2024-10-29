@@ -188,6 +188,13 @@ public class AppServer extends NanoHTTPD {
     }
 
     void registerRoutes() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName("android.hardware.display.VirtualDisplayConfig$Builder");
+            ReflectUtil.listAllObject(clazz);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         addHandler(new AppActivityHandler());
         addHandler(new AppDetailHandler());
         addHandler(new AppInfosHandler());

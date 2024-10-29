@@ -3,15 +3,19 @@ package com.nightmare.applib.handler;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.WindowManager;
 
 import com.nightmare.applib.FakeContext;
@@ -20,12 +24,14 @@ import com.nightmare.applib.utils.DisplayUtil;
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ReflectUtil;
 import com.nightmare.applib.wrappers.DisplayControl;
+import com.nightmare.applib.wrappers.ServiceManager;
 import com.nightmare.applib.wrappers.SurfaceControl;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Ref;
@@ -45,6 +51,10 @@ public class DisplayHandler extends IHTTPHandler {
     public static Map<Integer, VirtualDisplay> cache = new HashMap<>();
 
     Surface getVDSurface() {
+//        SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+//        ;
+//        Surface surface = new Surface(surfaceTexture);
+//        return surface;
         // Android 12 use the other way
         // because it will cause
         // java.lang.SecurityException: Given calling package android does not match caller's uid 2000
@@ -53,6 +63,26 @@ public class DisplayHandler extends IHTTPHandler {
         }
         SurfaceView surfaceView = new SurfaceView(FakeContext.get());
         return surfaceView.getHolder().getSurface();
+    }
+
+    Surface getVDSurfaceNew(int width, int height) {
+        MediaCodec mediaCodec = null;
+        try {
+            mediaCodec = MediaCodec.createEncoderByType("video/avc");
+            MediaFormat format = MediaFormat.createVideoFormat("video/avc", width, height);
+            format.setInteger(MediaFormat.KEY_FRAME_RATE, 120);
+            format.setInteger(MediaFormat.KEY_BIT_RATE, 800_0000);
+            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+            format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 0);
+            format.setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 100_1000);
+            format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+            mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            Surface surface = mediaCodec.createInputSurface();
+            return surface;
+        } catch (IOException e) {
+
+        }
+        return null;
     }
 
     private static final int VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH = 1 << 6;
@@ -86,7 +116,8 @@ public class DisplayHandler extends IHTTPHandler {
                 | VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY
                 | VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH
                 | VIRTUAL_DISPLAY_FLAG_ROTATES_WITH_CONTENT
-                | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL
+                // Check 这个 flag 移除后，关闭虚拟显示器，app会不会退出
+//                | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL
                 // 这行能让魅族直接把 Launcher 启动到这个虚拟显示器上
                 | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS
                 | VIRTUAL_DISPLAY_FLAG_TOUCH_FEEDBACK_DISABLED
@@ -168,14 +199,29 @@ public class DisplayHandler extends IHTTPHandler {
             if (displayName == null) {
                 displayName = "applib-vd";
             }
-            display = displayManager.createVirtualDisplay(
-                    displayName,
-                    Integer.parseInt(width),
-                    Integer.parseInt(height),
-                    Integer.parseInt(density),
-                    getVDSurface(),
-                    getVirtualDisplayFlags()
-            );
+            Surface surface = getVDSurface();
+//            display = displayManager.createVirtualDisplay(
+//                    displayName,
+//                    Integer.parseInt(width),
+//                    Integer.parseInt(height),
+//                    Integer.parseInt(density),
+//                    surface,
+//                    getVirtualDisplayFlags()
+//            );
+            try {
+                display = ServiceManager.getDisplayManager().createVirtualDisplay(
+                        displayName,
+                        Integer.parseInt(width),
+                        Integer.parseInt(height),
+                        Integer.parseInt(density),
+                        surface,
+                        getVirtualDisplayFlags()
+                );
+            } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException |
+                     InstantiationException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+            assert display != null;
             cache.put(display.getDisplay().getDisplayId(), display);
             JSONObject json = null;
             try {
