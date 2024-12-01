@@ -2,8 +2,15 @@ package com.nightmare.applib;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.IPackageManager;
+import android.ddm.DdmHandleAppName;
 import android.hardware.display.DisplayManager;
+import android.hardware.display.IDisplayManager;
 import android.os.Build;
+import android.os.Looper;
+import android.os.RemoteException;
+import android.os.ServiceManager;
 import android.util.Log;
 import android.view.Display;
 
@@ -41,7 +48,6 @@ public class AppServer extends NanoHTTPD {
         super(address, port);
     }
 
-    static public AppChannel appChannel;
     @SuppressLint("SdCardPath")
     static private String portDirectory = "/sdcard";
     List<IHTTPHandler> handlers = new ArrayList<>();
@@ -61,6 +67,7 @@ public class AppServer extends NanoHTTPD {
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
         startServerForShell();
+        Looper.loop();
     }
 
     String version = "0.0.1";
@@ -70,6 +77,7 @@ public class AppServer extends NanoHTTPD {
      */
     @SuppressLint("SdCardPath")
     public static void startServerForShell() {
+        DdmHandleAppName.setAppName("RAS", 0);
         AppServer server = ServerUtil.safeGetServerForADB();
         L.d("Sula input socket server starting.(version: " + server.version + ")");
         Workarounds.apply();
@@ -87,23 +95,12 @@ public class AppServer extends NanoHTTPD {
         String deviceInfo = "Info: " + manufacturer + "(" + model + ")";
         L.d(deviceInfo);
         server.registerRoutes();
-        appChannel = new AppChannel();
         L.d("success start port -> " + server.getListeningPort() + ".");
         writePort(portDirectory, server.getListeningPort());
         // 让进程等待
         // 不能用 System.in.read(), System.in.read()需要宿主进程由标准终端调用
         // Process.run 等方法就会出现异常，
         // System.in.read();
-        // noinspection InfiniteLoopStatement
-        while (true) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
     }
 
 
@@ -182,24 +179,16 @@ public class AppServer extends NanoHTTPD {
         assert server != null;
         server.registerRoutes();
         writePort(context.getFilesDir().getPath(), server.getListeningPort());
-        appChannel = new AppChannel(context);
         L.d("success start:" + server.getListeningPort());
         return server.getListeningPort();
     }
 
     void registerRoutes() {
-        Class clazz = null;
-        try {
-            clazz = Class.forName("android.hardware.display.VirtualDisplayConfig$Builder");
-            ReflectUtil.listAllObject(clazz);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
         addHandler(new AppActivityHandler());
         addHandler(new AppDetailHandler());
         addHandler(new AppInfosHandler());
 //        addHandler(new AppInfosHandlerV1());
-        addHandler(new AppMainactivity());
+        addHandler(new AppMainActivity());
         addHandler(new AppPermissionHandler());
         addHandler(new ChangeDisplayHandler());
         addHandler(new CMDHandler());
@@ -211,7 +200,6 @@ public class AppServer extends NanoHTTPD {
         addHandler(new StopActivityHandler());
         addHandler(new TaskHandler());
         addHandler(new Taskthumbnail());
-        addHandler(new InputInjectHandler());
     }
 
 

@@ -1,12 +1,9 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
-
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
@@ -15,15 +12,13 @@ import com.nightmare.applib.utils.L;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.List;
-
 import fi.iki.elonen.NanoHTTPD;
 
 // 通过包名获取Main Activity
-public class AppMainactivity extends IHTTPHandler {
+public class AppMainActivity extends IHTTPHandler {
     @Override
     public String route() {
-        return "/appmainactivity";
+        return "/app_main_activity";
     }
 
     @Override

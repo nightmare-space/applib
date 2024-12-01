@@ -1,6 +1,5 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
 
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.L;
@@ -10,6 +9,13 @@ import fi.iki.elonen.NanoHTTPD;
 
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 public class TaskHandler extends IHTTPHandler {
     @Override
     public String route() {
@@ -18,15 +24,21 @@ public class TaskHandler extends IHTTPHandler {
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
-//        L.d("TaskHandler handle");
+//        return newFixedLengthResponse(
+//                    NanoHTTPD.Response.Status.OK,
+//                    "application/json",
+//                    ""
+//            );
+        L.d("TaskHandler handle");
         try {
             return newFixedLengthResponse(
                     NanoHTTPD.Response.Status.OK,
                     "application/json",
-                    TaskUtil.getRecentTasksJson(appChannel).toString()
+                    TaskUtil.getRecentTasksJson().toString()
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
 }

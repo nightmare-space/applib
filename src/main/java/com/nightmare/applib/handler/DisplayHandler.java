@@ -3,7 +3,6 @@ package com.nightmare.applib.handler;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
@@ -15,7 +14,6 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceView;
-import android.view.TextureView;
 import android.view.WindowManager;
 
 import com.nightmare.applib.FakeContext;
@@ -24,7 +22,6 @@ import com.nightmare.applib.utils.DisplayUtil;
 import com.nightmare.applib.utils.L;
 import com.nightmare.applib.utils.ReflectUtil;
 import com.nightmare.applib.wrappers.DisplayControl;
-import com.nightmare.applib.wrappers.ServiceManager;
 import com.nightmare.applib.wrappers.SurfaceControl;
 
 import org.json.JSONArray;
@@ -34,7 +31,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Ref;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +39,10 @@ import java.util.Objects;
 import fi.iki.elonen.NanoHTTPD;
 
 public class DisplayHandler extends IHTTPHandler {
+    public DisplayHandler() {
+//        testChangeRefreshRate();
+    }
+
     @Override
     public String route() {
         return "/display";
@@ -58,7 +58,9 @@ public class DisplayHandler extends IHTTPHandler {
         // Android 12 use the other way
         // because it will cause
         // java.lang.SecurityException: Given calling package android does not match caller's uid 2000
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S) {
+        // android 15
+        L.d(" Build.VERSION.SDK_INT -> " + Build.VERSION.SDK_INT);
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             return MediaCodec.createPersistentInputSurface();
         }
         SurfaceView surfaceView = new SurfaceView(FakeContext.get());
@@ -119,7 +121,7 @@ public class DisplayHandler extends IHTTPHandler {
                 // Check 这个 flag 移除后，关闭虚拟显示器，app会不会退出
 //                | VIRTUAL_DISPLAY_FLAG_DESTROY_CONTENT_ON_REMOVAL
                 // 这行能让魅族直接把 Launcher 启动到这个虚拟显示器上
-                | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS
+//                | VIRTUAL_DISPLAY_FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS
                 | VIRTUAL_DISPLAY_FLAG_TOUCH_FEEDBACK_DISABLED
                 | VIRTUAL_DISPLAY_FLAG_OWN_FOCUS
                 | VIRTUAL_DISPLAY_FLAG_DEVICE_DISPLAY_GROUP;
@@ -198,29 +200,30 @@ public class DisplayHandler extends IHTTPHandler {
             }
             if (displayName == null) {
                 displayName = "applib-vd";
+                displayName = "Virtual Display";
             }
             Surface surface = getVDSurface();
-//            display = displayManager.createVirtualDisplay(
-//                    displayName,
-//                    Integer.parseInt(width),
-//                    Integer.parseInt(height),
-//                    Integer.parseInt(density),
-//                    surface,
-//                    getVirtualDisplayFlags()
-//            );
-            try {
-                display = ServiceManager.getDisplayManager().createVirtualDisplay(
-                        displayName,
-                        Integer.parseInt(width),
-                        Integer.parseInt(height),
-                        Integer.parseInt(density),
-                        surface,
-                        getVirtualDisplayFlags()
-                );
-            } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException |
-                     InstantiationException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
+            display = displayManager.createVirtualDisplay(
+                    displayName,
+                    Integer.parseInt(width),
+                    Integer.parseInt(height),
+                    Integer.parseInt(density),
+                    surface,
+                    getVirtualDisplayFlags()
+            );
+//            try {
+//                display = ServiceManager.getDisplayManager().createVirtualDisplay(
+//                        displayName,
+//                        Integer.parseInt(width),
+//                        Integer.parseInt(height),
+//                        Integer.parseInt(density),
+//                        surface,
+//                        getVirtualDisplayFlags()
+//                );
+//            } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException |
+//                     InstantiationException | InvocationTargetException e) {
+//                throw new RuntimeException(e);
+//            }
             assert display != null;
             cache.put(display.getDisplay().getDisplayId(), display);
             JSONObject json = null;
@@ -257,13 +260,17 @@ public class DisplayHandler extends IHTTPHandler {
 
         long[] ids = DisplayControl.getPhysicalDisplayIds();
         for (long id : ids) {
+            L.d("");
+            L.d("");
+            L.d("");
+            L.d("");
             L.d("Display Id -> " + id);
             IBinder displayToken = DisplayControl.getPhysicalDisplayToken(id);
 
             try {
 //                    ReflectUtil.listAllObject(SurfaceControl.class);
 
-                SurfaceControl.setBootDisplayMode(displayToken, 2);
+                SurfaceControl.setBootDisplayMode(displayToken, 0);
                 Object o = SurfaceControl.getDynamicDisplayInfo(id);
                 L.d("displayToken-> " + displayToken);
                 Field supportedDisplayModesField = o.getClass().getField("supportedDisplayModes");
@@ -278,7 +285,7 @@ public class DisplayHandler extends IHTTPHandler {
                 Object supportedDisplayModes = supportedDisplayModesField.get(o);
                 Object activeDisplayModeId = activeDisplayModeIdField.get(o);
                 Object renderFrameRate = renderFrameRateField.get(o);
-                Object supportedColorModes = supportedColorModesField.get(o);
+                int[] supportedColorModes = (int[]) supportedColorModesField.get(o);
                 Object activeColorMode = activeColorModeField.get(o);
                 Object hdrCapabilities = hdrCapabilitiesField.get(o);
                 Object autoLowLatencyModeSupported = autoLowLatencyModeSupportedField.get(o);
@@ -289,7 +296,10 @@ public class DisplayHandler extends IHTTPHandler {
                 }
                 L.d("activeDisplayModeId -> " + activeDisplayModeId);
                 L.d("renderFrameRate -> " + renderFrameRate);
-                L.d("supportedColorModes -> " + supportedColorModes);
+                L.d("supportedColorModes -> " + Arrays.toString(supportedColorModes));
+//                for (Object object : (Object[]) supportedColorModes) {
+//                    L.d("supportedColorMode -> " + object);
+//                }
                 L.d("activeColorMode -> " + activeColorMode);
                 L.d("hdrCapabilities -> " + hdrCapabilities);
                 L.d("autoLowLatencyModeSupported -> " + autoLowLatencyModeSupported);

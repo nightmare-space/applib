@@ -3,8 +3,10 @@ package com.nightmare.applib.utils;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 
 
@@ -48,12 +50,15 @@ public class L {
         fileOut.println(sb);
     }
 
-
     private static void initFileOutStream() {
         if (fileOut == null) {
             try {
-                fileOut = new PrintStream(new FileOutputStream(serverLogPath, false));
-            } catch (FileNotFoundException e) {
+                File logFile = new File(serverLogPath);
+                if (!logFile.exists()) {
+                    logFile.createNewFile();
+                }
+                fileOut = new PrintStream(new FileOutputStream(logFile, false));
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }

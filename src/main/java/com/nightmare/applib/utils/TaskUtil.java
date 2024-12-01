@@ -1,17 +1,14 @@
 package com.nightmare.applib.utils;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.app.ActivityManager.RecentTaskInfo;
 import android.app.TaskInfo;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
-import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.IInterface;
 
-import com.nightmare.applib.AppChannel;
 import com.nightmare.applib.handler.AppInfosHandler;
 import com.nightmare.applib.handler.IconHandler;
 
@@ -24,48 +21,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public class TaskUtil {
-
-    // TODO 安卓14不支持
-    static public byte[] getTaskThumbnail(int id) throws Exception {
-        long start = System.currentTimeMillis();
-        @SuppressLint("PrivateApi")
-        Class<?> cls = Class.forName("android.app.ActivityTaskManager");
-        @SuppressLint({"BlockedPrivateApi", "PrivateApi"})
-        Method services = cls.getDeclaredMethod("getService");
-        Object iam = services.invoke(null);
-        assert iam != null;
-        Method snapshotMethod = iam.getClass().getDeclaredMethod(
-                "getTaskSnapshot", int.class,
-                boolean.class
-        );
-        snapshotMethod.setAccessible(true);
-        Object snapshot = snapshotMethod.invoke(iam, id, true);
-        if (snapshot == null) return null;
-        Field buffer = snapshot.getClass().getDeclaredField("mSnapshot");
-        buffer.setAccessible(true);
-        Object hardBuffer = buffer.get(snapshot);
-        Object colorSpace = snapshot.getClass().getMethod("getColorSpace").invoke(snapshot);
-        Class<?> bitmapCls = Class.forName("android.graphics.Bitmap");
-        Class<?> colorSpaceCls = Class.forName("android.graphics.ColorSpace");
-        assert hardBuffer != null;
-        //noinspection JavaReflectionMemberAccess
-        Method wrapHardwareBufferMethod = bitmapCls.getMethod(
-                "wrapHardwareBuffer",
-                hardBuffer.getClass(),
-                colorSpaceCls
-        );
-        //noinspection JavaReflectionInvocation
-        Bitmap bmp = (Bitmap) wrapHardwareBufferMethod.invoke(null, hardBuffer, colorSpace);
-        if (bmp == null)
-            return null;
-        System.out.println("create " + (System.currentTimeMillis() - start));
-        Bitmap scaledBmp = Bitmap.createScaledBitmap(bmp, bmp.getWidth(), bmp.getHeight(), false);
-        System.out.println(System.currentTimeMillis() - start);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        scaledBmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        System.out.println(System.currentTimeMillis() - start);
-        return baos.toByteArray();
-    }
 
     private static List<ActivityManager.RecentTaskInfo> getRecentTasks(int maxNum, int flags) throws Exception {
         IInterface iam = getIAM();
@@ -91,7 +46,7 @@ public class TaskUtil {
         Class<?> taskParceledCls = tasksParcelled.getClass();
         Method getList = taskParceledCls.getMethod("getList");
         //noinspection unchecked
-        return (List<RecentTaskInfo>) getList.invoke(tasksParcelled);
+        return (List<ActivityManager.RecentTaskInfo>) getList.invoke(tasksParcelled);
     }
 
     private static IInterface getIAM() throws Exception {
@@ -116,7 +71,7 @@ public class TaskUtil {
     }
 
     // 获取最近任务，以json格式返回
-    static public JSONObject getRecentTasksJson(AppChannel appChannel) throws Exception {
+    static public JSONObject getRecentTasksJson() throws Exception {
 //        L.d("getRecentTasksJson handle");
         /// TODO check 这个功能在低版本 Android 下是否可用
 //        ActivityManager activityManager = (ActivityManager) appChannel.context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -154,10 +109,10 @@ public class TaskUtil {
 ////                }
 ////            }
 //        }
-        List<RecentTaskInfo> tasks = getRecentTasks(100, 0);
+        List<ActivityManager.RecentTaskInfo> tasks = getRecentTasks(100, 0);
         JSONObject jsonObjectResult = new JSONObject();
         JSONArray jsonArray = new JSONArray();
-        for (RecentTaskInfo taskInfo : tasks) {
+        for (ActivityManager.RecentTaskInfo taskInfo : tasks) {
             JSONObject jsonObject = new JSONObject();
             // System.out.println("serving: " + taskInfo.toString());
             jsonObject.put("id", taskInfo.id);

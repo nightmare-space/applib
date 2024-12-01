@@ -1,8 +1,6 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -15,9 +13,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-
 import com.nightmare.applib.ContextStore;
-import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.BitmapHelper;
 import com.nightmare.applib.utils.L;

@@ -1,21 +1,15 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
-
 import java.io.ByteArrayInputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-
 import fi.iki.elonen.NanoHTTPD;
 
 // 获取一个App的所有Activity

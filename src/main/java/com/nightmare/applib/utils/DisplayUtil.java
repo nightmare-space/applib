@@ -5,9 +5,6 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
 
-import com.nightmare.applib.wrappers.DisplayInfo;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 

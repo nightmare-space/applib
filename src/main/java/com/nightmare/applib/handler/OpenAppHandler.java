@@ -1,26 +1,12 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
-
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-
-import android.annotation.SuppressLint;
-import android.app.ActivityOptions;
-import android.content.ComponentName;
-import android.content.Intent;
-import android.os.Bundle;
-
 import com.nightmare.applib.interfaces.IHTTPHandler;
 import com.nightmare.applib.utils.L;
-import com.nightmare.applib.utils.ReflectUtil;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
-
 import fi.iki.elonen.NanoHTTPD;
-
 public class OpenAppHandler extends IHTTPHandler {
     @Override
     public String route() {

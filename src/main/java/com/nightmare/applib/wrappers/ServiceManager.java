@@ -3,6 +3,7 @@ package com.nightmare.applib.wrappers;
 import android.annotation.SuppressLint;
 import android.os.IBinder;
 import android.os.IInterface;
+
 import java.lang.reflect.Method;
 
 @SuppressLint("PrivateApi,DiscouragedPrivateApi")
@@ -22,9 +23,6 @@ public final class ServiceManager {
     }
 
     private static DisplayManager displayManager;
-    private static IPackageManager packageManager;
-    private static InputManager inputManager;
-    private static ActivityManager activityManager;
 
     private ServiceManager() {
         /* not instantiable */
@@ -47,35 +45,4 @@ public final class ServiceManager {
         return displayManager;
     }
 
-    public static InputManager getInputManager() {
-        if (inputManager == null) {
-            inputManager = InputManager.create();
-        }
-        return inputManager;
-    }
-
-
-    public static ActivityManager getActivityManager() {
-        if (activityManager == null) {
-            try {
-                // On old Android versions, the ActivityManager is not exposed via AIDL,
-                // so use ActivityManagerNative.getDefault()
-                Class<?> cls = Class.forName("android.app.ActivityManagerNative");
-                Method getDefaultMethod = cls.getDeclaredMethod("getDefault");
-                IInterface am = (IInterface) getDefaultMethod.invoke(null);
-                activityManager = new ActivityManager(am);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        return activityManager;
-    }
-
-    public static IPackageManager getPackageManager() {
-        if (packageManager == null) {
-            packageManager = new IPackageManager(getService("package", "android.content.pm.IPackageManager"));
-        }
-        return packageManager;
-    }
 }

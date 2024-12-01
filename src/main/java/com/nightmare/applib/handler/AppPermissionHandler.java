@@ -1,15 +1,11 @@
 package com.nightmare.applib.handler;
 
-import static com.nightmare.applib.AppServer.appChannel;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
-
 import com.nightmare.applib.FakeContext;
 import com.nightmare.applib.interfaces.IHTTPHandler;
-
 import fi.iki.elonen.NanoHTTPD;
 
 public class AppPermissionHandler extends IHTTPHandler {

@@ -5,6 +5,11 @@ LOCAL_DIR=$(
 PROJ_DIR=$LOCAL_DIR/../
 cd $PROJ_DIR
 $LOCAL_DIR/build_without_gradle.sh
+result=$?
+# if [ $result -ne 0 ]; then
+#     echo "编译失败"
+#     exit 1
+# fi
 cd $LOCAL_DIR
 lsof_result=$(adb shell 'lsof')
 # echo "$lsof_result"
@@ -33,7 +38,7 @@ adb shell 'rm -rf /sdcard/app_server*'
 adb push "build/app_server" /sdcard/app_server$MD5
 adb push "$PROJ_DIR/resource/executor" /data/local/tmp/executor
 $LOCAL_DIR/adb_forward.sh
-adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer , &"
+adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.applib.AppServer . &"
 
 
 

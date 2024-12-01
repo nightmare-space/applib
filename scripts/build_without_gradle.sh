@@ -18,8 +18,8 @@ LOCAL_DIR=$(cd `dirname $0`; pwd)
 PROJ_DIR=$LOCAL_DIR/..
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
-PLATFORM=${ANDROID_PLATFORM:-34}
-BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-30.0.3}
+PLATFORM=${ANDROID_PLATFORM:-35}
+BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-35.0.0}
 BUILD_TOOLS_DIR="$ANDROID_HOME/build-tools/$BUILD_TOOLS"
 # BUILD_DIR="$(realpath ${BUILD_DIR:-build})"
 BUILD_DIR="$LOCAL_DIR/${BUILD_DIR:-build}"
@@ -82,11 +82,19 @@ JAR_PATH=$PROJ_DIR/libs
 
 # CLASSES+=("org/newsclub/net/unix/*.class")
 
-/usr/bin/javac -bootclasspath "$ANDROID_JAR" \
+/usr/bin/javac -encoding UTF-8 -bootclasspath "$ANDROID_JAR" \
     -Djava.ext.dirs=$JAR_PATH \
     -cp "$LAMBDA_JAR:$GEN_DIR" \
     -d "$CLASSES_DIR" \
     -source 1.8 -target 1.8 \
+    android/content/pm/*.java \
+    android/os/*.java \
+    android/app/*.java \
+    android/window/*.java \
+    android/graphics/*.java \
+    android/hardware/display/*.java \
+    android/ddm/*.java \
+    androidx/annotation/*.java \
     ${SRC[@]}
 
 cp -r $PROJ_DIR/fi $CLASSES_DIR/
@@ -99,6 +107,14 @@ then
     color_echo "Dexing with dx..."
     "$BUILD_TOOLS_DIR/dx" --dex --output "$BUILD_DIR/classes.dex" \
         ${CLASSES[@]} \
+        android/content/pm/*.class \
+        android/os/*.class \
+        android/hardware/display/*.class \
+        android/graphics/*.class \
+        android/app/*.class \
+        android/window/*.class \
+        android/ddm/*.class \
+        androidx/annotation/*.class \
         fi/iki/elonen/*.class \
         fi/iki/elonen/util/*.class
 
