@@ -1,9 +1,6 @@
 plugins {
     id 'com.android.library'
-    id 'maven-publish'
 }
-
-group = 'com.github.nightmare-space'
 
 android {
     namespace 'com.nightmare.aas'

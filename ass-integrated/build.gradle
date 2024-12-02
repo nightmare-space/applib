@@ -1,9 +1,6 @@
 plugins {
     id 'com.android.library'
-    id 'maven-publish'
 }
-
-group = 'com.github.nightmare-space'
 
 android {
     namespace 'com.nightmare.ass_integrated'
@@ -30,17 +27,3 @@ dependencies {
     implementation project(':ass_plugins')
 }
 
-
-//afterEvaluate {
-//    publishing {
-//        publications {
-//            // Creates a Maven publication called "release".
-//            release(MavenPublication) {
-//                from components.release
-//                groupId = group
-//                artifactId = 'ass-integrated'
-//                version = '1.0'
-//            }
-//        }
-//    }
-//}

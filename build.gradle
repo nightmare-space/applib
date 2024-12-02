@@ -14,6 +14,28 @@ allprojects {
         maven { url "https://jitpack.io" }
         mavenCentral()
     }
+	version = "0.1.7"
+	group = 'com.github.nightmare-space'
+}
+
+
+subprojects {
+	apply plugin: 'maven-publish'
+//	sourceCompatibility = 1.8
+//	targetCompatibility = 1.8
+
+    if (project.plugins.hasPlugin('com.android.library')) {
+        publishing {
+            publications {
+                maven(MavenPublication) {
+                    from components.release
+                    groupId project.group
+                    artifactId project.name
+                    version project.version
+                }
+            }
+        }
+    }
 }
 
 task clean(type: Delete) {
