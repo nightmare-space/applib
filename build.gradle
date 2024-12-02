@@ -3,6 +3,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 group = 'com.github.nightmare-space'
 android {
+    namespace = 'com.nightmare.applib'
     compileSdk 35
 
     compileOptions {
@@ -13,9 +14,9 @@ android {
         minSdk 19
         targetSdk 34
         versionCode 1
-        versionName "1.0"
+        versionName '1.0'
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     lintOptions {
@@ -31,18 +32,18 @@ android {
     buildFeatures { aidl true }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            afterEvaluate {
-                from components.release
-            }
-        }
-    }
-    repositories {
-        mavenLocal()
-    }
-}
+// publishing {
+//     publications {
+//         mavenJava(MavenPublication) {
+//             afterEvaluate {
+//                 from components.release
+//             }
+//         }
+//     }
+//     repositories {
+//         mavenLocal()
+//     }
+// }
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])

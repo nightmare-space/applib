@@ -38,3 +38,17 @@ RAS is a server that provides RESTful API for Android devices. It is based on th
 也许这是一个很愚蠢的问题，我目前正在接入 Shizuku API
 
 想咨询一下，为什么 Shizuku.newProcess被隐藏了起来，
+
+
+## TODO 
+写一个示例
+
+ass-bundle
+
+ass-suite
+
+ass-complete
+
+ass-integrated
+
+app_channel作为一个submodule

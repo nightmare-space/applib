@@ -15,7 +15,7 @@ function color_echo()
 JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
 set -e
 LOCAL_DIR=$(cd `dirname $0`; pwd)
-PROJ_DIR=$LOCAL_DIR/..
+PROJ_DIR=$(cd $LOCAL_DIR/..; pwd)
 unset ANDROID_PLATFORM
 unset ANDROID_BUILD_TOOLS
 PLATFORM=${ANDROID_PLATFORM:-35}
@@ -42,59 +42,58 @@ printf "%-20s %-20s\n" "Build-tools:" "$BUILD_TOOLS"
 printf "%-20s %-20s\n" "BUILD_TOOLS_DIR" "$BUILD_TOOLS_DIR"
 printf "%-20s %-20s\n" "GEN_DIR" "$GEN_DIR"
 
-
-color_echo "$CLASSES_DIR/com/nightmare/applib"
 # rm -rf "$CLASSES_DIR" "$BUILD_DIR/$SERVER_BINARY" classes.dex
 
-mkdir -p "$CLASSES_DIR/com/nightmare/applib"
+mkdir -p "$CLASSES_DIR/com/nightmare/aas"
 
 color_echo "Generating java from aidl..."
-cd "$PROJ_DIR/src/main/aidl"
+# cd "$PROJ_DIR/src/main/aidl"
 # "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/IAdbService.aidl
 # "$BUILD_TOOLS_DIR/aidl" -p$ANDROID_HOME/platforms/android-$PLATFORM/framework.aidl -o"$GEN_DIR" com/nightmare/sula/ISurfaceService.aidl
 
 
-cd $PROJ_DIR/src/main/java
+# cd $PROJ_DIR/src/main/java
+AAS_INTEGRATE_DIR=$PROJ_DIR/ass-integrated
+AAS_INTEGRATE_SRC_DIR=$AAS_INTEGRATE_DIR/src/main/java
+HIDDEN_API_DIR=$PROJ_DIR/ass_hidden_api/src/main/java
+AAS_SRC_DIR=$PROJ_DIR/aas/src/main/java
+ASS_PLUGINS_SRC_DIR=$PROJ_DIR/ass_plugins/src/main/java
 
 SRC=( \
-    com/nightmare/applib/*.java \
-    com/nightmare/applib/wrappers/*.java \
-    com/nightmare/applib/utils/*.java \
-    com/nightmare/applib/handler/*.java \
-    com/nightmare/applib/interfaces/*.java \
+    $AAS_SRC_DIR/com/nightmare/aas/*.java \
+    $ASS_PLUGINS_SRC_DIR/com/nightmare/ass_plugins/*.java \
+    $AAS_INTEGRATE_SRC_DIR/com/nightmare/ass_integrated/*.java \
+)
+
+HIDDEN=( \
+    $HIDDEN_API_DIR/android/content/pm/*.java \
+    $HIDDEN_API_DIR/android/os/*.java \
+    $HIDDEN_API_DIR/android/app/*.java \
+    $HIDDEN_API_DIR/android/window/*.java \
+    $HIDDEN_API_DIR/android/graphics/*.java \
+    $HIDDEN_API_DIR/android/hardware/display/*.java \
+    $HIDDEN_API_DIR/android/ddm/*.java \
+    $HIDDEN_API_DIR/androidx/annotation/*.java \
 )
 
 CLASSES=()
 for src in "${SRC[@]}"
 do
+    # 删除 src 中 com/nightmare/aas 前面的部分
+    src=$(echo $src | sed 's|.*\(com/nightmare/.*\)|\1|')
     CLASSES+=("${src%.java}.class")
 done
 
-# CLASSES+=("com/nightmare/applib/MyParcelable\$1.class")
-
 color_echo "Compiling java sources..."
 
-JAR_PATH=$PROJ_DIR/libs
-
-# (cd $JAR_PATH && jar xf $JAR_PATH/junixsocket-selftest-2.10.1-jar-with-dependencies.jar)
-
-# cp -r $PROJ_DIR/app/libs/org $CLASSES_DIR/
-
-# CLASSES+=("org/newsclub/net/unix/*.class")
+JAR_PATH=$PROJ_DIR/aas/libs
 
 /usr/bin/javac -encoding UTF-8 -bootclasspath "$ANDROID_JAR" \
     -Djava.ext.dirs=$JAR_PATH \
-    -cp "$LAMBDA_JAR:$GEN_DIR" \
+    -cp "$LAMBDA_JAR:$GEN_DIR:$PROJ_DIR/aas/libs/nanohttpd-2.3.1.jar" \
     -d "$CLASSES_DIR" \
     -source 1.8 -target 1.8 \
-    android/content/pm/*.java \
-    android/os/*.java \
-    android/app/*.java \
-    android/window/*.java \
-    android/graphics/*.java \
-    android/hardware/display/*.java \
-    android/ddm/*.java \
-    androidx/annotation/*.java \
+    ${HIDDEN[@]} \
     ${SRC[@]}
 
 cp -r $PROJ_DIR/fi $CLASSES_DIR/
@@ -141,4 +140,4 @@ echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
 cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/uncon/assets'
-cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-space/GitHub/adb_tool/assets'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/adb_kit/assets'
