@@ -17,12 +17,12 @@ AAS 是基于Restful API实现的一个服务框架，支持插件化，也就�
 
 ## 运行模式
 
-AAS有两种运行模式
+AAS 有两种运行模式
 
 ### Activity Mode
 
 一种是由 Android App启动，这种情况下，
-AAS拥有真实的Activity Context，对于获取应用列表，则普通安卓本身访问 API一样，需要申请权限
+AAS 拥有真实的 Activity Context，对于获取应用列表，则普通安卓本身访问 API一样，需要申请权限
 
 但基于 Restful API 的好处是，你可以通过这样的代码来获取一个 App 的图标
 
@@ -38,12 +38,12 @@ AppChannel 是多实例，所有的 API 被封装到 AppChannel 下
 
 该库提供了一些快捷方便的API
 同时也提供了 aas_plugin 来快速的让 Flutter App拥有这个能力，无需手动启动服务，aas随Plugin注册而启动
-Activity Mode
-Dex Mode
-这种模式，aas会被编译成dex，中间会先将java编译成class，再由dx或d8转换成dex
+
+## Dex Mode
+这种模式，会先将 java编译成class，再由 d 或 d8 工具转换成 dex 文件
 通过 adb 运行 app_process 启动
 
-这种模式带来的好处是，我们可以通过为连接到PC的设备启动这个服务，再通过adb forward获得通信的端口
+这种模式带来的好处是，我们可以通过为连接到PC的设备启动这个服务，再通过 adb forward 获得通信的端口
 
 接下来，你仍然只需要像这样就获得 App的图标
 
