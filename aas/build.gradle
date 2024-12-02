@@ -33,3 +33,17 @@ dependencies {
 }
 
 
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.release
+                groupId = group
+                artifactId = 'aas'
+                version = '1.0'
+            }
+        }
+    }
+}
+
