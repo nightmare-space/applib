@@ -7,12 +7,10 @@ group = 'com.github.nightmare-space'
 
 android {
     namespace 'com.nightmare.aas'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         minSdk 24
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -33,17 +31,17 @@ dependencies {
 }
 
 
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                from components.release
-                groupId = group
-                artifactId = 'aas'
-                version = '1.0'
-            }
-        }
-    }
-}
+//afterEvaluate {
+//    publishing {
+//        publications {
+//            // Creates a Maven publication called "release".
+//            release(MavenPublication) {
+//                from components.release
+//                groupId = group
+//                artifactId = 'aas'
+//                version = '1.0'
+//            }
+//        }
+//    }
+//}
 

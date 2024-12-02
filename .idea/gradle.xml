@@ -14,8 +14,6 @@
             <option value="$PROJECT_DIR$/ass-integrated" />
             <option value="$PROJECT_DIR$/ass_hidden_api" />
             <option value="$PROJECT_DIR$/ass_plugins" />
-            <option value="$PROJECT_DIR$/lib" />
-            <option value="$PROJECT_DIR$/mylibrary" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="false" />
