@@ -3,8 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.nightmare'
-version = '1.0'
+group = 'com.github.nightmare-space'
 
 android {
     namespace 'com.nightmare.aas'
@@ -38,16 +37,3 @@ dependencies {
 }
 
 
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                from components.release
-                groupId = group
-                artifactId = 'ass'
-                version = version
-            }
-        }
-    }
-}
