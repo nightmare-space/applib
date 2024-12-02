@@ -1,4 +1,4 @@
-package com.nightmare.applib.wrappers;
+package com.nightmare.aas.wrappers;
 
 import android.annotation.SuppressLint;
 import android.os.IBinder;

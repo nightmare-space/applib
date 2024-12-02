@@ -1,4 +1,3 @@
-rootProject.name = "applib"
 include ':aas'
 include ':ass_plugins'
 include ':ass_hidden_api'

@@ -1,6 +1,10 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
+    id 'maven-publish'
 }
+
+group = 'com.nightmare'
+version = '1.0'
 
 android {
     namespace 'com.nightmare.aas'
@@ -31,4 +35,19 @@ android {
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':ass_hidden_api')
+}
+
+
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.release
+                groupId = group
+                artifactId = 'ass'
+                version = version
+            }
+        }
+    }
 }

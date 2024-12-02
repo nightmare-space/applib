@@ -1,4 +1,4 @@
-package com.nightmare.applib.wrappers;
+package com.nightmare.aas.wrappers;
 
 
 import android.annotation.SuppressLint;
@@ -10,7 +10,8 @@ import android.os.Handler;
 import android.view.Display;
 import android.view.Surface;
 
-import com.nightmare.applib.FakeContext;
+
+import com.nightmare.aas.FakeContext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

@@ -1,4 +1,4 @@
-package com.nightmare.applib;
+package com.nightmare.aas;
 
 /*
 copy from shizuku
