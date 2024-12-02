@@ -1,70 +1,22 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-apply plugin: 'com.android.library'
-apply plugin: 'maven-publish'
-group = 'com.github.nightmare-space'
-android {
-    namespace = 'com.nightmare.applib'
-    compileSdk 35
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    defaultConfig {
-        minSdk 19
-        targetSdk 34
-        versionCode 1
-        versionName '1.0'
-
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-    }
-
-    lintOptions {
-        abortOnError false
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    buildFeatures { aidl true }
-}
-
-// publishing {
-//     publications {
-//         mavenJava(MavenPublication) {
-//             afterEvaluate {
-//                 from components.release
-//             }
-//         }
-//     }
-//     repositories {
-//         mavenLocal()
-//     }
-// }
-
-dependencies {
-    api fileTree(dir: 'libs', include: ['*.jar'])
-}
-
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 
 allprojects {
     repositories {
         google()
+        maven { url "https://jitpack.io" }
         mavenCentral()
     }
+	group = 'com.github.nightmare-space'
 }
-//task clean(type: Delete) {
-//    delete rootProject.buildDir
-//}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

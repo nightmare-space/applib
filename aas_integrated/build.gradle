@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+android {
+    namespace 'com.nightmare.aas_integrated'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    api project(':aas')
+    api project(':aas_plugins')
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = group
+            artifactId = 'aas_integrated'
+            afterEvaluate {
+                from components.findByName('release')
+            }
+        }
+    }
+}
+
+// afterEvaluate {
+//     publishing {
+//         publications {
+//             // Creates a Maven publication called "release".
+//             release(MavenPublication) {
+//                 from components.findByName('release')
+//                 groupId = group
+//                 artifactId = 'aas_integrated'
+//                 version = '1.0.0'
+//             }
+//         }
+//     }
+// }
+
+//https://jitpack.io/com/github/nightmare-space/android_api_server/0.1.15

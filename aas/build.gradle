@@ -1,5 +1,6 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
+    id 'maven-publish'
 }
 
 android {
@@ -7,13 +8,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.nightmare.aas"
-        minSdk 24
-        targetSdk 34
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        minSdk 21
     }
 
     buildTypes {
@@ -30,5 +25,44 @@ android {
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':ass_hidden_api')
+    implementation project(':aas_hidden_api')
 }
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = group
+            artifactId = 'ass'
+            afterEvaluate {
+                from components.findByName('release')
+            }
+        }
+    }
+}
+// afterEvaluate {
+//    publishing {
+//        publications {
+//            // Creates a Maven publication called "release".
+//            release(MavenPublication) {
+//                from components.findByName('release')
+//                groupId = group
+//                artifactId = 'aas'
+//                packaging = 'aar'
+//            }
+//        }
+//    }
+// }
+//afterEvaluate {
+//    publishing {
+//        publications {
+//            // Creates a Maven publication called "release".
+//            release(MavenPublication) {
+//                from components.release
+//                groupId = group
+//                artifactId = 'aas'
+//                version = '1.0'
+//            }
+//        }
+//    }
+//}
+

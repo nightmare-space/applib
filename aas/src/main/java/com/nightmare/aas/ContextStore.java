@@ -25,9 +25,10 @@ public class ContextStore {
         this.context = context;
     }
 
-    public Context getContext() {
-        return context;
+    static public Context getContext() {
+        return INSTANCE.context;
     }
+
 }
 
 //静态内部类（Static Inner Class）
