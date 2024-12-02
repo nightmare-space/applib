@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'maven-publish'
 }
 
 android {
@@ -27,7 +28,19 @@ dependencies {
     implementation project(':ass_hidden_api')
 }
 
-
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.release
+                groupId = group
+                artifactId = 'aas'
+                version = version
+            }
+        }
+    }
+}
 //afterEvaluate {
 //    publishing {
 //        publications {
