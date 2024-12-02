@@ -33,7 +33,7 @@ afterEvaluate {
         publications {
             // Creates a Maven publication called "release".
             release(MavenPublication) {
-                from components.release
+                from components.findByName('release')
                 groupId = group
                 artifactId = 'aas'
                 version = version
