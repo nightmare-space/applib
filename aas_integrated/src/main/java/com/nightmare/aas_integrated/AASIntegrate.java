@@ -5,23 +5,14 @@ import android.os.Looper;
 
 import com.nightmare.aas.AndroidAPIServer;
 import com.nightmare.aas.L;
-import com.nightmare.aas_plugins.AppActivityHandler;
-import com.nightmare.aas_plugins.AppDetailHandler;
-import com.nightmare.aas_plugins.AppInfosHandler;
-import com.nightmare.aas_plugins.AppMainActivity;
-import com.nightmare.aas_plugins.AppPermissionHandler;
+import com.nightmare.aas_plugins.AMPlugin;
 import com.nightmare.aas_plugins.CMDHandler;
 import com.nightmare.aas_plugins.ChangeDisplayHandler;
-import com.nightmare.aas_plugins.DisplayHandler;
-import com.nightmare.aas_plugins.FileHandler;
-import com.nightmare.aas_plugins.IconHandler;
-import com.nightmare.aas_plugins.OpenAppHandler;
-import com.nightmare.aas_plugins.Resizevd;
-import com.nightmare.aas_plugins.StopActivityHandler;
-import com.nightmare.aas_plugins.TaskHandler;
-import com.nightmare.aas_plugins.Taskthumbnail;
+import com.nightmare.aas_plugins.DMPlugin;
+import com.nightmare.aas_plugins.FilePlugin;
+import com.nightmare.aas_plugins.PMPlugin;
+import com.nightmare.aas_plugins.ATMPlugin;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -57,22 +48,14 @@ public class AASIntegrate extends AndroidAPIServer {
     }
 
     void registerRoutes() {
-        registerPlugin(new AppActivityHandler());
-        registerPlugin(new AppDetailHandler());
-        registerPlugin(new AppInfosHandler());
 //        addHandler(new AppInfosHandlerV1());
-        registerPlugin(new AppMainActivity());
-        registerPlugin(new AppPermissionHandler());
+        registerPlugin(new PMPlugin());
         registerPlugin(new ChangeDisplayHandler());
         registerPlugin(new CMDHandler());
-        registerPlugin(new DisplayHandler());
-        registerPlugin(new IconHandler());
-        registerPlugin(new FileHandler());
-        registerPlugin(new OpenAppHandler());
-        registerPlugin(new Resizevd());
-        registerPlugin(new StopActivityHandler());
-        registerPlugin(new TaskHandler());
-        registerPlugin(new Taskthumbnail());
+        registerPlugin(new DMPlugin());
+        registerPlugin(new FilePlugin());
+        registerPlugin(new AMPlugin());
+        registerPlugin(new ATMPlugin());
     }
 
 }

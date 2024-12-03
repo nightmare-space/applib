@@ -1,4 +1,4 @@
-package com.nightmare.aas_plugins;
+package com.nightmare.aas_plugins.util;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;

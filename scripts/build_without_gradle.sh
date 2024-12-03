@@ -62,6 +62,7 @@ ASS_PLUGINS_SRC_DIR=$PROJ_DIR/aas_plugins/src/main/java
 SRC=( \
     $AAS_SRC_DIR/com/nightmare/aas/*.java \
     $ASS_PLUGINS_SRC_DIR/com/nightmare/aas_plugins/*.java \
+    $ASS_PLUGINS_SRC_DIR/com/nightmare/aas_plugins/util/*.java \
     $AAS_INTEGRATE_SRC_DIR/com/nightmare/aas_integrated/*.java \
 )
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PermissionInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -13,62 +14,103 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-
 import com.nightmare.aas.AndroidAPIPlugin;
 import com.nightmare.aas.ContextStore;
 import com.nightmare.aas.L;
-
+import com.nightmare.aas_plugins.util.BitmapHelper;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationTargetException;
-
 import fi.iki.elonen.NanoHTTPD;
 
-public class IconHandler extends AndroidAPIPlugin {
-    public IconHandler() {
-        context = ContextStore.getInstance().getContext();
-    }
-
+public class PMPlugin extends AndroidAPIPlugin {
     @Override
     public String route() {
-        return "/icon";
+        return "/package_manager";
     }
-
-    Context context;
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
-//        String url = session.getUri();
-        String path = session.getParms().get("path");
-        L.d("icon get path -> " + path);
-        byte[] bytes = null;
-        if (path != null) {
-            try {
-                bytes = getApkBitmapBytes(path);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
+        String action = session.getParms().get("action");
+        assert action != null;
+        if (action.equals("get_permissions")) {
             String packageName = session.getParms().get("package");
-            L.d("icon get package -> " + packageName);
-            assert packageName != null;
-            if (packageName.contains(".png")) {
-                int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
-                String result;
-                if (dotIndex != -1) {
-                    result = packageName.substring(0, dotIndex); // 获取 '.' 前的部分
-                } else {
-                    result = packageName; // 如果没有 '.'，返回原字符串
+            String permissions = getAppPermissions(packageName);
+            return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", permissions);
+        } else if (action.equals("get_icon")) {
+            String path = session.getParms().get("path");
+            L.d("icon get path -> " + path);
+            byte[] bytes = null;
+            if (path != null) {
+                try {
+                    bytes = getApkBitmapBytes(path);
+                } catch (InvocationTargetException | IllegalAccessException e) {
+                    throw new RuntimeException(e);
                 }
-                packageName = result;
+            } else {
+                String packageName = session.getParms().get("package");
+                L.d("icon get package -> " + packageName);
+                assert packageName != null;
+                if (packageName.contains(".png")) {
+                    int dotIndex = packageName.lastIndexOf('.'); // 找到 '.' 的位置
+                    String result;
+                    if (dotIndex != -1) {
+                        result = packageName.substring(0, dotIndex); // 获取 '.' 前的部分
+                    } else {
+                        result = packageName; // 如果没有 '.'，返回原字符串
+                    }
+                    packageName = result;
+                }
+                L.d("package -> " + packageName);
+                bytes = BitmapHelper.bitmap2Bytes(getBitmap(packageName));
             }
-            L.d("package -> " + packageName);
-            bytes = BitmapHelper.bitmap2Bytes(getBitmap(packageName));
+            return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "image/png", new ByteArrayInputStream(bytes), bytes.length);
         }
-        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "image/png", new ByteArrayInputStream(bytes), bytes.length);
+        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json", "{}");
     }
 
+
+    public String getAppPermissions(String packageName) {
+        PackageManager packageManager = ContextStore.getContext().getPackageManager();
+        try {
+            PackageInfo packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS);
+            String[] permissions = packageInfo.requestedPermissions;
+//            L.d("permissions: " + permissions);
+            if (permissions == null) {
+                return "[]";
+            }
+            JSONObject jsonObject = new JSONObject();
+            JSONArray jsonArray = new JSONArray();
+            jsonObject.put("datas", jsonArray);
+            for (String permission : permissions) {
+                JSONObject object = new JSONObject();
+                object.put("name", permission);
+                try {
+                    PermissionInfo permissionInfo = packageManager.getPermissionInfo(permission, 0);
+//                    L.d("permissionInfo: " + permissionInfo);
+                    if (permissionInfo != null) {
+                        CharSequence description = permissionInfo.loadDescription(packageManager);
+                        if (description != null) {
+                            object.put("description", description.toString());
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                jsonArray.put(object);
+            }
+            return jsonObject.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "[]";
+        }
+    }
+
+
     static public PackageInfo getPackageInfo(String packageName, int flag) {
-        PackageManager pm = ContextStore.getInstance().getContext().getPackageManager();
+        PackageManager pm = ContextStore.getContext().getPackageManager();
         PackageInfo info = null;
         try {
             info = pm.getPackageInfo(packageName, flag);
@@ -152,9 +194,7 @@ public class IconHandler extends AndroidAPIPlugin {
             //noinspection JavaReflectionMemberAccess
             assetManager.getClass().getMethod("addAssetPath", String.class).invoke(assetManager, applicationInfo.sourceDir);
             Resources resources = new Resources(assetManager, null, null);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                icon = resources.getDrawable(applicationInfo.icon, null);
-            }
+            icon = resources.getDrawable(applicationInfo.icon, null);
             if (icon == null) {
                 return null;
             }
@@ -199,7 +239,7 @@ public class IconHandler extends AndroidAPIPlugin {
 
     //
     public Bitmap getUninstallAPKIcon(String apkPath) {
-        Drawable icon = getApkIcon(context, apkPath);
+        Drawable icon = getApkIcon(ContextStore.getContext(), apkPath);
         try {
             if (icon == null) {
                 return null;

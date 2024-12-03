@@ -22,7 +22,7 @@ import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class FileHandler extends AndroidAPIPlugin {
+public class FilePlugin extends AndroidAPIPlugin {
     @Override
     public String route() {
         return "/file";
