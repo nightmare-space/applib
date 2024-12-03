@@ -24,3 +24,15 @@ android {
 
 dependencies {
 }
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = group
+            artifactId = 'ass_hidden_api'
+            afterEvaluate {
+                from components.findByName('release')
+            }
+        }
+    }
+}
