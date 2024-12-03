@@ -28,19 +28,19 @@ dependencies {
     implementation project(':aas_hidden_api')
 }
 
-afterEvaluate {
-   publishing {
-       publications {
-           // Creates a Maven publication called "release".
-           release(MavenPublication) {
-               from components.findByName('release')
-               groupId = group
-               artifactId = 'aas'
-               packaging = 'aar'
-           }
-       }
-   }
-}
+// afterEvaluate {
+//    publishing {
+//        publications {
+//            // Creates a Maven publication called "release".
+//            release(MavenPublication) {
+//                from components.findByName('release')
+//                groupId = group
+//                artifactId = 'aas'
+//                packaging = 'aar'
+//            }
+//        }
+//    }
+// }
 //afterEvaluate {
 //    publishing {
 //        publications {
