@@ -78,7 +78,7 @@ TODO:补图
 
 ### 在 Flutter 中使用
 
-也提供了 `android_api_server_client` 来快速的让 Flutter App 拥有这个能力，无需手动启动服务，`AAS` 随 Flutter Plugin 注册而启动，直接创建 `AASClient` 则会使用 Flutter Plugin 中启动的端口
+提供 `android_api_server_client` 来快速的让 Flutter App 拥有这个能力，无需手动启动服务，`AAS` 随 Flutter Plugin 注册而启动，直接创建 `AASClient` 则会使用 Flutter Plugin 中启动的端口
 
 ```yaml
   android_api_server_client:
