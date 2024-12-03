@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.nightmare.aas'
+    namespace 'com.nightmare.ass_integrated'
     compileSdk 35
 
     defaultConfig {
@@ -24,8 +24,8 @@ android {
 }
 
 dependencies {
-    api fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':aas_hidden_api')
+    api project(':aas')
+    api project(':aas_plugins')
 }
 
 afterEvaluate {
@@ -35,22 +35,8 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.findByName('release')
                 groupId = group
-                artifactId = 'aas'
+                artifactId = 'ass_integrated'
             }
         }
     }
 }
-//afterEvaluate {
-//    publishing {
-//        publications {
-//            // Creates a Maven publication called "release".
-//            release(MavenPublication) {
-//                from components.release
-//                groupId = group
-//                artifactId = 'aas'
-//                version = '1.0'
-//            }
-//        }
-//    }
-//}
-

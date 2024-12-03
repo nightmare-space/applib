@@ -11,9 +11,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/aas" />
-            <option value="$PROJECT_DIR$/ass-integrated" />
-            <option value="$PROJECT_DIR$/ass_hidden_api" />
-            <option value="$PROJECT_DIR$/ass_plugins" />
+            <option value="$PROJECT_DIR$/aas_hidden_api" />
+            <option value="$PROJECT_DIR$/aas_integrated" />
+            <option value="$PROJECT_DIR$/aas_plugins" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="false" />

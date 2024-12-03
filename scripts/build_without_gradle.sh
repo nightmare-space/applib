@@ -53,16 +53,16 @@ color_echo "Generating java from aidl..."
 
 
 # cd $PROJ_DIR/src/main/java
-AAS_INTEGRATE_DIR=$PROJ_DIR/ass-integrated
+AAS_INTEGRATE_DIR=$PROJ_DIR/aas_integrated
 AAS_INTEGRATE_SRC_DIR=$AAS_INTEGRATE_DIR/src/main/java
-HIDDEN_API_DIR=$PROJ_DIR/ass_hidden_api/src/main/java
+HIDDEN_API_DIR=$PROJ_DIR/aas_hidden_api/src/main/java
 AAS_SRC_DIR=$PROJ_DIR/aas/src/main/java
-ASS_PLUGINS_SRC_DIR=$PROJ_DIR/ass_plugins/src/main/java
+ASS_PLUGINS_SRC_DIR=$PROJ_DIR/aas_plugins/src/main/java
 
 SRC=( \
     $AAS_SRC_DIR/com/nightmare/aas/*.java \
-    $ASS_PLUGINS_SRC_DIR/com/nightmare/ass_plugins/*.java \
-    $AAS_INTEGRATE_SRC_DIR/com/nightmare/ass_integrated/*.java \
+    $ASS_PLUGINS_SRC_DIR/com/nightmare/aas_plugins/*.java \
+    $AAS_INTEGRATE_SRC_DIR/com/nightmare/aas_integrated/*.java \
 )
 
 HIDDEN=( \
@@ -140,4 +140,4 @@ echo "App Server generated in $BUILD_DIR/$SERVER_BINARY"
 
 
 cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/uncon/assets'
-cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/adb_kit/assets'
+cp -f $BUILD_DIR/$SERVER_BINARY  '/Users/nightmare/Desktop/nightmare-core/adb_kit'

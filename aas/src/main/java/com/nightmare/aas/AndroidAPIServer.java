@@ -8,10 +8,8 @@ import android.os.Build;
 import android.os.Looper;
 import android.view.Display;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -19,19 +17,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import fi.iki.elonen.NanoHTTPD;
-
-public class AndroidAPIServer extends NanoHTTPD {
-    public AndroidAPIServer(String address, int port) {
-        super(address, port);
+public class AndroidAPIServer {
+    public AndroidAPIServer() {
     }
 
+//    private final Class<?> type;
+
     @SuppressLint("SdCardPath")
-    static private String portDirectory = "/sdcard";
-    List<AndroidAPIPlugin> handlers = new ArrayList<>();
+    static public String portDirectory = "/sdcard";
+    List<AndroidAPIPlugin> plugins = new ArrayList<>();
 
     public void registerPlugin(AndroidAPIPlugin handler) {
-        handlers.add(handler);
+        plugins.add(handler);
         L.d("add handler -> " + handler);
     }
 
@@ -44,7 +41,8 @@ public class AndroidAPIServer extends NanoHTTPD {
         }
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
-        startServerForShell();
+        AndroidAPIServer server = new AndroidAPIServer();
+        server.startServerForShell();
         Looper.loop();
     }
 
@@ -54,14 +52,13 @@ public class AndroidAPIServer extends NanoHTTPD {
      * usually cmd is 'adb shell app_process *'
      */
     @SuppressLint("SdCardPath")
-    public static void startServerForShell() {
+    public void startServerForShell() {
         DdmHandleAppName.setAppName("RAS", 0);
-        AndroidAPIServer server = ServerUtil.safeGetServerForADB();
-        L.d("Sula input socket server starting.(version: " + server.version + ")");
+        AndroidAPIServerHTTPD androidAPIServerHTTPD = ServerUtil.safeGetServerForShell();
+        androidAPIServerHTTPD.setAndroidAPIServer(this);
+        L.d("Sula input socket server starting.(version: " + version + ")");
         Workarounds.apply();
         ContextStore.getInstance().setContext(FakeContext.get());
-//        SulaServer.start();
-//        server.tryChangeDisplayConfig();
         // 获取安卓版本
         String sdk = Build.VERSION.SDK;
         String release = Build.VERSION.RELEASE;
@@ -74,14 +71,36 @@ public class AndroidAPIServer extends NanoHTTPD {
         // 构建显示信息
         String deviceInfo = "Info: " + manufacturer + "(" + model + ")";
         L.d(deviceInfo);
-        L.d("success start port -> " + server.getListeningPort() + ".");
-        writePort(portDirectory, server.getListeningPort());
+        L.d("success start port -> " + androidAPIServerHTTPD.getListeningPort() + ".");
+        writePort(portDirectory, androidAPIServerHTTPD.getListeningPort());
         // 让进程等待
         // 不能用 System.in.read()
         // System.in.read() 需要宿主进程由标准终端调用
         // Process.run 等方法就会出现异常
     }
 
+
+    /**
+     * 与直接启动dex不同，从 Activity中启动不用反射 context 上下文
+     * different from start dex directly, start from Activity doesn't need to reflect context
+     *
+     * @param context: Context
+     * @throws IOException : IOException
+     */
+    public int startServerFromActivity(Context context) {
+        L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
+        L.enableTerminalLog = false;
+        String portPath = context.getFilesDir().getPath();
+        ContextStore.getInstance().setContext(context);
+        AndroidAPIServerHTTPD server = ServerUtil.safeGetServerForActivity();
+        server.setAndroidAPIServer(this);
+        // TODO 在确认下这个断言在 release 下是怎么的
+        assert server != null;
+        writePort(portPath, server.getListeningPort());
+        L.d("port path:" + portPath);
+        L.d("success start:" + server.getListeningPort());
+        return server.getListeningPort();
+    }
 
     /**
      * @noinspection DataFlowIssue
@@ -143,26 +162,6 @@ public class AndroidAPIServer extends NanoHTTPD {
 
 
     /**
-     * 与直接启动dex不同，从Activity中启动不用反射context上下文
-     * different from start dex directly, start from Activity doesn't need to reflect context
-     *
-     * @param context: Context
-     * @throws IOException : IOException
-     */
-    public static int startServerFromActivity(Context context) throws IOException {
-        L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
-        L.enableTerminalLog = false;
-//        ContextStore.getInstance().setContext(context);
-        AndroidAPIServer server = ServerUtil.safeGetServerForActivity();
-        // TODO 在确认下这个断言在 release 下是怎么的
-        assert server != null;
-        writePort(context.getFilesDir().getPath(), server.getListeningPort());
-        L.d("success start:" + server.getListeningPort());
-        return server.getListeningPort();
-    }
-
-
-    /**
      * 写入端口号，方便不同进程同App，获得这个端口号
      *
      * @param path: 写入的路径
@@ -183,34 +182,4 @@ public class AndroidAPIServer extends NanoHTTPD {
         }
     }
 
-    public static byte[] readAllBytes(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int nRead;
-        byte[] data = new byte[1024];
-        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
-        }
-        buffer.flush();
-        return buffer.toByteArray();
-    }
-
-    @Override
-    public Response serve(IHTTPSession session) {
-        try {
-            String url = session.getUri();
-            if (url.startsWith("/check")) {
-                return newFixedLengthResponse(Response.Status.OK, "text/plain", "ok");
-            }
-            for (AndroidAPIPlugin handler : handlers) {
-                if (!handler.route().isEmpty() && url.startsWith(handler.route())) {
-                    return handler.handle(session);
-                }
-            }
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "route not found");
-        } catch (Exception e) {
-            //noinspection CallToPrintStackTrace
-            e.printStackTrace();
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.toString());
-        }
-    }
 }

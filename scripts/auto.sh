@@ -27,7 +27,7 @@ SERVER_PATH=$LOCAL_DIR/build/app_server
 MD5=$(md5sum $SERVER_PATH | cut -d ' ' -f1 | cut -c 1-8)
 ADB_KIT_ASSETS="/Users/nightmare/Desktop/nightmare-core/adb_kit/assets/app_server"
 UNCON_ASSETS="/Users/nightmare/Desktop/nightmare-core/uncon/assets/app_server"
-SULA_ASSETS="/Users/nightmare/Desktop/nightmare-space/GitHub/super_launcher/assets/sula_app_server"
+SULA_ASSETS="/Users/nightmare/Desktop/nightmare-space/super_launcher/assets/sula_app_server"
 cp $SERVER_PATH $ADB_KIT_ASSETS
 cp $SERVER_PATH $UNCON_ASSETS
 cp $SERVER_PATH $SULA_ASSETS
@@ -36,9 +36,8 @@ devices=`adb devices | grep -v List | grep device | wc -l`
 echo devices:$devices
 adb shell 'rm -rf /sdcard/app_server*'
 adb push "build/app_server" /sdcard/app_server$MD5
-adb push "$PROJ_DIR/resource/executor" /data/local/tmp/executor
 $LOCAL_DIR/adb_forward.sh
-adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.ass_integrated.AASIntegrate . &"
+adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.aas_integrated.AASIntegrate . &"
 
 
 
