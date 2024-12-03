@@ -25,7 +25,7 @@ android {
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':aas_hidden_api')
+    compileOnly project(':aas_hidden_api')
 }
 
 publishing {
