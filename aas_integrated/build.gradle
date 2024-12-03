@@ -28,18 +28,18 @@ dependencies {
     api project(':aas_plugins')
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                from components.findByName('release')
-                groupId = group
-                artifactId = 'aas_integrated'
-                version = '1.0.0'
-            }
-        }
-    }
-}
+//afterEvaluate {
+//    publishing {
+//        publications {
+//            // Creates a Maven publication called "release".
+//            release(MavenPublication) {
+//                from components.findByName('release')
+//                groupId = group
+//                artifactId = 'aas_integrated'
+//                version = '1.0.0'
+//            }
+//        }
+//    }
+//}
 
 //https://jitpack.io/com/github/nightmare-space/android_api_server/0.1.15
