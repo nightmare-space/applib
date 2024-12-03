@@ -41,6 +41,8 @@ public class DisplayHandler extends AndroidAPIPlugin {
 //        testChangeRefreshRate();
     }
 
+    int VANILLA_ICE_CREAM = 35;
+
     @Override
     public String route() {
         return "/display";
@@ -58,8 +60,10 @@ public class DisplayHandler extends AndroidAPIPlugin {
         // java.lang.SecurityException: Given calling package android does not match caller's uid 2000
         // android 15
         L.d(" Build.VERSION.SDK_INT -> " + Build.VERSION.SDK_INT);
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            return MediaCodec.createPersistentInputSurface();
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == VANILLA_ICE_CREAM) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                return MediaCodec.createPersistentInputSurface();
+            }
         }
         SurfaceView surfaceView = new SurfaceView(FakeContext.get());
         return surfaceView.getHolder().getSurface();
@@ -146,7 +150,7 @@ public class DisplayHandler extends AndroidAPIPlugin {
                          NoSuchMethodException e) {
                     throw new RuntimeException(e);
                 }
-            }else{
+            } else {
                 displayManager = (DisplayManager) ContextStore.getContext().getSystemService(Context.DISPLAY_SERVICE);
             }
             Display[] displays = displayManager.getDisplays();

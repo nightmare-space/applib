@@ -95,7 +95,7 @@ public class Taskthumbnail extends AndroidAPIPlugin {
             Object snapshot = null;
 
             // Android 12/Android 15
-            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == 35) {
                 L.d("S or VANILLA_ICE_CREAM");
                 snapshot = invokeHiddenMethod(activityTaskManager, "getTaskSnapshot", Integer.parseInt(id), false);
                 L.d("snapshot -> " + snapshot);
