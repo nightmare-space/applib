@@ -14,7 +14,6 @@ allprojects {
         maven { url "https://jitpack.io" }
         mavenCentral()
     }
-	version = "0.1.7"
 	group = 'com.github.nightmare-space'
 }
 

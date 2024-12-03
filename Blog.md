@@ -16,3 +16,13 @@
 所有反驳我的人，请拿出你的文章
 
 小可实力不济，35 target有点问题，发布不上去
+
+## 开源仓库解释
+
+### ass
+
+### aas_hidden_api
+
+### aas_integrated
+
+### aas_plugin
