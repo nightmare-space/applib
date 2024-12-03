@@ -19,7 +19,7 @@ AAS 提供了封装好的开箱即用的 [Flutter Plugin](https://github.com/nig
 
 ## 架构图
 
-对上层的应用层来说，只有端口的感知，它不在乎对方是哪种模式运行的
+对上层的应用来说，只有端口的感知，它不在乎对方是哪种模式运行的
 
 ![](docs/applib.excalidraw.png)
 
