@@ -37,7 +37,7 @@ echo devices:$devices
 adb shell 'rm -rf /sdcard/app_server*'
 adb push "build/app_server" /sdcard/app_server$MD5
 $LOCAL_DIR/adb_forward.sh
-adb shell "exec app_process -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.aas_integrated.AASIntegrate . &"
+adb shell "exec app_process -Djava.net.preferIPv4Stack=true -Djava.class.path=/sdcard/app_server$MD5 /system/bin --nice-name=com.nightmare.dex com.nightmare.aas_integrated.AASIntegrate . &"
 
 
 
