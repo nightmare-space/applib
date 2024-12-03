@@ -6,7 +6,7 @@ AAS 是一个为 Android 设备提供 RESTful API 的服务器。它基于 HTTP 
 
 支持上层框架为 Web 或者 Flutter 或者其他任意不能直接访问 Java 的框架中使用
 
-例如在 Flutter 中，我们几乎需要使用 MethodChannel 来访问安卓的 API，并且如果无法在多个 Isolate 中访问
+例如在 Flutter 中，我们几乎需要使用 MethodChannel 来访问安卓的 API，并且无法在多个 Isolate 中访问
 
 使用 MethodChannel 实现后，如果想要在 Flutter Web 中访问，也是行不通的
 
@@ -36,7 +36,6 @@ TODO: 补图
 现在我想找个界面在 PC 上展示，亦或者在 Web 中展示
 
 我只需要修改传入启动了服务的设备端口号即可
-
 
 
 亮点
@@ -139,13 +138,14 @@ Image.network(aasClient.iconUrl('com.nightmare'))
 
 你还可以自己实现各种各样的 API ，来获得远超 adb 命令行的功能，例如图标获取，adb 命令则就是不支持的
 
+## 仓库介绍
+
+
 ## 开发自定义插件
 
 ## 展望
 我一直觉得腾讯的 PerfDog 收费太贵，使用 AAS，我觉得应该是能够编写一个 PerfDog 的安卓部分的
 还有 Scene，LibChecker
-
-
 
 
 ## 谁在用？
