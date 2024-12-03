@@ -21,6 +21,9 @@ import com.nightmare.aas.ContextStore;
 import com.nightmare.aas.FakeContext;
 import com.nightmare.aas.L;
 import com.nightmare.aas.ReflectUtil;
+import com.nightmare.aas_plugins.util.DisplayControl;
+import com.nightmare.aas_plugins.util.DisplayUtil;
+import com.nightmare.aas_plugins.util.SurfaceControl;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,8 +39,8 @@ import java.util.Objects;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class DisplayHandler extends AndroidAPIPlugin {
-    public DisplayHandler() {
+public class DMPlugin extends AndroidAPIPlugin {
+    public DMPlugin() {
 //        testChangeRefreshRate();
     }
 
@@ -45,7 +48,7 @@ public class DisplayHandler extends AndroidAPIPlugin {
 
     @Override
     public String route() {
-        return "/display";
+        return "/display_manager";
     }
 
     public static Map<Integer, VirtualDisplay> cache = new HashMap<>();
@@ -322,3 +325,26 @@ public class DisplayHandler extends AndroidAPIPlugin {
         }
     }
 }
+
+
+// 改变虚拟显示器尺寸
+//public class Resizevd extends AndroidAPIPlugin {
+//    @Override
+//    public String route() {
+//        return "virtual_display_resize";
+//    }
+//
+//    @Override
+//    public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
+//        String id = session.getParms().get("id");
+//        String width = session.getParms().get("width");
+//        String height = session.getParms().get("height");
+//        String density = session.getParms().get("density");
+//        VirtualDisplay display = DMPlugin.cache.get(Integer.parseInt(id));
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            display.resize(Integer.parseInt(width), Integer.parseInt(height), Integer.parseInt(density));
+//        }
+//        return newFixedLengthResponse(NanoHTTPD.Response.Status.OK, "application/json",
+//                display.getDisplay().getDisplayId() + "");
+//    }
+//}

@@ -21,11 +21,13 @@ import java.lang.reflect.Method;
 
 import fi.iki.elonen.NanoHTTPD;
 
-// 获取缩略图
-public class Taskthumbnail extends AndroidAPIPlugin {
+/**
+ * ActivityTaskManager Plugin
+ */
+public class ATMPlugin extends AndroidAPIPlugin {
     @Override
     public String route() {
-        return "/taskthumbnail";
+        return "/task_thumbnail";
     }
 
     public Bitmap graphicBufferToBitmap(GraphicBuffer graphicBuffer) {

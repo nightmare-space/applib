@@ -1,4 +1,4 @@
-package com.nightmare.aas_plugins;
+package com.nightmare.aas_plugins.util;
 
 import android.annotation.SuppressLint;
 import android.app.TaskInfo;
@@ -7,11 +7,11 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.IInterface;
-
+import com.nightmare.aas_plugins.AMPlugin;
+import com.nightmare.aas_plugins.PMPlugin;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -146,8 +146,8 @@ public class TaskUtil {
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getPackageName());
                 jsonObject.put("topActivity", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getClassName());
                 if (taskInfo.topActivity != null) {
-                    PackageInfo packageInfo = IconHandler.getPackageInfo(taskInfo.topActivity.getPackageName());
-                    jsonObject.put("label", AppInfosHandler.getLabel(packageInfo.applicationInfo));
+                    PackageInfo packageInfo = PMPlugin.getPackageInfo(taskInfo.topActivity.getPackageName());
+                    jsonObject.put("label", AMPlugin.getLabel(packageInfo.applicationInfo));
                 } else {
                     jsonObject.put("label", "");
                 }

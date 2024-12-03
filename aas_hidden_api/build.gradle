@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.nightmare.ass_hidden_api'
+    namespace 'com.nightmare.aas_hidden_api'
     compileSdk 34
 
     defaultConfig {
@@ -30,7 +30,7 @@ publishing {
     publications {
         release(MavenPublication) {
             groupId = group
-            artifactId = 'ass_hidden_api'
+            artifactId = 'aas_hidden_api'
             afterEvaluate {
                 from components.findByName('release')
             }
