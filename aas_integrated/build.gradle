@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.nightmare.ass_integrated'
+    namespace 'com.nightmare.aas_integrated'
     compileSdk 35
 
     defaultConfig {
@@ -35,7 +35,7 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.findByName('release')
                 groupId = group
-                artifactId = 'ass_integrated'
+                artifactId = 'aas_integrated'
             }
         }
     }
