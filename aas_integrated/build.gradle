@@ -33,8 +33,6 @@ publishing {
         release(MavenPublication) {
             groupId = group
             artifactId = 'aas_integrated'
-            version = '1.0.0'
-
             afterEvaluate {
                 from components.findByName('release')
             }

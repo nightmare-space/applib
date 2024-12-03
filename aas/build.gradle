@@ -28,6 +28,17 @@ dependencies {
     implementation project(':aas_hidden_api')
 }
 
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = group
+            artifactId = 'ass'
+            afterEvaluate {
+                from components.findByName('release')
+            }
+        }
+    }
+}
 // afterEvaluate {
 //    publishing {
 //        publications {
