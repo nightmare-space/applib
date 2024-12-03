@@ -17,23 +17,6 @@ allprojects {
 	group = 'com.github.nightmare-space'
 }
 
-
-//subprojects {
-//	apply plugin: 'maven-publish'
-//    if (project.plugins.hasPlugin('com.android.library')) {
-//        publishing {
-//            publications {
-//                maven(MavenPublication) {
-//                    from components.release
-//                    groupId project.group
-//                    artifactId project.name
-//                    version project.version
-//                }
-//            }
-//        }
-//    }
-//}
-
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

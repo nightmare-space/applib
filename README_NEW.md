@@ -1,11 +1,19 @@
 ## Android API Server(AAS)
-这个库可以让你可以通过 Restful API 访问安卓的API，
+AAS 是一个为 Android 设备提供 RESTful API 的服务器。它基于 HTTP 协议，可以被任何支持 HTTP 的客户端访问。它设计轻量且易于使用
+
+AAS 可以让你可以通过 Restful API 访问安卓的API
+
 支持上层框架为 Web 或者 Flutter 或者其他任意框架构建的界面时
 
 例如在Flutter中，我们几乎需要使用 MethodChannel 来访问安卓的 API，并且如果无法在多个 Isolate 中访问
-使用Method实现后，如果想要在Flutter Web中访问，就变得不可行
 
-AAS 是基于Restful API实现的一个服务框架，支持插件化，也就是你可以通过很简短的代码，来让 AAS 加载你自定义的插件
+使用 MethodChannel 实现后，如果想要在 Flutter Web 中访问，也是行不通的
+
+AAS 是基于 Restful API 实现的一个服务框架，支持插件化，也就是你可以通过很简短的代码，来让 AAS 加载你自定义的插件
+
+
+or you can impl with any language(kotlin/java/...) by this protocol [API.md](docs/API.md)
+
 
 ## 功能特性
 
@@ -14,6 +22,54 @@ AAS 是基于Restful API实现的一个服务框架，支持插件化，也就�
 - 内置插件: 内置多个插件，例如获取应用列表、应用图标、创建虚拟显示器等
 - Flutter Plugin 支持: 只需要引入 Flutter 依赖，AAS 会随插件的注册而启动，在 Flutter 侧只需要调用 Dart API 即可
 - 多种模式支持: 支持 Activity Mode 与 Dex Mode
+
+
+## Structure
+
+![](docs/applib.excalidraw.png)
+
+## Start with Flutter
+```yaml
+  app_channel:
+    git: https://github.com/nightmare-space/app_channel
+```
+and use Dart API to get some info like this
+
+```dart
+AppChannel channel =  AppChannel(port: 14000);
+AppInfos infos = await channel.getAppInfosV2();
+```
+
+
+## Who use this?
+- [Speed Share](https://github.com/nightmare-space/speed_share): Select app to send file.
+- [ADB KIT](https://github.com/nightmare-space/adb_kit): Select app to install to target device.
+- Uncon(Closed source): Obtain apps/tasks/icons about LAN devices
+
+
+
+Restful Android Server
+
+RAS is a server that provides RESTful API for Android devices. It is based on the HTTP protocol and can be accessed by any client that supports HTTP. It is designed to be lightweight and easy to use. It is written in Java and can be run on any platform that supports Java.
+
+
+也许这是一个很愚蠢的问题，我目前正在接入 Shizuku API
+
+想咨询一下，为什么 Shizuku.newProcess被隐藏了起来，
+
+
+## TODO 
+写一个示例
+
+ass-bundle
+
+ass-suite
+
+ass-complete
+
+ass-integrated
+
+app_channel作为一个submodule
 
 ## 运行模式
 
