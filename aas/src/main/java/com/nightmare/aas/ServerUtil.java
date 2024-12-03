@@ -26,13 +26,14 @@ public class ServerUtil {
      * safe start app server for shell
      */
     public static AndroidAPIServerHTTPD safeGetServerForShell() {
+        System.setProperty("java.net.preferIPv4Stack", "true");
         return safeGetServer(SHELL_RANGE_START, SHELL_RANGE_END);
     }
 
 
     public static AndroidAPIServerHTTPD safeGetServer(int start, int end) {
         for (int i = start; i < end; i++) {
-            AndroidAPIServerHTTPD server = new AndroidAPIServerHTTPD(i);
+            AndroidAPIServerHTTPD server = new AndroidAPIServerHTTPD("127.0.0.1", i);
             try {
                 server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 return server;

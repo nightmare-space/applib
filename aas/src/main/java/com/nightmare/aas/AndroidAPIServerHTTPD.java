@@ -11,6 +11,10 @@ public class AndroidAPIServerHTTPD extends NanoHTTPD {
         super(port);
     }
 
+    public AndroidAPIServerHTTPD(String address, int port) {
+        super(address, port);
+    }
+
 
     List<AndroidAPIPlugin> plugins;
 
