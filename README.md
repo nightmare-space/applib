@@ -1,4 +1,7 @@
 ## Android API Server(AAS)
+[![](https://jitpack.io/v/nightmare-space/android_api_server.svg)](https://jitpack.io/#nightmare-space/android_api_server)
+
+
 AAS 是一个为 Android 设备提供 RESTful API 的服务器。它基于 HTTP 协议，可以被任何支持 HTTP 的客户端访问。它设计轻量且易于使用，支持热插拔，你可以通过很简短的代码，来让 AAS 加载你自定义的插件
 
 支持上层框架为 Web 或者 Flutter 或者其他任意不能直接访问 Java 的框架中使用
@@ -34,7 +37,6 @@ TODO: 补图
 
 我只需要修改传入启动了服务的设备端口号即可
 
-更详细的用法详见 [Flutter Example](https://github.com/nightmare-space/android_api_server_flutter/tree/main/example)
 
 
 亮点
@@ -45,6 +47,12 @@ TODO: 补图
 实际上，这样的模式已大量的在无界、速享、ADB KIT中使用
 其中的应用列表页面，都是完全的同一份代码，仅仅是端口号不一样
 
+## 示例
+
+<img src="docs/screenshot/01.jpg" alt="" width="33%" /><img src="docs/screenshot/02.jpg" alt="" width="33%" /><img src="docs/screenshot/03.jpg" alt="" width="33%" />
+<img src="docs/screenshot/04.jpg" alt="" width="33%" /><img src="docs/screenshot/05.jpg" alt="" width="33%" />
+
+更详细的用法详见 [Flutter Example](https://github.com/nightmare-space/android_api_server_flutter/tree/main/example)
 
 ## 开始使用
 
