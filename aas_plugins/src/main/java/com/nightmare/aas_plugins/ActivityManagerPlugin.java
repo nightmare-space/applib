@@ -17,10 +17,10 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 
-import com.nightmare.aas.AndroidAPIPlugin;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
 import com.nightmare.aas.ContextStore;
-import com.nightmare.aas.FakeContext;
-import com.nightmare.aas.L;
+import com.nightmare.aas.foundation.FakeContext;
+import com.nightmare.aas.helper.L;
 import com.nightmare.aas_plugins.util.TaskUtil;
 
 import org.json.JSONArray;
@@ -33,7 +33,7 @@ import java.util.List;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class AMPlugin extends AndroidAPIPlugin {
+public class ActivityManagerPlugin extends AndroidAPIPlugin {
 
     @Override
     public String route() {
@@ -165,7 +165,7 @@ public class AMPlugin extends AndroidAPIPlugin {
     public String getAppDetail(String data) {
         JSONObject jsonObject = new JSONObject();
         try {
-            PackageInfo packageInfo = PMPlugin.getPackageInfo(data);
+            PackageInfo packageInfo = PackageManagerPlugin.getPackageInfo(data);
             jsonObject.put("firstInstallTime", packageInfo.firstInstallTime);
             jsonObject.put("lastUpdateTime", packageInfo.lastUpdateTime);
             jsonObject.put("dataDir", packageInfo.applicationInfo.dataDir);
@@ -204,7 +204,7 @@ public class AMPlugin extends AndroidAPIPlugin {
         try {
             for (String packageName : packages) {
                 JSONObject appInfoJson = new JSONObject();
-                PackageInfo packageInfo = PMPlugin.getPackageInfo(packageName);
+                PackageInfo packageInfo = PackageManagerPlugin.getPackageInfo(packageName);
                 if (packageInfo == null) {
                     continue;
                 }
@@ -236,7 +236,7 @@ public class AMPlugin extends AndroidAPIPlugin {
                 }
                 appInfoJson.put("enabled", applicationInfo.enabled);
                 // TODO 判断 Apk 是否隐藏需要重新实现
-                PackageInfo withoutHidePackage = PMPlugin.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
+                PackageInfo withoutHidePackage = PackageManagerPlugin.getPackageInfo(packageInfo.packageName, PackageManager.GET_DISABLED_COMPONENTS);
                 appInfoJson.put("hide", false);
                 appInfoJson.put("uid", applicationInfo.uid);
                 appInfoJson.put("sourceDir", applicationInfo.sourceDir);

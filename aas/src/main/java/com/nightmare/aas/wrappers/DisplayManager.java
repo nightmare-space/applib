@@ -11,7 +11,7 @@ import android.view.Display;
 import android.view.Surface;
 
 
-import com.nightmare.aas.FakeContext;
+import com.nightmare.aas.foundation.FakeContext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

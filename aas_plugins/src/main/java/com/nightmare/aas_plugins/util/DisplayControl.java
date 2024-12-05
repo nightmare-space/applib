@@ -8,9 +8,9 @@ import android.os.Build;
 import android.os.IBinder;
 import android.view.Display;
 
-import com.nightmare.aas.FakeContext;
-import com.nightmare.aas.L;
-import com.nightmare.aas.ReflectUtil;
+import com.nightmare.aas.foundation.FakeContext;
+import com.nightmare.aas.helper.L;
+import com.nightmare.aas.helper.ReflectionHelper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -53,22 +53,22 @@ public final class DisplayControl {
 //            onBootPhase.invoke(dms, 100);
             onBootPhase.invoke(dms, 1000);
 
-            Object o = ReflectUtil.invokeMethod(dms, "getDisplayDeviceInfoInternal", 0);
+            Object o = ReflectionHelper.invokeMethod(dms, "getDisplayDeviceInfoInternal", 0);
             L.d("o -> " + o);
-            Object mode = ReflectUtil.invokeMethod(dms, "getActiveDisplayModeAtStart", 0);
+            Object mode = ReflectionHelper.invokeMethod(dms, "getActiveDisplayModeAtStart", 0);
             L.d("mode -> " + mode);
 
 //            mVirtualDisplayAdapter
-            ReflectUtil.invokeMethod(dms, "registerDefaultDisplayAdapters");
+            ReflectionHelper.invokeMethod(dms, "registerDefaultDisplayAdapters");
             Field mVirtualDisplayAdapterF = cl.getDeclaredField("mVirtualDisplayAdapter");
             mVirtualDisplayAdapterF.setAccessible(true);
             Object mVirtualDisplayAdapter = mVirtualDisplayAdapterF.get(dms);
             L.d("mVirtualDisplayAdapter -> " + mVirtualDisplayAdapter);
-            Object userMode = ReflectUtil.invokeMethod(dms, "getUserPreferredDisplayModeInternal", 2);
+            Object userMode = ReflectionHelper.invokeMethod(dms, "getUserPreferredDisplayModeInternal", 2);
             L.d("userMode -> " + userMode);
-            Display.Mode systemMode = (Display.Mode) ReflectUtil.invokeMethod(dms, "getSystemPreferredDisplayModeInternal", 0);
+            Display.Mode systemMode = (Display.Mode) ReflectionHelper.invokeMethod(dms, "getSystemPreferredDisplayModeInternal", 0);
             L.d("systemMode -> " + systemMode);
-            IBinder token = (IBinder) ReflectUtil.invokeMethod(dms, "getDisplayToken", 0);
+            IBinder token = (IBinder) ReflectionHelper.invokeMethod(dms, "getDisplayToken", 0);
             L.d("token:" + token);
             // void setUserPreferredDisplayModeInternal(int displayId, Display.Mode mode)
 
@@ -98,11 +98,11 @@ public final class DisplayControl {
              * @hide
              */
 //            public static final int SWITCHING_TYPE_RENDER_FRAME_RATE_ONLY = 3;
-            ReflectUtil.invokeMethod(dms, "setRefreshRateSwitchingTypeInternal", 2);
-            int type = (int) ReflectUtil.invokeMethod(dms, "getRefreshRateSwitchingTypeInternal");
+            ReflectionHelper.invokeMethod(dms, "setRefreshRateSwitchingTypeInternal", 2);
+            int type = (int) ReflectionHelper.invokeMethod(dms, "getRefreshRateSwitchingTypeInternal");
             L.d("type -> " + type);
-            ReflectUtil.invokeMethod(dms, "setShouldAlwaysRespectAppRequestedModeInternal", true);
-            boolean should = (boolean) ReflectUtil.invokeMethod(dms, "shouldAlwaysRespectAppRequestedModeInternal");
+            ReflectionHelper.invokeMethod(dms, "setShouldAlwaysRespectAppRequestedModeInternal", true);
+            boolean should = (boolean) ReflectionHelper.invokeMethod(dms, "shouldAlwaysRespectAppRequestedModeInternal");
             L.d("shouldAlwaysRespectAppRequestedMode -> " + should);
 
             DisplayManager displayManager = null;

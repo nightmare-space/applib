@@ -10,21 +10,20 @@ import android.graphics.GraphicBuffer;
 import android.graphics.PixelFormat;
 import android.hardware.HardwareBuffer;
 import android.os.Build;
-import com.nightmare.aas.AndroidAPIPlugin;
-import com.nightmare.aas.L;
-import com.nightmare.aas.ReflectUtil;
+
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
+import com.nightmare.aas.helper.L;
+import com.nightmare.aas.helper.ReflectionHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 import fi.iki.elonen.NanoHTTPD;
 
 /**
  * ActivityTaskManager Plugin
  */
-public class ATMPlugin extends AndroidAPIPlugin {
+public class ActivityTaskManagerPlugin extends AndroidAPIPlugin {
     @Override
     public String route() {
         return "/task_thumbnail";
@@ -49,41 +48,6 @@ public class ATMPlugin extends AndroidAPIPlugin {
         return bitmap;
     }
 
-    public static <T> T unsafeCast(final Object obj) {
-        //noinspection unchecked
-        return (T) obj;
-    }
-
-    public static <T> T getHiddenField(Object obj, String fieldName) {
-        try {
-            Field field = obj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return unsafeCast(field.get(obj));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T> T invokeHiddenMethod(Object obj, String methodName, Object... args) {
-        try {
-            Class<?>[] parameterTypes = new Class<?>[args.length];
-            for (int i = 0; i < args.length; i++) {
-                if (args[i] instanceof Integer) {
-                    parameterTypes[i] = int.class;
-                } else if (args[i] instanceof Boolean) {
-                    parameterTypes[i] = boolean.class;
-                } else {
-                    parameterTypes[i] = args[i].getClass();
-                }
-            }
-            Method method = obj.getClass().getDeclaredMethod(methodName, parameterTypes);
-            method.setAccessible(true);
-            return unsafeCast(method.invoke(obj, args));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     @Override
     public NanoHTTPD.Response handle(NanoHTTPD.IHTTPSession session) {
@@ -93,24 +57,24 @@ public class ATMPlugin extends AndroidAPIPlugin {
         try {
             long start = System.currentTimeMillis();
             IActivityTaskManager activityTaskManager = ActivityTaskManager.getService();
-            ReflectUtil.listAllObject(activityTaskManager);
+            ReflectionHelper.listAllObject(activityTaskManager);
             Object snapshot = null;
 
             // Android 12/Android 15
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.S || Build.VERSION.SDK_INT == 35) {
                 L.d("S or VANILLA_ICE_CREAM");
-                snapshot = invokeHiddenMethod(activityTaskManager, "getTaskSnapshot", Integer.parseInt(id), false);
+                snapshot = ReflectionHelper.invokeHiddenMethod(activityTaskManager, "getTaskSnapshot", Integer.parseInt(id), false);
                 L.d("snapshot -> " + snapshot);
             }
             // Android 13/Android 14
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU || Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 L.d("TIRAMISU or UPSIDE_DOWN_CAKE");
-                snapshot = invokeHiddenMethod(activityTaskManager, "getTaskSnapshot", Integer.parseInt(id), false, false);
+                snapshot = ReflectionHelper.invokeHiddenMethod(activityTaskManager, "getTaskSnapshot", Integer.parseInt(id), false, false);
                 L.d("snapshot -> " + snapshot);
             }
-            Object hardBuffer = getHiddenField(snapshot, "mSnapshot");
+            Object hardBuffer = ReflectionHelper.getHiddenField(snapshot, "mSnapshot");
             L.d("hardBuffer -> " + hardBuffer);
-            Object colorSpace = getHiddenField(snapshot, "mColorSpace");
+            Object colorSpace = ReflectionHelper.getHiddenField(snapshot, "mColorSpace");
             //
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 HardwareBuffer hardwareBuffer = (HardwareBuffer) hardBuffer;

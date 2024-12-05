@@ -1,6 +1,6 @@
 package com.nightmare.aas_plugins;
 
-import com.nightmare.aas.AndroidAPIPlugin;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
 
 import fi.iki.elonen.NanoHTTPD;
 

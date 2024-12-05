@@ -2,27 +2,23 @@ package com.nightmare.aas;
 
 import android.util.Log;
 
-import java.util.List;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
+
+import org.json.JSONObject;
 
 import fi.iki.elonen.NanoHTTPD;
 
 public class AndroidAPIServerHTTPD extends NanoHTTPD {
-    public AndroidAPIServerHTTPD(int port) {
-        super(port);
-    }
-
     public AndroidAPIServerHTTPD(String address, int port) {
         super(address, port);
     }
 
 
-    List<AndroidAPIPlugin> plugins;
-
     AndroidAPIServer aas;
+    String key;
 
     void setAndroidAPIServer(AndroidAPIServer aas) {
         this.aas = aas;
-        plugins = aas.plugins;
     }
 
     @Override
@@ -30,10 +26,39 @@ public class AndroidAPIServerHTTPD extends NanoHTTPD {
         try {
             String url = session.getUri();
             Log.d("AndroidAPIServerHTTPD", "url -> " + url);
+            if (url.startsWith("/key")) {
+                JSONObject jsonObject = new JSONObject();
+                if (key != null) {
+                    jsonObject.put("result", "key just can be set once");
+                    return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", jsonObject.toString());
+                }
+                key = session.getHeaders().get("key");
+                jsonObject.put("result", "ok");
+                return newFixedLengthResponse(Response.Status.OK, "application/json", jsonObject.toString());
+            }
             if (url.startsWith("/check")) {
                 return newFixedLengthResponse(Response.Status.OK, "text/plain", "ok");
             }
-            for (AndroidAPIPlugin plugin : plugins) {
+            String key = session.getHeaders().get("key");
+            if (key == null) {
+                key = session.getParms().get("key");
+            }
+            if (this.key == null) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("result", "You need init request key first");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", jsonObject.toString());
+            } else if (key == null) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("result", "You need set key to request header");
+                return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", jsonObject.toString());
+            } else {
+                if (!key.equals(this.key)) {
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("result", "You need use the same key what you first request");
+                    return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", jsonObject.toString());
+                }
+            }
+            for (AndroidAPIPlugin plugin : aas.plugins) {
                 if (!plugin.route().isEmpty() && url.startsWith(plugin.route())) {
                     return plugin.handle(session);
                 }

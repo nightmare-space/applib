@@ -5,8 +5,15 @@ import android.content.Context;
 import android.ddm.DdmHandleAppName;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.os.Looper;
+import android.os.SystemProperties;
 import android.view.Display;
+
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
+import com.nightmare.aas.foundation.FakeContext;
+import com.nightmare.aas.foundation.Workarounds;
+import com.nightmare.aas.helper.L;
+import com.nightmare.aas.helper.ReflectionHelper;
+import com.nightmare.aas.helper.ServerHelper;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,7 +39,13 @@ public class AndroidAPIServer {
         L.d("add handler -> " + handler);
     }
 
-    public static void main(String[] args) {
+    String version = "0.0.1";
+
+    /**
+     * usually cmd is 'adb shell app_process *'
+     */
+    @SuppressLint("SdCardPath")
+    public void startServerForShell(String[] args) {
         if (Objects.equals(args[0], "sula")) {
             // TODO: 这个多在几个安卓模拟器上测试一下
             L.serverLogPath = "/storage/emulated/0/Android/data/com.nightmare.sula" + "/app_server_log";
@@ -41,33 +54,23 @@ public class AndroidAPIServer {
         }
         L.d("Welcome!!!");
         L.d("args -> " + Arrays.toString(args));
-        AndroidAPIServer server = new AndroidAPIServer();
-        server.startServerForShell();
-        Looper.loop();
-    }
-
-    String version = "0.0.1";
-
-    /**
-     * usually cmd is 'adb shell app_process *'
-     */
-    @SuppressLint("SdCardPath")
-    public void startServerForShell() {
         DdmHandleAppName.setAppName("RAS", 0);
-        AndroidAPIServerHTTPD androidAPIServerHTTPD = ServerUtil.safeGetServerForShell();
+        AndroidAPIServerHTTPD androidAPIServerHTTPD = ServerHelper.safeGetServerForShell();
         androidAPIServerHTTPD.setAndroidAPIServer(this);
-        L.d("Sula input socket server starting.(version: " + version + ")");
+        L.d("Sula server starting.(version: " + version + ")");
         Workarounds.apply();
         ContextStore.getInstance().setContext(FakeContext.get());
         // 获取安卓版本
         String sdk = Build.VERSION.SDK;
         String release = Build.VERSION.RELEASE;
         L.d("Info: Android " + release + "(" + sdk + ")");
-        // 获取设备的型号信息
         // 获取设备制造商，例如 "Samsung"
         String manufacturer = Build.MANUFACTURER;
         // 获取设备型号，例如 "Galaxy S10"
-        String model = Build.MODEL;
+        String model = getMarketName();
+        if(model==null){
+            model = Build.MODEL;
+        }
         // 构建显示信息
         String deviceInfo = "Info: " + manufacturer + "(" + model + ")";
         L.d(deviceInfo);
@@ -79,20 +82,24 @@ public class AndroidAPIServer {
         // Process.run 等方法就会出现异常
     }
 
-
+    public static String getMarketName() {
+        return SystemProperties.get("ro.product.marketname");
+    }
     /**
-     * 与直接启动dex不同，从 Activity中启动不用反射 context 上下文
+     * 与直接启动dex不同，从 Activity 中启动不用反射 context 上下文
+     * 但是一些权限需要动态申请
      * different from start dex directly, start from Activity doesn't need to reflect context
      *
      * @param context: Context
-     * @throws IOException : IOException
      */
     public int startServerFromActivity(Context context) {
-        L.serverLogPath = context.getFilesDir().getPath() + "/app_server_log";
+        String dataPath = context.getFilesDir().getPath();
         L.enableTerminalLog = false;
+        L.serverLogPath = dataPath + "/app_server_log";
+        portDirectory = dataPath;
         String portPath = context.getFilesDir().getPath();
         ContextStore.getInstance().setContext(context);
-        AndroidAPIServerHTTPD server = ServerUtil.safeGetServerForActivity();
+        AndroidAPIServerHTTPD server = ServerHelper.safeGetServerForActivity();
         server.setAndroidAPIServer(this);
         // TODO 在确认下这个断言在 release 下是怎么的
         assert server != null;
@@ -113,25 +120,25 @@ public class AndroidAPIServer {
             clazz = Class.forName("android.hardware.display.DisplayManagerGlobal");
             @SuppressLint("DiscouragedPrivateApi") java.lang.reflect.Method getInstanceMethod = clazz.getDeclaredMethod("getInstance");
             Object dmg = getInstanceMethod.invoke(null);
-            ReflectUtil.invokeMethod(dmg, "setRefreshRateSwitchingType", 2);
+            ReflectionHelper.invokeMethod(dmg, "setRefreshRateSwitchingType", 2);
             //getRefreshRateSwitchingType
-            int type = (int) ReflectUtil.invokeMethod(dmg, "getRefreshRateSwitchingType");
+            int type = (int) ReflectionHelper.invokeMethod(dmg, "getRefreshRateSwitchingType");
             L.d("RefreshRateSwitchingType -> " + type);
             //noinspection JavaReflectionMemberAccess
             DisplayManager displayManager = DisplayManager.class.getDeclaredConstructor(Context.class).newInstance(FakeContext.get());
-            int matchContentFrameRateUserPreference = (int) ReflectUtil.invokeMethod(displayManager, "getMatchContentFrameRateUserPreference");
+            int matchContentFrameRateUserPreference = (int) ReflectionHelper.invokeMethod(displayManager, "getMatchContentFrameRateUserPreference");
             L.d("matchContentFrameRateUserPreference -> " + matchContentFrameRateUserPreference);
             // getSystemPreferredDisplayMode
-            Object systemMode = ReflectUtil.invokeMethod(dmg, "getSystemPreferredDisplayMode", 0);
+            Object systemMode = ReflectionHelper.invokeMethod(dmg, "getSystemPreferredDisplayMode", 0);
             L.d("SystemPreferredDisplayMode -> " + systemMode);
             // same with adb shell cmd display get-user-preferred-display-mode 0
-            Object userMode = ReflectUtil.invokeMethod(dmg, "getUserPreferredDisplayMode", 0);
+            Object userMode = ReflectionHelper.invokeMethod(dmg, "getUserPreferredDisplayMode", 0);
             L.d("UserPreferredDisplayMode -> " + userMode);
             // getGlobalUserPreferredDisplayMode
-            Object globalUserMode = ReflectUtil.invokeMethod(displayManager, "getGlobalUserPreferredDisplayMode");
+            Object globalUserMode = ReflectionHelper.invokeMethod(displayManager, "getGlobalUserPreferredDisplayMode");
             L.d("GlobalUserPreferredDisplayMode -> " + globalUserMode);
-            ReflectUtil.invokeMethod(dmg, "setShouldAlwaysRespectAppRequestedMode", true);
-            boolean should = (boolean) ReflectUtil.invokeMethod(dmg, "shouldAlwaysRespectAppRequestedMode");
+            ReflectionHelper.invokeMethod(dmg, "setShouldAlwaysRespectAppRequestedMode", true);
+            boolean should = (boolean) ReflectionHelper.invokeMethod(dmg, "shouldAlwaysRespectAppRequestedMode");
             L.d("shouldAlwaysRespectAppRequestedMode -> " + should);
             for (Display display : displayManager.getDisplays()) {
                 if (display.getDisplayId() != 0) {
@@ -144,15 +151,15 @@ public class AndroidAPIServer {
                             L.d("");
                             if (mode.getRefreshRate() > 60) {
                                 L.d("set mode -> " + mode);
-                                ReflectUtil.invokeMethod(dmg, "setUserPreferredDisplayMode", display.getDisplayId(), mode);
-                                ReflectUtil.invokeMethod(displayManager, "setGlobalUserPreferredDisplayMode", mode);
+                                ReflectionHelper.invokeMethod(dmg, "setUserPreferredDisplayMode", display.getDisplayId(), mode);
+                                ReflectionHelper.invokeMethod(displayManager, "setGlobalUserPreferredDisplayMode", mode);
                             }
                         }
                     }
                 }
             }
-            ReflectUtil.listAllObject(dmg);
-            ReflectUtil.listAllObject(displayManager);
+            ReflectionHelper.listAllObject(dmg);
+            ReflectionHelper.listAllObject(displayManager);
 
         } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
                  IllegalAccessException | InstantiationException e) {

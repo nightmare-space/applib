@@ -4,8 +4,8 @@ import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
 import android.annotation.SuppressLint;
 
-import com.nightmare.aas.AndroidAPIPlugin;
-import com.nightmare.aas.L;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
+import com.nightmare.aas.helper.L;
 
 import org.json.JSONArray;
 

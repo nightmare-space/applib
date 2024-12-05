@@ -1,4 +1,4 @@
-package com.nightmare.aas;
+package com.nightmare.aas.foundation;
 
 import android.annotation.TargetApi;
 import android.content.AttributionSource;

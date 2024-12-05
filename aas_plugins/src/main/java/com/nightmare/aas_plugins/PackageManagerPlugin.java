@@ -14,9 +14,9 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import com.nightmare.aas.AndroidAPIPlugin;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
 import com.nightmare.aas.ContextStore;
-import com.nightmare.aas.L;
+import com.nightmare.aas.helper.L;
 import com.nightmare.aas_plugins.util.BitmapHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,7 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationTargetException;
 import fi.iki.elonen.NanoHTTPD;
 
-public class PMPlugin extends AndroidAPIPlugin {
+public class PackageManagerPlugin extends AndroidAPIPlugin {
     @Override
     public String route() {
         return "/package_manager";

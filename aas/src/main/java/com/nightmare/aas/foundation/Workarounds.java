@@ -1,4 +1,4 @@
-package com.nightmare.aas;
+package com.nightmare.aas.foundation;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -13,6 +13,9 @@ import android.media.AudioRecord;
 import android.os.Build;
 import android.os.Looper;
 import android.os.Parcel;
+
+import com.nightmare.aas.helper.L;
+
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

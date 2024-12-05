@@ -16,11 +16,11 @@ import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
-import com.nightmare.aas.AndroidAPIPlugin;
+import com.nightmare.aas.foundation.AndroidAPIPlugin;
 import com.nightmare.aas.ContextStore;
-import com.nightmare.aas.FakeContext;
-import com.nightmare.aas.L;
-import com.nightmare.aas.ReflectUtil;
+import com.nightmare.aas.foundation.FakeContext;
+import com.nightmare.aas.helper.L;
+import com.nightmare.aas.helper.ReflectionHelper;
 import com.nightmare.aas_plugins.util.DisplayControl;
 import com.nightmare.aas_plugins.util.DisplayUtil;
 import com.nightmare.aas_plugins.util.SurfaceControl;
@@ -39,8 +39,8 @@ import java.util.Objects;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class DMPlugin extends AndroidAPIPlugin {
-    public DMPlugin() {
+public class DisplayManagerPlugin extends AndroidAPIPlugin {
+    public DisplayManagerPlugin() {
 //        testChangeRefreshRate();
     }
 
@@ -243,7 +243,7 @@ public class DMPlugin extends AndroidAPIPlugin {
                 throw new RuntimeException(e);
             }
 
-            Display display1 = (Display) ReflectUtil.invokeMethod(displayManager, "getDisplay", display.getDisplay().getDisplayId());
+            Display display1 = (Display) ReflectionHelper.invokeMethod(displayManager, "getDisplay", display.getDisplay().getDisplayId());
             L.d("display1 -> " + display1);
 //
 //            IBinder displayToken = DisplayControl.getPhysicalDisplayToken(display.getDisplay().getDisplayId());

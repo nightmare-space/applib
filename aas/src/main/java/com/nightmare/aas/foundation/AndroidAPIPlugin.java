@@ -1,4 +1,4 @@
-package com.nightmare.aas;
+package com.nightmare.aas.foundation;
 
 
 import fi.iki.elonen.NanoHTTPD;

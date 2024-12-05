@@ -6,7 +6,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.view.Surface;
 
-import com.nightmare.aas.L;
+import com.nightmare.aas.helper.L;
 
 import java.lang.reflect.Method;
 

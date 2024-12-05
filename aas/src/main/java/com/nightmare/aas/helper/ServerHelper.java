@@ -1,10 +1,12 @@
-package com.nightmare.aas;
+package com.nightmare.aas.helper;
+
+import com.nightmare.aas.AndroidAPIServerHTTPD;
 
 import java.io.IOException;
 
 import fi.iki.elonen.NanoHTTPD;
 
-public class ServerUtil {
+public class ServerHelper {
 
     // 端口尝试的范围
     static final int RANGE_START = 14000;
@@ -33,7 +35,7 @@ public class ServerUtil {
 
     public static AndroidAPIServerHTTPD safeGetServer(int start, int end) {
         for (int i = start; i < end; i++) {
-            AndroidAPIServerHTTPD server = new AndroidAPIServerHTTPD("127.0.0.1", i);
+            AndroidAPIServerHTTPD server = new AndroidAPIServerHTTPD("0.0.0.0", i);
             try {
                 server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 return server;

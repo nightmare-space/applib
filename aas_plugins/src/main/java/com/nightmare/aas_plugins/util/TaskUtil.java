@@ -7,8 +7,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.IInterface;
-import com.nightmare.aas_plugins.AMPlugin;
-import com.nightmare.aas_plugins.PMPlugin;
+import com.nightmare.aas_plugins.ActivityManagerPlugin;
+import com.nightmare.aas_plugins.PackageManagerPlugin;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -146,8 +146,8 @@ public class TaskUtil {
                 jsonObject.put("topPackage", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getPackageName());
                 jsonObject.put("topActivity", taskInfo.topActivity == null ? "" : taskInfo.topActivity.getClassName());
                 if (taskInfo.topActivity != null) {
-                    PackageInfo packageInfo = PMPlugin.getPackageInfo(taskInfo.topActivity.getPackageName());
-                    jsonObject.put("label", AMPlugin.getLabel(packageInfo.applicationInfo));
+                    PackageInfo packageInfo = PackageManagerPlugin.getPackageInfo(taskInfo.topActivity.getPackageName());
+                    jsonObject.put("label", ActivityManagerPlugin.getLabel(packageInfo.applicationInfo));
                 } else {
                     jsonObject.put("label", "");
                 }

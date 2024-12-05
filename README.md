@@ -1,8 +1,9 @@
 ## Android API Server(AAS)
 [![](https://jitpack.io/v/nightmare-space/android_api_server.svg)](https://jitpack.io/#nightmare-space/android_api_server)
 
-
 AAS 是一个为 Android 设备提供 RESTful API 的服务器。它基于 HTTP 协议，可以被任何支持 HTTP 的客户端访问。它设计轻量且易于使用，支持热插拔，你可以通过很简短的代码，来让 AAS 加载你自定义的插件
+
+AAS 本身是一个框架，AAS Integrate 是一个带有自实现插件的库
 
 支持上层框架为 Web 或者 Flutter 或者其他任意不能直接访问 Java 的框架中使用
 
@@ -14,15 +15,19 @@ AAS 提供了封装好的开箱即用的 [Flutter Plugin](https://github.com/nig
 
 ## 功能特性
 
+- Restful API: 通过 HTTP 协议，访问安卓的 API
 - 插件化: 通过简单的代码编写，可实现自定义插件的支持
 - 内置 API: 内置开箱即用的在 Dex 中获取 Context、Services 的各种 API
 - 内置插件: 内置多个插件，例如获取应用列表、应用图标、创建虚拟显示器等
 - Flutter Plugin 支持: 只需要引入 Flutter 依赖，AAS 会随插件的注册而启动，在 Flutter 侧只需要调用 Dart API 即可
 - 多种模式支持: 支持 Activity Mode 与 Dex Mode
+- 安全: 有一个简单的鉴权，来防止端口扫描恶意调用
 
 ## 架构图
 
 对上层的应用来说，只有端口的感知，它不在乎对方是哪种模式运行的
+
+这其实也是它的魅力所在，你可以在任何地方，任何设备上，通过 HTTP 协议访问安卓的 API
 
 ![](docs/applib.excalidraw.png)
 
@@ -46,7 +51,7 @@ TODO: 补图
 实际上，这样的模式已大量的在无界、速享、ADB KIT中使用
 其中的应用列表页面，都是完全的同一份代码，仅仅是端口号不一样
 
-## 示例
+## 示例代码
 
 <img src="docs/screenshot/01.jpg" alt="" width="33%" /><img src="docs/screenshot/02.jpg" alt="" width="33%" /><img src="docs/screenshot/03.jpg" alt="" width="33%" />
 <img src="docs/screenshot/04.jpg" alt="" width="33%" /><img src="docs/screenshot/05.jpg" alt="" width="33%" />
