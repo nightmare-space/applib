@@ -1,115 +1,133 @@
-## Android API Server(AAS)
+
+## Android API Server (AAS)
 [![](https://jitpack.io/v/nightmare-space/android_api_server.svg)](https://jitpack.io/#nightmare-space/android_api_server)
 
-AAS 是一个为 Android 设备提供 RESTful API 的服务器。它基于 HTTP 协议，可以被任何支持 HTTP 的客户端访问。它设计轻量且易于使用，支持热插拔，你可以通过很简短的代码，来让 AAS 加载你自定义的插件
+AAS is a server that provides RESTful APIs for Android devices. It is based on the HTTP protocol and can be accessed by any client that supports HTTP. It is designed to be lightweight and easy to use, supporting hot-plugging, allowing you to load your custom plugins with very short code.
 
-AAS 本身是一个框架，AAS Integrate 是一个带有自实现插件的库
+It supports upper-layer frameworks such as Web or Flutter or any other frameworks that cannot directly access Java.
 
-支持上层框架为 Web 或者 Flutter 或者其他任意不能直接访问 Java 的框架中使用
+For example, in Flutter, we almost need to use MethodChannel to access Android APIs.
 
-例如在 Flutter 中，我们几乎需要使用 MethodChannel 来访问安卓的 API，并且无法在多个 Isolate 中访问
+After implementing with MethodChannel, it cannot support accessing Android's MethodChannel in Flutter Web.
 
-使用 MethodChannel 实现后，如果想要在 Flutter Web 中访问，也是行不通的
+AAS provides a ready-to-use [Flutter Plugin](https://github.com/nightmare-space/android_api_server_flutter), or you can implement clients in any language according to [API.md](docs/API.md).
 
-AAS 提供了封装好的开箱即用的 [Flutter Plugin](https://github.com/nightmare-space/android_api_server_flutter)，或者你可以根据 [API.md](docs/API.md) 实现任意语言编写的客户端
+## Features
 
-## 功能特性
+- RESTful: Get information related to Android APIs via HTTP protocol.
+- Plugin support: Custom plugins can be supported with simple code.
+- Built-in APIs: Various APIs to get Context and Services in Dex.
+- Built-in plugins: Multiple plugins, such as getting the app list, app icons, creating virtual displays, etc.
+- Flutter Plugin support: Just include the Flutter dependency, and AAS will start with the plugin registration. You only need to call the Dart API on the Flutter side.
+- Multiple modes support: Supports Activity Mode and Dex Mode.
+- Security: A simple authentication to prevent malicious calls from port scanning.
 
-- Restful API: 通过 HTTP 协议，访问安卓的 API
-- 插件化: 通过简单的代码编写，可实现自定义插件的支持
-- 内置 API: 内置开箱即用的在 Dex 中获取 Context、Services 的各种 API
-- 内置插件: 内置多个插件，例如获取应用列表、应用图标、创建虚拟显示器等
-- Flutter Plugin 支持: 只需要引入 Flutter 依赖，AAS 会随插件的注册而启动，在 Flutter 侧只需要调用 Dart API 即可
-- 多种模式支持: 支持 Activity Mode 与 Dex Mode
-- 安全: 有一个简单的鉴权，来防止端口扫描恶意调用
-
-## 架构图
-
-对上层的应用来说，只有端口的感知，它不在乎对方是哪种模式运行的
-
-这其实也是它的魅力所在，你可以在任何地方，任何设备上，通过 HTTP 协议访问安卓的 API
+## Architecture Diagram
 
 ![](docs/applib.excalidraw.png)
 
+For upper-layer applications, only the Address and Port are perceived, regardless of the running mode.
 
+You can get Android information via HTTP from anywhere, on any device.
 
-## 使用场景介绍
-假如我目前有一个 Flutter 编写的展示应用列表的界面是这样
+Since HTTP is not secure, AAS has built-in simple interface authentication to prevent malicious calls from port scanning.
 
-TODO: 补图
+## Getting Started
 
-现在我想找个界面在 PC 上展示，亦或者在 Web 中展示
-
-我只需要修改传入启动了服务的设备端口号即可
-
-
-亮点
-例如我当前有个加载应用列表的Flutter界面，看起来像这样
-
-而此时我需要这个界面展示其它设备的应用列表
-我只需要更换端口
-实际上，这样的模式已大量的在无界、速享、ADB KIT中使用
-其中的应用列表页面，都是完全的同一份代码，仅仅是端口号不一样
-
-## 示例代码
-
-<img src="docs/screenshot/01.jpg" alt="" width="33%" /><img src="docs/screenshot/02.jpg" alt="" width="33%" /><img src="docs/screenshot/03.jpg" alt="" width="33%" />
-<img src="docs/screenshot/04.jpg" alt="" width="33%" /><img src="docs/screenshot/05.jpg" alt="" width="33%" />
-
-更详细的用法详见 [Flutter Example](https://github.com/nightmare-space/android_api_server_flutter/tree/main/example)
-
-## 开始使用
-
-AAS 有两种运行模式
+AAS has two running modes.
 
 ### Activity Mode
 
-这种情况下，AAS 拥有真实的 Activity Context，对于获取应用列表，同普通安卓本身访问 API一样，需要申请权限
+In this case, AAS has a real Activity Context. For getting the app list, it needs to request permissions like accessing APIs on Android itself.
 
-但基于 Restful API 的好处是，你可以通过这样的代码来获取一个 App 的图标
+But the benefit of Restful API is that you can get an app's icon with such code (Flutter):
 
 ```dart
 AASClient aasClient = AASClient();
 Image.network(aasClient.iconUrl('com.nightmare'))
 ```
 
-AppChannel 是多实例，所有的 API 被封装到 AppChannel 下
+AASClient is multi-instance, and all APIs are encapsulated under AASClient.
 
-多实例可以让同一个页面加载不同设备的应用列表，例如 Uncon
+Multi-instance allows loading information from different devices on the same page, such as Uncon.
 
-TODO:补图
+![Uncon](docs/uncon.png)
 
+## Dex Mode
 
-### 在 Flutter 中使用
+The startup script is in [auto.sh](scripts/auto.sh).
 
-提供 `android_api_server_client` 来快速的让 Flutter App 拥有这个能力，无需手动启动服务，`AAS` 随 Flutter Plugin 注册而启动，直接创建 `AASClient` 则会使用 Flutter Plugin 中启动的端口
+In this mode, Java is first compiled into class files, then converted into dex files by dx or d8 tools.
+
+Run app_process via adb to start dex.
+
+The benefit of this mode is that we can use more permissions, such as getting background task thumbnails, creating virtual displays (with Group).
+
+All Java permissions are for shell (uid 2000), so you don't need to request permissions separately for getting the app list, creating virtual displays, etc.
+
+We can start this service on a device connected to a PC, then get the communication port via adb forward (port forwarding is included in auto.sh).
+
+Next, you still only need to get the app's icon like this:
+
+```dart
+AASClient aasClient = AASClient(port: port);
+Image.network(aasClient.iconUrl('com.nightmare'))
+```
+
+You can also implement various APIs yourself to get features far beyond adb command line, such as icons, background app screenshots, which adb commands do not support.
+
+### Using in Flutter
+
+Provide `android_api_server_client` to quickly enable this capability in Flutter App without manually starting the service. `AAS` starts with Flutter Plugin registration, and directly creating `AASClient` will use the port started by Flutter Plugin.
 
 ```yaml
+dependencies:
   android_api_server_client:
     git: https://github.com/nightmare-space/android_api_server_client
 ```
-然后直接使用封装好的 Dart API
+
+Then directly use the encapsulated Dart API:
+
 ```dart
 AASClient aasClient = AASClient();
 AppInfos infos = await aasClient.getAppInfos();
 ```
 
-如果你需要在 PC 上访问同样的接口，你只需要更改端口
+If you need to access the same interface on a PC, just change the port via Dex Mode:
+
 ```dart
 AASClient aasClient = AASClient(port: 15000);
 AppInfos infos = await aasClient.getAppInfos();
 ```
 
-### 在原生安卓中使用
+Suppose I currently have a Flutter interface displaying the app list like this:
 
-根据仓库的 Tag 版本，引入对应的依赖
-```gradle
-implementation('com.github.nightmare-space.android_api_server:aas_integrated:v0.1.23') {
-    exclude group: 'com.github.nightmare-space.android_api_server', module: 'ass_hidden_api'
-}
+<img src="docs/app_manager.jpg" alt="" width="33%" />
+
+Now I want this interface to be displayed on a PC or in Web.
+
+After starting Dex, I only need to change the port number:
+
+```dart
+AASClient aasClient = AASClient(port: Platform.isMacOS ? 15000 : null);
 ```
 
-#### 启动服务
+![Uncon](docs/app_manager_mac.png)
+
+In fact, this mode is already widely used in Uncon, Speed Share, and ADB KIT.
+
+The file manager, app list, task list, etc., are all the same code, only the port number is different.
+
+### Using in Native Android
+
+Include the corresponding dependency according to the repository's Tag version:
+
+```gradle
+implementation 'com.github.nightmare-space.android_api_server:aas_integrated:v0.1.27'
+```
+
+#### Start the service
+
 ```java
 AASIntegrate aasIntegrate = new AASIntegrate();
 try {
@@ -121,39 +139,36 @@ try {
 }
 ```
 
-## Dex Mode
-启动脚本在 [auto.sh](scripts/auto.sh)
+## Example Code
 
-这种模式，会先将 java 编译成 class，再由 dx 或 d8 工具转换成 dex 文件
+The example code includes all API usage methods. The example code is the best way to understand AAS.
 
-通过 adb 运行 app_process 启动 dex
+<img src="docs/screenshot/01.jpg" alt="" width="33%" /><img src="docs/screenshot/02.jpg" alt="" width="33%" /><img src="docs/screenshot/03.jpg" alt="" width="33%" />
+<img src="docs/screenshot/04.jpg" alt="" width="33%" /><img src="docs/screenshot/05.jpg" alt="" width="33%" />
 
-这种模式带来的好处是，我们能使用的权限更多，例如获取后台任务缩略图，创建虚拟显示器(带Group的)
+See the complete code in [Flutter Example](https://github.com/nightmare-space/android_api_server_flutter/tree/main/example).
 
-所有 java 的权限为 shell(uid 2000)，你无需再为获取应用列表，创建虚拟显示器等单独申请权限
+## Repository Introduction
 
-我们可以通过为连接到 PC 的设备启动这个服务，再通过 adb forward 获得通信的端口
+- ass: This is the framework itself, a shell without any plugins. If you need to use this mode, just depend on this.
+- aas_hidden_api: An elegant solution to access Android hidden APIs, compileOnly dependency to aas_plugin and aas.
+- aas_integrated: A library integrated with aas_plugin. If you need some existing plugins, use this directly.
+- aas_plugin: Implements some plugins used in personal projects, such as ActivityManagerPlugin, DisplayManagerPlugin, etc.
 
-接下来，你仍然只需要像这样就获得 App的图标
+## Developing Custom Plugins
+TODO
 
-```dart
-AASClient aasClient = AASClient(port: port);
-Image.network(aasClient.iconUrl('com.nightmare'))
-```
+## Outlook
+I always think Tencent's PerfDog is too expensive. Using AAS, I think it should be possible to write a new PerfDog to get frame rate android other information on Android.
+Also, Scene, LibChecker, can be supported on PC or even Web using AAS.
 
-你还可以自己实现各种各样的 API ，来获得远超 adb 命令行的功能，例如图标获取，adb 命令则就是不支持的
+## Who is using it?
+- [Speed Share](https://github.com/nightmare-space/speed_share): `AAS` is integrated into Speed Share in `Activity Mode`, allowing Speed Share to get the app list on the Flutter side to select an app to send to other devices.
+- [ADB KIT](https://github.com/nightmare-space/adb_kit): `AAS` exists in both Activity Mode and Dex Mode in ADB KIT. The former is similar to Speed Share, used when we need to install an already installed Apk on the connected device. After a device is successfully connected, ADB KIT starts Dex Mode's AAS via app_process to achieve functions that adb command line cannot directly implement, such as file viewing and preview.
+- Uncon (closed source): Exists in both Activity Mode and Dex Mode, similar to ADB KIT. After starting Dex Mode's AAS, Uncon is used to load the tasks running on the target device.
 
-## 仓库介绍
+### More Scenario Screenshots
 
+<img src="docs/file_manager_android.jpg" alt="" width="50%" /><img src="docs/app_select.jpg" alt="" width="50%" />
 
-## 开发自定义插件
-
-## 展望
-我一直觉得腾讯的 PerfDog 收费太贵，使用 AAS，我觉得应该是能够编写一个 PerfDog 的安卓部分的
-还有 Scene，LibChecker
-
-
-## 谁在用？
-- [Speed Share](https://github.com/nightmare-space/speed_share): AAS以 Activity Mode的方式集成到速享，以让速享可以在 Flutter 侧获取应用列表，来选择一个应用发送到其它设备
-- [ADB KIT](https://github.com/nightmare-space/adb_kit): `AAS` 在 ADB KIT 中同时以 Activity Mode 与 Dex Mode 存在，前者与速享类似，当我们需要安装本机已经安装的Apk到连接的设备后，就使用的这种模式；而当一个设备连接成功后，ADB KIT 便会通过 app_process唤起 Dex Mode 的 AAS，以实现 adb 命令行无法直接实现的功能，例如文件查看、预览
-- Uncon(闭源): 同时以 Activity Mode 与 Dex Mode 存在，行为与 ADB KIT 类似，启动 Dex Mode 的 AAS 后，无界会用来加载目标设备运行的 Task
+<img src="docs/uncon_file_manager.png" alt="" width="50%" /><img src="docs/uncon_app_starter.png" alt="" width="50%" />

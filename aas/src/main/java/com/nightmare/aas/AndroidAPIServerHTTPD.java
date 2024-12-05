@@ -3,6 +3,7 @@ package com.nightmare.aas;
 import android.util.Log;
 
 import com.nightmare.aas.foundation.AndroidAPIPlugin;
+import com.nightmare.aas.helper.L;
 
 import org.json.JSONObject;
 
@@ -33,6 +34,7 @@ public class AndroidAPIServerHTTPD extends NanoHTTPD {
                     return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json", jsonObject.toString());
                 }
                 key = session.getHeaders().get("key");
+                L.d("key -> " + key);
                 jsonObject.put("result", "ok");
                 return newFixedLengthResponse(Response.Status.OK, "application/json", jsonObject.toString());
             }
