@@ -31,7 +31,6 @@ public class AASIntegrate {
         server.registerPlugin(new PackageManagerPlugin());
         server.registerPlugin(new ChangeDisplayHandler());
         server.registerPlugin(new DisplayManagerPlugin());
-
         server.registerPlugin(new ActivityManagerPlugin());
         server.registerPlugin(new ActivityTaskManagerPlugin());
         server.registerPlugin(new FilePlugin());

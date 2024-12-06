@@ -1,1 +1,0 @@
-adb shell am start-activity -W -S --activityType 0 --activity-brought-to-front --display 11 -n com.nightmare.speedshare/.MainActivity

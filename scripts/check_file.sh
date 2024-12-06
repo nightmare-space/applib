@@ -1,1 +1,0 @@
-adb shell ls -al /sdcard/ | grep app_server
